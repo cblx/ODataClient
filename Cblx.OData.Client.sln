@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30114.105
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OData.Client", "OData.Client\OData.Client.csproj", "{33CA6B4C-6088-4A96-A8C9-37F21994000D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cblx.OData.Client", "OData.Client\Cblx.OData.Client.csproj", "{33CA6B4C-6088-4A96-A8C9-37F21994000D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OData.Client.Abstractions", "OData.Client.Abstractions\OData.Client.Abstractions.csproj", "{A288D58F-F775-4DDA-B1FC-5E80960CB7F3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cblx.OData.Client.Abstractions", "OData.Client.Abstractions\Cblx.OData.Client.Abstractions.csproj", "{A288D58F-F775-4DDA-B1FC-5E80960CB7F3}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OData.Client.UnitTests", "OData.Client.UnitTests\OData.Client.UnitTests.csproj", "{903B77DB-1A40-4461-A46F-8F85C41F55FB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cblx.OData.Client.UnitTests", "OData.Client.UnitTests\Cblx.OData.Client.UnitTests.csproj", "{903B77DB-1A40-4461-A46F-8F85C41F55FB}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Coverage", "Coverage", "{B36D94DE-4DE5-449D-A872-56543F0642C9}"
 	ProjectSection(SolutionItems) = preProject

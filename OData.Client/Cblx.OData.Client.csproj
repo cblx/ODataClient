@@ -9,7 +9,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\OData.Client.Abstractions\OData.Client.Abstractions.csproj" />
+    <ProjectReference Include="..\OData.Client.Abstractions\Cblx.OData.Client.Abstractions.csproj" />
   </ItemGroup>
 
 </Project>
