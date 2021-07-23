@@ -20,5 +20,7 @@ jobs:
             const branch = '${{github.ref}}';
             const id = branch.split('/').reverse()[0];
             core.setOutput('id', id);
-      - run: dotnet pack -p:PackageVersion=${{steps.get-version.outputs.id}}
+      - run: dotnet pack -p:PackageVersion=${{steps.get-version.outputs.id}} --output ${{GITHUB_WORKSPACE}}
+      #- run: dotnet nuget push AppLogger.1.0.0.nupkg --api-key ${{secrets.NUGET_API_KEY}} --source https://api.nuget.org/v3/index.json
+      
           
