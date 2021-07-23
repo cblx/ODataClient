@@ -14,36 +14,39 @@ namespace OData.Client
         public static async Task Patch(HttpMessageInvoker invoker, string url, object value)
         {
             string jsonValue = Serialize(value);
-#if DEBUG
             StringBuilder sbLog = new();
-            AppendRequestInfo(sbLog, invoker, "PATCH", url);
-            AppendBodyInfo(sbLog, jsonValue);
-#endif
+            if (ODataClient.ShowLog)
+            {
+                AppendRequestInfo(sbLog, invoker, "PATCH", url);
+                AppendBodyInfo(sbLog, jsonValue);
+            }
             HttpResponseMessage responseMessage = await invoker.SendAsync(
                new HttpRequestMessage(
                    HttpMethod.Patch,
                    url
                )
-               { 
+               {
                    Content = new StringContent(jsonValue, Encoding.UTF8, "application/json")
                }, default);
 
             var json = await responseMessage.Content.ReadAsStringAsync();
-#if DEBUG
-            AppendResponseInfo(sbLog, json);
-            Console.WriteLine(sbLog);
-#endif
+            if (ODataClient.ShowLog)
+            {
+                AppendResponseInfo(sbLog, json);
+                Console.WriteLine(sbLog);
+            }
             ThrowErrorIfNotOk(responseMessage, json);
         }
 
         public static async Task Post(HttpMessageInvoker invoker, string url, object value)
         {
             string jsonValue = Serialize(value);
-#if DEBUG
             StringBuilder sbLog = new();
-            AppendRequestInfo(sbLog, invoker, "POST", url);
-            AppendBodyInfo(sbLog, jsonValue);
-#endif
+            if (ODataClient.ShowLog)
+            {
+                AppendRequestInfo(sbLog, invoker, "POST", url);
+                AppendBodyInfo(sbLog, jsonValue);
+            }
             HttpResponseMessage responseMessage = await invoker.SendAsync(
                new HttpRequestMessage(
                    HttpMethod.Post,
@@ -54,10 +57,11 @@ namespace OData.Client
                }, default);
 
             var json = await responseMessage.Content.ReadAsStringAsync();
-#if DEBUG
-            AppendResponseInfo(sbLog, json);
-            Console.WriteLine(sbLog);
-#endif
+            if (ODataClient.ShowLog)
+            {
+                AppendResponseInfo(sbLog, json);
+                Console.WriteLine(sbLog);
+            }
             ThrowErrorIfNotOk(responseMessage, json);
         }
 
@@ -72,10 +76,11 @@ namespace OData.Client
 
         public static async Task Delete(HttpMessageInvoker invoker, string url)
         {
-#if DEBUG
             StringBuilder sbLog = new();
-            AppendRequestInfo(sbLog, invoker, "DELETE", url);
-#endif
+            if (ODataClient.ShowLog)
+            {
+                AppendRequestInfo(sbLog, invoker, "DELETE", url);
+            }
             HttpResponseMessage responseMessage = await invoker.SendAsync(
                 new HttpRequestMessage(
                     HttpMethod.Delete,
@@ -84,19 +89,21 @@ namespace OData.Client
 
             var json = await responseMessage.Content.ReadAsStringAsync();
 
-#if DEBUG
-            AppendResponseInfo(sbLog, json);
-            Console.WriteLine(sbLog);
-#endif
+            if (ODataClient.ShowLog)
+            {
+                AppendResponseInfo(sbLog, json);
+                Console.WriteLine(sbLog);
+            }
             ThrowErrorIfNotOk(responseMessage, json);
         }
 
         public static async Task<TResult> Get<TResult>(HttpMessageInvoker invoker, string url)
         {
-#if DEBUG
             StringBuilder sbLog = new();
-            AppendRequestInfo(sbLog, invoker, "GET", url);
-#endif
+            if (ODataClient.ShowLog)
+            {
+                AppendRequestInfo(sbLog, invoker, "GET", url);
+            }
             HttpResponseMessage responseMessage = await invoker.SendAsync(
                 new HttpRequestMessage(
                     HttpMethod.Get,
@@ -105,10 +112,11 @@ namespace OData.Client
 
             var json = await responseMessage.Content.ReadAsStringAsync();
 
-#if DEBUG
-            AppendResponseInfo(sbLog, json);
-            Console.WriteLine(sbLog);
-#endif
+            if (ODataClient.ShowLog)
+            {
+                AppendResponseInfo(sbLog, json);
+                Console.WriteLine(sbLog);
+            }
             ThrowErrorIfNotOk(responseMessage, json);
 
             var jsonSerializerOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
@@ -117,7 +125,7 @@ namespace OData.Client
             return result;
         }
 
-     
+
         static void AppendRequestInfo(StringBuilder sbLog, HttpMessageInvoker invoker, string method, string url)
         {
             sbLog.AppendLine();

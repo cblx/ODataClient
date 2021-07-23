@@ -10,6 +10,7 @@ namespace OData.Client
     public class ODataClient : IODataClient
     {
         readonly HttpClient httpClient;
+        public static bool ShowLog = false;
 
         public ODataClient(HttpClient httpClient)
         {
