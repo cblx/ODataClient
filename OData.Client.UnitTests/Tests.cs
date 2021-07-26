@@ -8,6 +8,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -71,6 +72,18 @@ namespace OData.Client.UnitTests
         }
 
         [Fact]
+        public void AnnotationTest()
+        {
+            var set = new ODataSet<some_entity>(new HttpClient(), "some_entities");
+            string str = set.ToString(e => new
+            {
+                AtAnnotation = e.at__annotation,
+                RootAnnotation = e.root__annotation
+            });
+            Assert.Equal("some_entities?$select=at", str);
+        }
+
+        [Fact]
         public void ExpandArrayTest()
         {
             var set = new ODataSet<some_entity>(new HttpClient(), "some_entities");
@@ -106,7 +119,6 @@ namespace OData.Client.UnitTests
             });
             Assert.Equal("some_entities?$select=name", str);
         }
-      
 
         [Fact]
         public void TestFilterWithMethodCall()
@@ -497,6 +509,12 @@ namespace OData.Client.UnitTests
         public DateTimeOffset at { get; set; }
 
         public DateTime partyDay { get; set; }
+
+        [JsonPropertyName("at@annotation")]
+        public string at__annotation { get; set; }
+
+        [JsonPropertyName("@annotation")]
+        public string root__annotation { get; set; }
     }
 
     public class other_entity

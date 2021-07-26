@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Text.Json.Serialization;
 
 namespace OData.Client
 {
@@ -109,9 +110,24 @@ namespace OData.Client
                     pair = pair.Expand[child];
                     splitted = splitted.Skip(1);
                 }
-                pair.Select.Add(splitted.Last());
+                string field = node.Member.Name;
+
+                // Supporting mapped names in projections
+                var jsonPropertyNameAttr = node.Member.GetCustomAttribute<JsonPropertyNameAttribute>();
+                if(jsonPropertyNameAttr != null)
+                {
+                    field = jsonPropertyNameAttr.Name;
+                }
+
+                // Supporting OData annotations
+                if (field.Contains("@"))
+                {
+                    field = field.Split('@')[0];
+                    // This may happend for root annotations
+                    if (string.IsNullOrWhiteSpace(field)) { return base.VisitMember(node); }
+                }
+                pair.Select.Add(field);
             }
-            //return node;
             return base.VisitMember(node);
         }
 
