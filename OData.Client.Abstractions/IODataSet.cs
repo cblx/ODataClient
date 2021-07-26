@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
 
 namespace OData.Client.Abstractions
@@ -10,6 +11,7 @@ namespace OData.Client.Abstractions
     public interface IODataSet<TSource>
         where TSource: class, new()
     {
+        IODataSet<TSource> ConfigureRequestMessage(Action<HttpRequestMessage> requestMessageConfiguration);
 
         IODataSet<TSource> Filter(Expression<Func<TSource, bool>> filterExpression);
 
@@ -58,17 +60,6 @@ namespace OData.Client.Abstractions
         string ToString<TProjection>(Expression<Func<TSource, TProjection>> selectExpression);
         Task<ODataResult<TEntity>> Execute<TEntity>() where TEntity : class;
         Task<TEntity> ExecuteFirstOrDefault<TEntity>() where TEntity : class;
-    }
-
-    public static class IODataSetExtensions
-    {
-        public static IODataSet<T> FilterOrs<T, TSource>(this IODataSet<T> set, IEnumerable<TSource> source, Func<TSource, Expression<Func<T, bool>>> exp)
-            where T: class, new()
-        {
-            if(source == null) { return set; }
-            if (!source.Any()) { return set; }
-            return set.FilterOrs(source.Select(exp).ToArray());
-        }
     }
 
 }

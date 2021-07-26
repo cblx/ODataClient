@@ -16,32 +16,51 @@ namespace OData.Client
         {
             this.httpClient = httpClient;
         }
-
+      
         public IODataSet<T> From<T>() where T : class, new()
-        {
-            return new ODataSet<T>(httpClient, ResolveEndpointName<T>());
-        }
-
-        public Task Post<T>(Body<T> body)  where T: class
+            => new ODataSet<T>(httpClient, ResolveEndpointName<T>());
+     
+        public Task Post<T>(Body<T> body, Action<HttpRequestMessage> requestMessageConfiguration = null)  where T: class
             => HttpHelpers.Post(
-                httpClient, 
-                ResolveEndpointName<T>(), 
-                body.ToDictionary());
+                new(
+                    httpClient,
+                    requestMessageConfiguration,
+                    ResolveEndpointName<T>(), 
+                    body.ToDictionary()
+                )
+            );
 
-        public Task Patch<T>(object id, Body<T> body) where T : class
+        public Task Patch<T>(object id, Body<T> body, Action<HttpRequestMessage> requestMessageConfiguration = null) where T : class
             => HttpHelpers.Patch(
-                httpClient, 
-                $"{ResolveEndpointName<T>()}({id})", 
-                body.ToDictionary());
+                new(
+                    httpClient, 
+                    requestMessageConfiguration,
+                    $"{ResolveEndpointName<T>()}({id})", 
+                    body.ToDictionary()
+                )
+            );
 
-        public Task Delete<T>(object id) => HttpHelpers.Delete(httpClient, $"{ResolveEndpointName<T>()}({id})");
+        public Task Delete<T>(object id, Action<HttpRequestMessage> requestMessageConfiguration = null)
+            => HttpHelpers.Delete(
+                new(
+                    httpClient, 
+                    requestMessageConfiguration, 
+                    $"{ResolveEndpointName<T>()}({id})"
+                )
+            );
 
-        public Task Unbind<T>(object id, string nav) 
-            => HttpHelpers.Delete(httpClient, $"{ResolveEndpointName<T>()}({id})/{nav}/$ref");
+        public Task Unbind<T>(object id, string nav, Action<HttpRequestMessage> requestMessageConfiguration = null) 
+            => HttpHelpers.Delete(
+                new(
+                    httpClient, 
+                    requestMessageConfiguration, 
+                    $"{ResolveEndpointName<T>()}({id})/{nav}/$ref"
+                )
+            );
 
-        public Task Unbind<T, TBind>(object id, Expression<Func<T, TBind>> navExpression) 
+        public Task Unbind<T, TBind>(object id, Expression<Func<T, TBind>> navExpression, Action<HttpRequestMessage> requestMessageConfiguration = null) 
             where TBind: class
-            => Unbind<T>(id, (navExpression.Body as MemberExpression).Member.Name);
+            => Unbind<T>(id, (navExpression.Body as MemberExpression).Member.Name, requestMessageConfiguration);
 
         static string ResolveEndpointName<T>()
         {

@@ -3,31 +3,40 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace OData.Client
 {
+    record RequestParameters(
+        HttpMessageInvoker Invoker, 
+        Action<HttpRequestMessage> RequestMessageConfiguration,
+        string Url);
+
+    record RequestParametersWithValue(
+        HttpMessageInvoker Invoker,
+        Action<HttpRequestMessage> RequestMessageConfiguration,
+        string Url, object Value) : RequestParameters(Invoker, RequestMessageConfiguration, Url);
+
     static class HttpHelpers
     {
-        public static async Task Patch(HttpMessageInvoker invoker, string url, object value)
+        public static async Task Patch(RequestParametersWithValue parameters)
         {
-            string jsonValue = Serialize(value);
+            string jsonValue = Serialize(parameters.Value);
             StringBuilder sbLog = new();
             if (ODataClient.ShowLog)
             {
-                AppendRequestInfo(sbLog, invoker, "PATCH", url);
+                AppendRequestInfo(sbLog, parameters.Invoker, "PATCH", parameters.Url);
                 AppendBodyInfo(sbLog, jsonValue);
             }
-            HttpResponseMessage responseMessage = await invoker.SendAsync(
-               new HttpRequestMessage(
-                   HttpMethod.Patch,
-                   url
-               )
-               {
-                   Content = new StringContent(jsonValue, Encoding.UTF8, "application/json")
-               }, default);
+            var requestMessage = new HttpRequestMessage(HttpMethod.Patch, parameters.Url)
+            {
+                Content = new StringContent(jsonValue, Encoding.UTF8, "application/json")
+            };
+            parameters.RequestMessageConfiguration?.Invoke(requestMessage);
+            HttpResponseMessage responseMessage = await parameters.Invoker.SendAsync(requestMessage, default);
 
             var json = await responseMessage.Content.ReadAsStringAsync();
             if (ODataClient.ShowLog)
@@ -38,23 +47,22 @@ namespace OData.Client
             ThrowErrorIfNotOk(responseMessage, json);
         }
 
-        public static async Task Post(HttpMessageInvoker invoker, string url, object value)
+        public static async Task Post(RequestParametersWithValue parameters)
         {
-            string jsonValue = Serialize(value);
+            string jsonValue = Serialize(parameters.Value);
             StringBuilder sbLog = new();
             if (ODataClient.ShowLog)
             {
-                AppendRequestInfo(sbLog, invoker, "POST", url);
+                AppendRequestInfo(sbLog, parameters.Invoker, "POST", parameters.Url);
                 AppendBodyInfo(sbLog, jsonValue);
             }
-            HttpResponseMessage responseMessage = await invoker.SendAsync(
-               new HttpRequestMessage(
-                   HttpMethod.Post,
-                   url
-               )
-               {
-                   Content = new StringContent(jsonValue, Encoding.UTF8, "application/json")
-               }, default);
+
+            var requestMessage = new HttpRequestMessage(HttpMethod.Post, parameters.Url)
+            {
+                Content = new StringContent(jsonValue, Encoding.UTF8, "application/json")
+            };
+            parameters.RequestMessageConfiguration?.Invoke(requestMessage);
+            HttpResponseMessage responseMessage = await parameters.Invoker.SendAsync(requestMessage, default);
 
             var json = await responseMessage.Content.ReadAsStringAsync();
             if (ODataClient.ShowLog)
@@ -74,18 +82,17 @@ namespace OData.Client
             return JsonSerializer.Serialize(value, options);
         }
 
-        public static async Task Delete(HttpMessageInvoker invoker, string url)
+        public static async Task Delete(RequestParameters parameters)
         {
             StringBuilder sbLog = new();
             if (ODataClient.ShowLog)
             {
-                AppendRequestInfo(sbLog, invoker, "DELETE", url);
+                AppendRequestInfo(sbLog, parameters.Invoker, "DELETE", parameters.Url);
             }
-            HttpResponseMessage responseMessage = await invoker.SendAsync(
-                new HttpRequestMessage(
-                    HttpMethod.Delete,
-                    url
-                ), default);
+
+            var requestMessage = new HttpRequestMessage(HttpMethod.Delete, parameters.Url);
+            parameters.RequestMessageConfiguration?.Invoke(requestMessage);
+            HttpResponseMessage responseMessage = await parameters.Invoker.SendAsync(requestMessage, default);
 
             var json = await responseMessage.Content.ReadAsStringAsync();
 
@@ -97,18 +104,17 @@ namespace OData.Client
             ThrowErrorIfNotOk(responseMessage, json);
         }
 
-        public static async Task<TResult> Get<TResult>(HttpMessageInvoker invoker, string url)
+        public static async Task<TResult> Get<TResult>(RequestParameters parameters)
         {
             StringBuilder sbLog = new();
             if (ODataClient.ShowLog)
             {
-                AppendRequestInfo(sbLog, invoker, "GET", url);
+                AppendRequestInfo(sbLog, parameters.Invoker, "GET", parameters.Url);
             }
-            HttpResponseMessage responseMessage = await invoker.SendAsync(
-                new HttpRequestMessage(
-                    HttpMethod.Get,
-                    url
-                ), default);
+
+            var requestMessage = new HttpRequestMessage(HttpMethod.Get,parameters.Url);
+            parameters.RequestMessageConfiguration?.Invoke(requestMessage);
+            HttpResponseMessage responseMessage = await parameters.Invoker.SendAsync(requestMessage, default);
 
             var json = await responseMessage.Content.ReadAsStringAsync();
 

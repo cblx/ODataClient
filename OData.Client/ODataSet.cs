@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
 
 namespace OData.Client
@@ -13,8 +14,9 @@ namespace OData.Client
     {
         readonly HttpMessageInvoker invoker;
         readonly string endpoint;
-
         readonly ODataOptions options = new ();
+        Action<HttpRequestMessage> requestMessageConfiguration = null;
+
 
         public ODataSet(HttpMessageInvoker invoker, string endpoint)
         {
@@ -29,7 +31,13 @@ namespace OData.Client
         {
             invoker = o.invoker;
             endpoint = o.endpoint;
+            requestMessageConfiguration = o.requestMessageConfiguration;
             this.options = options;
+        }
+
+        public IODataSet<TSource> ConfigureRequestMessage(Action<HttpRequestMessage> requestMessageConfiguration)
+        {
+            return new ODataSet<TSource>(this, options) { requestMessageConfiguration = requestMessageConfiguration };
         }
 
         public IODataSet<TSource> AddOptionValue(string option, string value)
@@ -39,7 +47,7 @@ namespace OData.Client
 
         Task<ODataResult<TSource>> Get(string url) => Get<ODataResult<TSource>>(url);
 
-        Task<TResult> Get<TResult>(string url) => HttpHelpers.Get<TResult>(invoker, url);
+        Task<TResult> Get<TResult>(string url) => HttpHelpers.Get<TResult>(new(invoker, requestMessageConfiguration, url));
 
         Expression<Func<TSource, object>> currentSelectExpression = null;
         public IODataSet<TSource> Select(Expression<Func<TSource, object>> selectExpression)
