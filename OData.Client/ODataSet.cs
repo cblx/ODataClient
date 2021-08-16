@@ -93,11 +93,11 @@ namespace OData.Client
 
         public async Task<ODataResult<TProjection>> Execute<TProjection>(Expression<Func<TSource, TProjection>> selectExpression)
         {
+            string url = this.ToString(selectExpression);
+            ODataResult<TSource> result = await Get(url);
+            var project = selectExpression.Compile();
             try
             {
-                string url = this.ToString(selectExpression);
-                ODataResult<TSource> result = await Get(url);
-                var project = selectExpression.Compile();
                 var projected = new ODataResult<TProjection>
                 {
                     Count = result.Count,
