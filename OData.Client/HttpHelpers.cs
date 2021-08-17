@@ -121,19 +121,26 @@ namespace OData.Client
 
             var jsonSerializerOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
 
-            if (parameters.ODataClient.Options.ReadResponsesAsString)
+            string json = "*JSON FROM STREAM*";
+            try
             {
-                var json = await responseMessage.Content.ReadAsStringAsync();
+                if (parameters.ODataClient.Options.ReadResponsesAsString)
+                {
+                    json = await responseMessage.Content.ReadAsStringAsync();
+                    return JsonSerializer.Deserialize<TResult>(json, jsonSerializerOptions);
+                }
+                else
+                {
+                    return await JsonSerializer.DeserializeAsync<TResult>(await responseMessage.Content.ReadAsStreamAsync(), jsonSerializerOptions);
+                }
+            }
+            finally
+            {
                 if (parameters.ShowLog)
                 {
                     AppendResponseInfo(sbLog, json);
                     Console.WriteLine(sbLog);
                 }
-                return JsonSerializer.Deserialize<TResult>(json, jsonSerializerOptions);
-            }
-            else
-            {
-                return await JsonSerializer.DeserializeAsync<TResult>(await responseMessage.Content.ReadAsStreamAsync(), jsonSerializerOptions);
             }
         }
 
