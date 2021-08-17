@@ -7,25 +7,32 @@ using System.Threading.Tasks;
 
 namespace OData.Client
 {
+    public class ODataClientOptions
+    {
+        public bool ShowLog { get; set; } = false;
+        public bool ReadResponsesAsString { get; set; } = false;
+    }
+
     public class ODataClient : IODataClient
     {
-        readonly HttpClient httpClient;
-        public static bool ShowLog = false;
+        public ODataClientOptions Options { get; private set; }
+        public HttpMessageInvoker Invoker { get; private set; }
 
-        public ODataClient(HttpClient httpClient)
+        public ODataClient(HttpMessageInvoker invoker, ODataClientOptions options = null)
         {
-            this.httpClient = httpClient;
+            this.Invoker = invoker;
+            this.Options = options ?? new();
         }
-      
+
         public IODataSet<T> From<T>() where T : class, new()
-            => new ODataSet<T>(httpClient, ResolveEndpointName<T>());
-     
-        public Task Post<T>(Body<T> body, Action<HttpRequestMessage> requestMessageConfiguration = null)  where T: class
+            => new ODataSet<T>(this, ResolveEndpointName<T>());
+
+        public Task Post<T>(Body<T> body, Action<HttpRequestMessage> requestMessageConfiguration = null) where T : class
             => HttpHelpers.Post(
                 new(
-                    httpClient,
+                    this,
                     requestMessageConfiguration,
-                    ResolveEndpointName<T>(), 
+                    ResolveEndpointName<T>(),
                     body.ToDictionary()
                 )
             );
@@ -33,9 +40,9 @@ namespace OData.Client
         public Task Patch<T>(object id, Body<T> body, Action<HttpRequestMessage> requestMessageConfiguration = null) where T : class
             => HttpHelpers.Patch(
                 new(
-                    httpClient, 
+                    this,
                     requestMessageConfiguration,
-                    $"{ResolveEndpointName<T>()}({id})", 
+                    $"{ResolveEndpointName<T>()}({id})",
                     body.ToDictionary()
                 )
             );
@@ -43,23 +50,23 @@ namespace OData.Client
         public Task Delete<T>(object id, Action<HttpRequestMessage> requestMessageConfiguration = null)
             => HttpHelpers.Delete(
                 new(
-                    httpClient, 
-                    requestMessageConfiguration, 
+                    this,
+                    requestMessageConfiguration,
                     $"{ResolveEndpointName<T>()}({id})"
                 )
             );
 
-        public Task Unbind<T>(object id, string nav, Action<HttpRequestMessage> requestMessageConfiguration = null) 
+        public Task Unbind<T>(object id, string nav, Action<HttpRequestMessage> requestMessageConfiguration = null)
             => HttpHelpers.Delete(
                 new(
-                    httpClient, 
-                    requestMessageConfiguration, 
+                    this,
+                    requestMessageConfiguration,
                     $"{ResolveEndpointName<T>()}({id})/{nav}/$ref"
                 )
             );
 
-        public Task Unbind<T, TBind>(object id, Expression<Func<T, TBind>> navExpression, Action<HttpRequestMessage> requestMessageConfiguration = null) 
-            where TBind: class
+        public Task Unbind<T, TBind>(object id, Expression<Func<T, TBind>> navExpression, Action<HttpRequestMessage> requestMessageConfiguration = null)
+            where TBind : class
             => Unbind<T>(id, (navExpression.Body as MemberExpression).Member.Name, requestMessageConfiguration);
 
         static string ResolveEndpointName<T>()

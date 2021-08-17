@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -11,14 +10,17 @@ using System.Threading.Tasks;
 namespace OData.Client
 {
     record RequestParameters(
-        HttpMessageInvoker Invoker, 
+        ODataClient ODataClient,
         Action<HttpRequestMessage> RequestMessageConfiguration,
-        string Url);
+        string Url) {
+        internal HttpMessageInvoker Invoker { get => ODataClient.Invoker; }
+        internal bool ShowLog { get => ODataClient.Options.ShowLog; }
+    };
 
     record RequestParametersWithValue(
-        HttpMessageInvoker Invoker,
+        ODataClient ODataClient,
         Action<HttpRequestMessage> RequestMessageConfiguration,
-        string Url, object Value) : RequestParameters(Invoker, RequestMessageConfiguration, Url);
+        string Url, object Value) : RequestParameters(ODataClient, RequestMessageConfiguration, Url);
 
     static class HttpHelpers
     {
@@ -26,7 +28,7 @@ namespace OData.Client
         {
             string jsonValue = Serialize(parameters.Value);
             StringBuilder sbLog = new();
-            if (ODataClient.ShowLog)
+            if (parameters.ShowLog)
             {
                 AppendRequestInfo(sbLog, parameters.Invoker, "PATCH", parameters.Url);
                 AppendBodyInfo(sbLog, jsonValue);
@@ -39,7 +41,7 @@ namespace OData.Client
             HttpResponseMessage responseMessage = await parameters.Invoker.SendAsync(requestMessage, default);
 
             var json = await responseMessage.Content.ReadAsStringAsync();
-            if (ODataClient.ShowLog)
+            if (parameters.ShowLog)
             {
                 AppendResponseInfo(sbLog, json);
                 Console.WriteLine(sbLog);
@@ -51,7 +53,7 @@ namespace OData.Client
         {
             string jsonValue = Serialize(parameters.Value);
             StringBuilder sbLog = new();
-            if (ODataClient.ShowLog)
+            if (parameters.ShowLog)
             {
                 AppendRequestInfo(sbLog, parameters.Invoker, "POST", parameters.Url);
                 AppendBodyInfo(sbLog, jsonValue);
@@ -65,7 +67,7 @@ namespace OData.Client
             HttpResponseMessage responseMessage = await parameters.Invoker.SendAsync(requestMessage, default);
 
             var json = await responseMessage.Content.ReadAsStringAsync();
-            if (ODataClient.ShowLog)
+            if (parameters.ShowLog)
             {
                 AppendResponseInfo(sbLog, json);
                 Console.WriteLine(sbLog);
@@ -85,7 +87,7 @@ namespace OData.Client
         public static async Task Delete(RequestParameters parameters)
         {
             StringBuilder sbLog = new();
-            if (ODataClient.ShowLog)
+            if (parameters.ShowLog)
             {
                 AppendRequestInfo(sbLog, parameters.Invoker, "DELETE", parameters.Url);
             }
@@ -96,7 +98,7 @@ namespace OData.Client
 
             var json = await responseMessage.Content.ReadAsStringAsync();
 
-            if (ODataClient.ShowLog)
+            if (parameters.ShowLog)
             {
                 AppendResponseInfo(sbLog, json);
                 Console.WriteLine(sbLog);
@@ -107,7 +109,7 @@ namespace OData.Client
         public static async Task<TResult> Get<TResult>(RequestParameters parameters)
         {
             StringBuilder sbLog = new();
-            if (ODataClient.ShowLog)
+            if (parameters.ShowLog)
             {
                 AppendRequestInfo(sbLog, parameters.Invoker, "GET", parameters.Url);
             }
@@ -115,22 +117,25 @@ namespace OData.Client
             var requestMessage = new HttpRequestMessage(HttpMethod.Get,parameters.Url);
             parameters.RequestMessageConfiguration?.Invoke(requestMessage);
             HttpResponseMessage responseMessage = await parameters.Invoker.SendAsync(requestMessage, default);
-
-            var json = await responseMessage.Content.ReadAsStringAsync();
-
-            if (ODataClient.ShowLog)
-            {
-                AppendResponseInfo(sbLog, json);
-                Console.WriteLine(sbLog);
-            }
-            ThrowErrorIfNotOk(responseMessage, json);
+            await ThrowErrorIfNotOk(responseMessage);
 
             var jsonSerializerOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-            var result = JsonSerializer.Deserialize<TResult>(json, jsonSerializerOptions);
 
-            return result;
+            if (parameters.ODataClient.Options.ReadResponsesAsString)
+            {
+                var json = await responseMessage.Content.ReadAsStringAsync();
+                if (parameters.ShowLog)
+                {
+                    AppendResponseInfo(sbLog, json);
+                    Console.WriteLine(sbLog);
+                }
+                return JsonSerializer.Deserialize<TResult>(json, jsonSerializerOptions);
+            }
+            else
+            {
+                return await JsonSerializer.DeserializeAsync<TResult>(await responseMessage.Content.ReadAsStreamAsync(), jsonSerializerOptions);
+            }
         }
-
 
         static void AppendRequestInfo(StringBuilder sbLog, HttpMessageInvoker invoker, string method, string url)
         {
@@ -185,6 +190,15 @@ namespace OData.Client
         {
             if (responseMessage.StatusCode != HttpStatusCode.OK && responseMessage.StatusCode != HttpStatusCode.NoContent)
             {
+                throw new HttpRequestException(responseMessage.StatusCode.ToString() + ": " + json);
+            }
+        }
+
+        static async Task ThrowErrorIfNotOk(HttpResponseMessage responseMessage)
+        {
+            if (responseMessage.StatusCode != HttpStatusCode.OK && responseMessage.StatusCode != HttpStatusCode.NoContent)
+            {
+                string json = await responseMessage.Content.ReadAsStringAsync();
                 throw new HttpRequestException(responseMessage.StatusCode.ToString() + ": " + json);
             }
         }

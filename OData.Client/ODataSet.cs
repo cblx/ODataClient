@@ -12,26 +12,26 @@ namespace OData.Client
     public class ODataSet<TSource> : IODataSet<TSource>
         where TSource : class, new()
     {
-        readonly HttpMessageInvoker invoker;
+        readonly ODataClient client;
         readonly string endpoint;
         readonly ODataOptions options = new ();
         Action<HttpRequestMessage> requestMessageConfiguration = null;
 
 
-        public ODataSet(HttpMessageInvoker invoker, string endpoint)
+        public ODataSet(ODataClient client, string endpoint)
         {
-            this.invoker = invoker;
+            this.client = client;
             this.endpoint = endpoint;
         }
 
         private ODataSet(
-            ODataSet<TSource> o,
+            ODataSet<TSource> originalODataSet,
             ODataOptions options
         )
         {
-            invoker = o.invoker;
-            endpoint = o.endpoint;
-            requestMessageConfiguration = o.requestMessageConfiguration;
+            client = originalODataSet.client;
+            endpoint = originalODataSet.endpoint;
+            requestMessageConfiguration = originalODataSet.requestMessageConfiguration;
             this.options = options;
         }
 
@@ -47,7 +47,7 @@ namespace OData.Client
 
         Task<ODataResult<TSource>> Get(string url) => Get<ODataResult<TSource>>(url);
 
-        Task<TResult> Get<TResult>(string url) => HttpHelpers.Get<TResult>(new(invoker, requestMessageConfiguration, url));
+        Task<TResult> Get<TResult>(string url) => HttpHelpers.Get<TResult>(new(client, requestMessageConfiguration, url));
 
         Expression<Func<TSource, object>> currentSelectExpression = null;
         public IODataSet<TSource> Select(Expression<Func<TSource, object>> selectExpression)
