@@ -20,7 +20,7 @@ namespace OData.Client.UnitTests
         [Fact]
         public void TestFilters()
         {
-            var set = new ODataSet<some_entity>(new HttpClient(), "some_entities");
+            var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
             var eAux = new SomeEntity();
             eAux.Id = Guid.Empty;
             string str = set
@@ -47,7 +47,7 @@ namespace OData.Client.UnitTests
         [Fact]
         public void ExpandOtherTypeChildTest()
         {
-            var set = new ODataSet<some_entity>(new HttpClient(), "some_entities");
+            var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
             string str = set.ToString(e => new SomeEntity { 
                 Name = e.otherChild.name
             });
@@ -57,7 +57,7 @@ namespace OData.Client.UnitTests
         [Fact]
         public void SubExpandCollectionsTest()
         {
-            var set = new ODataSet<some_entity>(new HttpClient(), "some_entities");
+            var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
             string str = set.ToString(e => new SomeEntity
             {
                 Children = e.children.Select(c => new SomeEntity
@@ -74,7 +74,7 @@ namespace OData.Client.UnitTests
         [Fact]
         public void AnnotationTest()
         {
-            var set = new ODataSet<some_entity>(new HttpClient(), "some_entities");
+            var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
             string str = set.ToString(e => new
             {
                 AtAnnotation = e.at__annotation,
@@ -86,7 +86,7 @@ namespace OData.Client.UnitTests
         [Fact]
         public void ExpandArrayTest()
         {
-            var set = new ODataSet<some_entity>(new HttpClient(), "some_entities");
+            var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
             string str = set.ToString(e => new SomeEntity
             {
                 Children = e.children.Select(c => new SomeEntity
@@ -101,7 +101,7 @@ namespace OData.Client.UnitTests
         [Fact]
         public void ClientMethodTest()
         {
-            var set = new ODataSet<some_entity>(new HttpClient(), "some_entities");
+            var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
             string str = set.ToString(e => new SomeEntity
             {
                 Name = e.name.ToLower()
@@ -112,7 +112,7 @@ namespace OData.Client.UnitTests
         [Fact]
         public void ClientExtensionMethodTest()
         {
-            var set = new ODataSet<some_entity>(new HttpClient(), "some_entities");
+            var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
             string str = set.ToString(e => new SomeEntity
             {
                 Name = e.name.Ext()
@@ -123,7 +123,7 @@ namespace OData.Client.UnitTests
         [Fact]
         public void TestFilterWithMethodCall()
         {
-            var set = new ODataSet<some_entity>(new HttpClient(), "some_entities");
+            var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
             int i = 123;
             string str = set
                 .Filter(e => e.name == i.ToString())
@@ -137,7 +137,7 @@ namespace OData.Client.UnitTests
         [Fact]
         public void FitlerByChildPropTest()
         {
-            var set = new ODataSet<some_entity>(new HttpClient(), "some_entities");
+            var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
             string str = set
                 .Filter(e => e.child.child.name == "123")
                 .ToString(e => new SomeEntity
@@ -150,7 +150,7 @@ namespace OData.Client.UnitTests
         [Fact]
         public void NullComparisonTest()
         {
-            var set = new ODataSet<some_entity>(new HttpClient(), "some_entities");
+            var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
             string str = set
                 .Filter(e => e.name == null)
                 .ToString(e => new SomeEntity
@@ -163,7 +163,7 @@ namespace OData.Client.UnitTests
         [Fact]
         public void HasValueInProjectionTest()
         {
-            var set = new ODataSet<some_entity>(new HttpClient(), "some_entities");
+            var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
             string str = set
                 .ToString(e => new SomeEntity
                 {
@@ -175,7 +175,7 @@ namespace OData.Client.UnitTests
         [Fact]
         public void OrderByTest()
         {
-            var set = new ODataSet<some_entity>(new HttpClient(), "some_entities");
+            var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
             string str = set
                 .OrderBy(e => e.name)
                 .ToString(e => new SomeEntity
@@ -188,7 +188,7 @@ namespace OData.Client.UnitTests
         [Fact]
         public void OrderByNestedTest()
         {
-            var set = new ODataSet<some_entity>(new HttpClient(), "some_entities");
+            var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
             string str = set
                 .OrderBy(e => e.child.name)
                 .ToString(e => new SomeEntity
@@ -201,7 +201,7 @@ namespace OData.Client.UnitTests
         [Fact]
         public void OrderByDescendingTest()
         {
-            var set = new ODataSet<some_entity>(new HttpClient(), "some_entities");
+            var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
             string str = set
                 .OrderByDescending(e => e.partyDay)
                 .ToString(e => new SomeEntity
@@ -214,7 +214,7 @@ namespace OData.Client.UnitTests
         [Fact]
         public void ContainsTest()
         {
-            var set = new ODataSet<some_entity>(new HttpClient(), "some_entities");
+            var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
             string str = set
                 .Filter(e => e.name.Contains("123"))
                 .ToString(e => new SomeEntity
@@ -227,7 +227,7 @@ namespace OData.Client.UnitTests
         [Fact]
         public void ContainsNestedTest()
         {
-            var set = new ODataSet<some_entity>(new HttpClient(), "some_entities");
+            var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
             string str = set
                 .Filter(e => e.child.name.Contains("123"))
                 .ToString(e => new SomeEntity
@@ -240,7 +240,7 @@ namespace OData.Client.UnitTests
         [Fact]
         public void CompareBooleanTest()
         {
-            var set = new ODataSet<some_entity>(new HttpClient(), "some_entities");
+            var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
             string str = set
                 .Filter(e => e.active == true)
                 .ToString(e => new SomeEntity
@@ -253,7 +253,7 @@ namespace OData.Client.UnitTests
         [Fact]
         public void CompareIntTest()
         {
-            var set = new ODataSet<some_entity>(new HttpClient(), "some_entities");
+            var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
             string str = set
                 .Filter(e => e.age == 123)
                 .ToString(e => new SomeEntity
@@ -266,7 +266,7 @@ namespace OData.Client.UnitTests
         [Fact]
         public void CompareDateTimeOffsetTest()
         {
-            var set = new ODataSet<some_entity>(new HttpClient(), "some_entities");
+            var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
             var dt = new DateTimeOffset(2020, 12, 1, 0, 0, 0, TimeSpan.Zero);
             string str = set
                 .Filter(e => e.at == dt)
@@ -280,7 +280,7 @@ namespace OData.Client.UnitTests
         [Fact]
         public void CompareDateTimeTest()
         {
-            var set = new ODataSet<some_entity>(new HttpClient(), "some_entities");
+            var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
             var dt = new DateTime(2020, 12, 1, 0, 0, 0);
             string str = set
                 .Filter(e => e.partyDay == dt)
@@ -294,7 +294,7 @@ namespace OData.Client.UnitTests
         [Fact]
         public void OrTest()
         {
-            var set = new ODataSet<some_entity>(new HttpClient(), "some_entities");
+            var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
             string str = set
                 .Filter(e => e.age == 123 || e.age == 321)
                 .ToString(e => new SomeEntity
@@ -307,7 +307,7 @@ namespace OData.Client.UnitTests
         [Fact]
         public void MultiOrTest()
         {
-            var set = new ODataSet<some_entity>(new HttpClient(), "some_entities");
+            var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
             string str = set
                 .Filter(e => e.age == 123 || e.age == 321)
                 .Filter(e => e.age == 456 || e.age == 789)
@@ -327,7 +327,7 @@ namespace OData.Client.UnitTests
         [Fact]
         public void AndAndOrsTest2()
         {
-            var set = new ODataSet<some_entity>(new HttpClient(), "some_entities");
+            var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
             string str = set
                 .Filter(e => (e.age == 123 || e.age == 321 || e.age == 890) && (e.age == 456 || e.age == 789))
                 .ToString(e => new SomeEntity
@@ -340,7 +340,7 @@ namespace OData.Client.UnitTests
         [Fact]
         public void FilteredExpandTest()
         {
-            var set = new ODataSet<some_entity>(new HttpClient(), "some_entities");
+            var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
             var guidEmpty = Guid.Empty;
             string str = set.ToString(e => new SomeEntity
             {
@@ -352,7 +352,7 @@ namespace OData.Client.UnitTests
         [Fact]
         public void AnyTest()
         {
-            var set = new ODataSet<some_entity>(new HttpClient(), "some_entities");
+            var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
             string str = set
                 .Filter(e => e.children.Any(c => c.name == "hey" || c.name == "ho"))
                 .ToString(e => new SomeEntity
@@ -365,7 +365,7 @@ namespace OData.Client.UnitTests
         [Fact]
         public void FilterByNewGuidTest()
         {
-            var set = new ODataSet<some_entity>(new HttpClient(), "some_entities");
+            var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
             string str = set
                 .Filter(e => e.id == new Guid("00000000-0000-0000-0000-000000000000"))
                 .ToString(e => new SomeEntity
@@ -378,7 +378,7 @@ namespace OData.Client.UnitTests
         [Fact]
         public void FilterByStaticTest()
         {
-            var set = new ODataSet<some_entity>(new HttpClient(), "some_entities");
+            var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
             string str = set
                 .Filter(e => e.id == Guid.Empty)
                 .ToString(e => new SomeEntity
@@ -391,7 +391,7 @@ namespace OData.Client.UnitTests
         [Fact]
         public void FilterByMemberTest()
         {
-            var set = new ODataSet<some_entity>(new HttpClient(), "some_entities");
+            var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
             Guid? guid = Guid.Empty;
             string str = set
                 .Filter(e => e.id == guid.Value)
@@ -427,11 +427,11 @@ namespace OData.Client.UnitTests
                 }
             };
 
-            var set = new ODataSet<some_entity>(new HttpClient(
+            var set = new ODataSet<some_entity>(new(new HttpClient(
                 new MockHttpMessageHandler(JsonSerializer.Serialize(data)))
             {
                 BaseAddress = new Uri("http://localhost")
-            },
+            }),
                 "some_entities");
             ODataResult<SomeEntity> result = await set
                 .Execute(e => new SomeEntity
