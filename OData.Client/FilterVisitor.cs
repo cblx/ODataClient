@@ -117,11 +117,17 @@ namespace OData.Client
                     return true;
                 case object v when v is DateTimeOffset dtoff:
                     string strDateTimeOffset = $"{dtoff:O}";
-                    strDateTimeOffset = strDateTimeOffset.Replace("+", "%2B");
+                    strDateTimeOffset = strDateTimeOffset
+                        .Replace(":", "%3A")
+                        .Replace("+", "%2B");
                     Query += strDateTimeOffset;
                     return true;
                 case object v when v is DateTime dtoff:
-                    Query += $"{dtoff:O}";
+                    string strDateTimeOffset = $"{dtoff:O}";
+                    strDateTimeOffset = strDateTimeOffset
+                        .Replace(":", "%3A")
+                        .Replace("+", "%2B");
+                    Query += strDateTimeOffset;
                     return true;
                 case object v when v.GetType() == typeof(Guid):
                     Query += $"{v}";
