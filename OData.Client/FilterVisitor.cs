@@ -123,11 +123,11 @@ namespace OData.Client
                     Query += strDateTimeOffset;
                     return true;
                 case object v when v is DateTime dtoff:
-                    string strDateTimeOffset = $"{dtoff:O}";
-                    strDateTimeOffset = strDateTimeOffset
+                    string strDateTime = $"{dtoff:O}";
+                    strDateTime = strDateTime
                         .Replace(":", "%3A")
                         .Replace("+", "%2B");
-                    Query += strDateTimeOffset;
+                    Query += strDateTime;
                     return true;
                 case object v when v.GetType() == typeof(Guid):
                     Query += $"{v}";
