@@ -21,7 +21,7 @@ namespace Cblx.OData.Client
             this.oDataClient = oDataClient;
         }
 
-        protected async Task<T> ObterGenerico<T>(Guid id)
+        protected async Task<T> Get<T>(Guid id)
           where T : class, TEntity, new()
         {
             T e = await oDataClient.From<TTable>().Find<T>(id);
