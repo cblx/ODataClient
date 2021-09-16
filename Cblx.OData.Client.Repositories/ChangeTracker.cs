@@ -51,7 +51,15 @@ namespace Cblx.OData.Client
             states.Add(id.Value, JsonSerializer.Serialize(o, o.GetType(), options));
             entities.Add(id.Value, o);
         }
-        
+
+        public void AttachRange(IEnumerable<object> items)
+        {
+            foreach (var o in items)
+            {
+                Attach(o);
+            }
+        }
+
         internal Guid? GetId(object entity)
         {
             object val = entity.GetType().GetProperty("Id").GetValue(entity);
