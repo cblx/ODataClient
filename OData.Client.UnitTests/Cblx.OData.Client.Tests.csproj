@@ -16,6 +16,7 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Cblx.OData.Client.Repositories\Cblx.OData.Client.Repositories.csproj" />
     <ProjectReference Include="..\OData.Client\Cblx.OData.Client.csproj" />
   </ItemGroup>
 </Project>

@@ -82,14 +82,14 @@ namespace Cblx.OData.Client
             }
         }
 
-        internal Change GetChange(Guid id)
+        public Change GetChange(Guid id)
         {
             IEnumerable<Change> changes = GetChanges();
             Change change = changes.FirstOrDefault(c => c.Id.Equals(id));
             return change;
         }
 
-        internal IEnumerable<Change> GetChanges()
+        public IEnumerable<Change> GetChanges()
         {
             List<Change> changes = new List<Change>();
             foreach (var kvp in entities)
