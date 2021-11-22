@@ -13,7 +13,8 @@ namespace OData.Client
     record RequestParameters(
         ODataClient ODataClient,
         Action<HttpRequestMessage> RequestMessageConfiguration,
-        string Url) {
+        string Url)
+    {
         internal HttpMessageInvoker Invoker { get => ODataClient.Invoker; }
         internal bool ShowLog { get => ODataClient.Options.ShowLog; }
     };
@@ -115,7 +116,7 @@ namespace OData.Client
                 AppendRequestInfo(sbLog, parameters.Invoker, "GET", parameters.Url);
             }
 
-            var requestMessage = new HttpRequestMessage(HttpMethod.Get,parameters.Url);
+            var requestMessage = new HttpRequestMessage(HttpMethod.Get, parameters.Url);
             parameters.RequestMessageConfiguration?.Invoke(requestMessage);
             HttpResponseMessage responseMessage = await parameters.Invoker.SendAsync(requestMessage, default);
             await ThrowErrorIfNotOk(responseMessage);
@@ -215,9 +216,10 @@ namespace OData.Client
 
         static void ThrowODataErrorIfItFits(string json)
         {
-            if (json != null && json.Contains("\"code\":"))
+
+            var error = JsonSerializer.Deserialize<ODataError>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            if (error?.Error is not null)
             {
-                var error = JsonSerializer.Deserialize<ODataError>(json);
                 throw new ODataErrorException(error.Error.Code, error.Error.Message);
             }
         }
