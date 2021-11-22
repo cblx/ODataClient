@@ -215,7 +215,7 @@ namespace OData.Client
 
         static void ThrowODataErrorIfItFits(string json)
         {
-            if (json.Contains("\"code\":"))
+            if (json != null && json.Contains("\"code\":"))
             {
                 var error = JsonSerializer.Deserialize<ODataError>(json);
                 throw new ODataErrorException(error.Error.Code, error.Error.Message);
