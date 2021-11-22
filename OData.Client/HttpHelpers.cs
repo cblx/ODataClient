@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Cblx.OData.Client.Abstractions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -197,6 +198,7 @@ namespace OData.Client
         {
             if (responseMessage.StatusCode != HttpStatusCode.OK && responseMessage.StatusCode != HttpStatusCode.NoContent)
             {
+                ThrowODataErrorIfItFits(json);
                 throw new HttpRequestException(responseMessage.StatusCode.ToString() + ": " + json);
             }
         }
@@ -206,9 +208,30 @@ namespace OData.Client
             if (responseMessage.StatusCode != HttpStatusCode.OK && responseMessage.StatusCode != HttpStatusCode.NoContent)
             {
                 string json = await responseMessage.Content.ReadAsStringAsync();
+                ThrowODataErrorIfItFits(json);
                 throw new HttpRequestException(responseMessage.StatusCode.ToString() + ": " + json);
             }
         }
 
+        static void ThrowODataErrorIfItFits(string json)
+        {
+            if (json.Contains("\"code\":"))
+            {
+                var error = JsonSerializer.Deserialize<ODataError>(json);
+                throw new ODataErrorException(error.Error.Code, error.Error.Message);
+            }
+        }
+
+    }
+
+    public class ODataError
+    {
+        public ODataErrorCodeMessage Error { get; set; }
+    }
+
+    public class ODataErrorCodeMessage
+    {
+        public string Code { get; set; }
+        public string Message { get; set; }
     }
 }
