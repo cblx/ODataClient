@@ -29,37 +29,39 @@ namespace OData.Client.Abstractions
 
         IODataSet<TSource> IncludeCount();
 
-        /// <summary>
-        /// Utilize esta forma + (ToListaAsync,ToResultAsync ou FirstOrDefaultAsync) para usar separadamente
-        /// a lógica de execução de projeção vs lógica de seleção.
-        /// As vezes isso é necessário pois podem existir Expands complexos
-        /// que devem ser representados para a seleção, mas não devem ser executados na projeção.
-        /// Pensar em talvez manter apenas desta forma e não oferecer mais as opções "Execute", apesar de serem convenientes
-        /// na maioria das consultas.
-        /// </summary>
-        /// <param name="selectExpression"></param>
-        /// <returns></returns>
-        IODataSet<TSource> Select(Expression<Func<TSource, object>> selectExpression);
+        ///// <summary>
+        ///// Utilize esta forma + (ToListaAsync,ToResultAsync ou FirstOrDefaultAsync) para usar separadamente
+        ///// a lógica de execução de projeção vs lógica de seleção.
+        ///// As vezes isso é necessário pois podem existir Expands complexos
+        ///// que devem ser representados para a seleção, mas não devem ser executados na projeção.
+        ///// Pensar em talvez manter apenas desta forma e não oferecer mais as opções "Execute", apesar de serem convenientes
+        ///// na maioria das consultas.
+        ///// </summary>
+        ///// <param name="selectExpression"></param>
+        ///// <returns></returns>
+        //IODataSet<TSource> Select(Expression<Func<TSource, object>> selectExpression);
 
-        Task<TSource> Find(Guid id);
+        IODataSetSelected<TSource> Select(Expression<Func<TSource, object>> selectExpression);
 
-        Task<TEntity> Find<TEntity>(Guid id) where TEntity: class;
+        Task<TSource> FindAsync(Guid id);
 
-        Task<List<TProjection>> ToListAsync<TProjection>(Func<TSource, TProjection> transform);
+        Task<TEntity> FindAsync<TEntity>(Guid id) where TEntity: class;
 
-        Task<TProjection> FirstOrDefaultAsync<TProjection>(Func<TSource, TProjection> transform);
+        //Task<List<TProjection>> ToListAsync<TProjection>(Func<TSource, TProjection> transform);
 
-        Task<ODataResult<TProjection>> ToResultAsync<TProjection>(Func<TSource, TProjection> transform);
+        //Task<TProjection> FirstOrDefaultAsync<TProjection>(Func<TSource, TProjection> transform);
 
-        Task<ODataResult<TSource>> Execute();
+        //Task<ODataResult<TProjection>> ToResultAsync<TProjection>(Func<TSource, TProjection> transform);
 
-        Task<ODataResult<TProjection>> Execute<TProjection>(Expression<Func<TSource, TProjection>> selectExpression);
+        Task<ODataResult<TSource>> ToResultAsync();
 
-        Task<TProjection> ExecuteFirstOrDefault<TProjection>(Expression<Func<TSource, TProjection>> selectExpression);
+        Task<ODataResult<TProjection>> ToResultAsync<TProjection>(Expression<Func<TSource, TProjection>> selectExpression);
+
+        Task<TProjection> FirstOrDefaultAsync<TProjection>(Expression<Func<TSource, TProjection>> selectExpression);
 
         string ToString<TProjection>(Expression<Func<TSource, TProjection>> selectExpression);
-        Task<ODataResult<TEntity>> Execute<TEntity>() where TEntity : class;
-        Task<TEntity> ExecuteFirstOrDefault<TEntity>() where TEntity : class;
+        Task<ODataResult<TEntity>> ToResultAsync<TEntity>() where TEntity : class;
+        Task<TEntity> FirstOrDefaultAsync<TEntity>() where TEntity : class;
     }
 
 }

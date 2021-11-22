@@ -14,7 +14,7 @@ namespace OData.Client
     {
         readonly ODataClient client;
         readonly string endpoint;
-        readonly ODataOptions options = new ();
+        readonly ODataOptions options = new();
         Action<HttpRequestMessage> requestMessageConfiguration = null;
 
 
@@ -49,49 +49,52 @@ namespace OData.Client
 
         Task<TResult> Get<TResult>(string url) => HttpHelpers.Get<TResult>(new(client, requestMessageConfiguration, url));
 
-        Expression<Func<TSource, object>> currentSelectExpression = null;
-        public IODataSet<TSource> Select(Expression<Func<TSource, object>> selectExpression)
+        
+        public IODataSetSelected<TSource> Select(Expression<Func<TSource, object>> selectExpression)
         {
-            currentSelectExpression = selectExpression;
-            return this;
+            return new ODataSetSelected(this, selectExpression);
+           
         }
 
-        public async Task<List<TProjection>> ToListAsync<TProjection>(Func<TSource, TProjection> transform) {
-            string url = ToString(currentSelectExpression);
-            ODataResult<TSource> result = await Get(url);
-            return result.Value.Select(transform).ToList();
-        }
+        //public async Task<List<TProjection>> ToListAsync<TProjection>(Func<TSource, TProjection> transform)
+        //{
+        //    string url = ToString(currentSelectExpression);
+        //    ODataResult<TSource> result = await Get(url);
+        //    return result.Value.Select(transform).ToList();
+        //}
 
-        public async Task<TProjection> FirstOrDefaultAsync<TProjection>(Func<TSource, TProjection> transform) {
-            string url = ToString(currentSelectExpression);
-            ODataResult<TSource> result = await Get(url);
-            return result.Value.Select(transform).FirstOrDefault();
-        }
+        //public async Task<TProjection> FirstOrDefaultAsync<TProjection>(Func<TSource, TProjection> transform)
+        //{
+        //    string url = ToString(currentSelectExpression);
+        //    ODataResult<TSource> result = await Get(url);
+        //    return result.Value.Select(transform).FirstOrDefault();
+        //}
 
-        public async Task<ODataResult<TProjection>> ToResultAsync<TProjection>(Func<TSource, TProjection> transform) {
-            string url = ToString(currentSelectExpression);
-            ODataResult<TSource> result = await Get(url);
-            return new ODataResult<TProjection>
-            {
-                Count = result.Count,
-                Value = result.Value.Select(transform).ToArray()
-            };
-        }
+        //public async Task<ODataResult<TProjection>> ToResultAsync<TProjection>(Func<TSource, TProjection> transform)
+        //{
+        //    string url = ToString(currentSelectExpression);
+        //    ODataResult<TSource> result = await Get(url);
+        //    return new ODataResult<TProjection>
+        //    {
+        //        Count = result.Count,
+        //        Value = result.Value.Select(transform).ToArray()
+        //    };
+        //}
 
-        public Task<ODataResult<TSource>> Execute()
+        public Task<ODataResult<TSource>> ToResultAsync()
         {
             string url = this.ToString();
             return Get(url);
         }
 
-        public Task<ODataResult<TEntity>> Execute<TEntity>() where TEntity : class
+        public Task<ODataResult<TEntity>> ToResultAsync<TEntity>() where TEntity : class
         {
             var selectAndExpandParser = new SelectAndExpandParser<TSource, TEntity>();
             string url = AppendOptions(endpoint, selectAndExpandParser.ToString());
             return Get<ODataResult<TEntity>>(url);
         }
 
-        public async Task<ODataResult<TProjection>> Execute<TProjection>(Expression<Func<TSource, TProjection>> selectExpression)
+        public async Task<ODataResult<TProjection>> ToResultAsync<TProjection>(Expression<Func<TSource, TProjection>> selectExpression)
         {
             string url = this.ToString(selectExpression);
             ODataResult<TSource> result = await Get(url);
@@ -107,23 +110,24 @@ namespace OData.Client
                 };
 
                 return projected;
-            }catch(Exception ex)
+            }
+            catch (Exception ex)
             {
                 throw new Exception("Could no project query. Check for null references in the projection expression.", ex);
             }
         }
 
-        public async Task<TProjection> ExecuteFirstOrDefault<TProjection>(Expression<Func<TSource, TProjection>> selectExpression)
+        public async Task<TProjection> FirstOrDefaultAsync<TProjection>(Expression<Func<TSource, TProjection>> selectExpression)
         {
             var set = Top(1);
-            var result = await set.Execute(selectExpression);
+            var result = await set.ToResultAsync(selectExpression);
             return result.Value.FirstOrDefault();
         }
 
-        public async Task<TEntity> ExecuteFirstOrDefault<TEntity>() where TEntity: class
+        public async Task<TEntity> FirstOrDefaultAsync<TEntity>() where TEntity : class
         {
             var set = Top(1);
-            var result = await set.Execute<TEntity>();
+            var result = await set.ToResultAsync<TEntity>();
             return result.Value.FirstOrDefault();
         }
 
@@ -178,9 +182,9 @@ namespace OData.Client
         }
 
 
-        public Task<TSource> Find(Guid id) => Find<TSource>(id);
+        public Task<TSource> FindAsync(Guid id) => FindAsync<TSource>(id);
 
-        public Task<TEntity> Find<TEntity>(Guid id) where TEntity: class
+        public Task<TEntity> FindAsync<TEntity>(Guid id) where TEntity : class
         {
             var selectAndExpandParser = new SelectAndExpandParser<TSource, TEntity>();
             string url = $"{endpoint}({id})?{selectAndExpandParser}";
@@ -194,7 +198,7 @@ namespace OData.Client
 
         public string ToString<TProjection>(Expression<Func<TSource, TProjection>> selectExpression)
         {
-            if(selectExpression == null) { return AppendOptions(endpoint, null); }
+            if (selectExpression == null) { return AppendOptions(endpoint, null); }
             var visitor = new SelectAndExpandVisitor(true, null);
             visitor.Visit(selectExpression);
             return AppendOptions(endpoint, visitor.ToString());
@@ -231,5 +235,45 @@ namespace OData.Client
             return endpoint;
         }
 
+        class ODataSetSelected : IODataSetSelected<TSource>
+        {
+            readonly ODataSet<TSource> dataSet;
+            Expression<Func<TSource, object>> selectExpression = null;
+
+            public ODataSetSelected(ODataSet<TSource> dataSet, Expression<Func<TSource, object>> selectExpression)
+            {
+                this.dataSet = dataSet;
+                this.selectExpression = selectExpression;
+            }
+
+            public async Task<TProjection> FirstOrDefaultAsync<TProjection>(Func<TSource, TProjection> transform)
+            {
+                string url = dataSet.ToString(selectExpression);
+                ODataResult<TSource> result = await dataSet.Get(url);
+                return result.Value.Select(transform).FirstOrDefault();
+            }
+
+
+            public async Task<List<TProjection>> ToListAsync<TProjection>(Func<TSource, TProjection> transform)
+            {
+                string url = dataSet.ToString(selectExpression);
+                ODataResult<TSource> result = await dataSet.Get(url);
+                return result.Value.Select(transform).ToList();
+            }
+
+            public async Task<ODataResult<TProjection>> ToResultAsync<TProjection>(Func<TSource, TProjection> transform)
+            {
+                string url = dataSet.ToString(selectExpression);
+                ODataResult<TSource> result = await dataSet.Get(url);
+                return new ODataResult<TProjection>
+                {
+                    Count = result.Count,
+                    Value = result.Value.Select(transform).ToArray()
+                };
+            }
+        }
+
     }
+
+
 }

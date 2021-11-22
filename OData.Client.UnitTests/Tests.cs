@@ -274,7 +274,7 @@ namespace OData.Client.UnitTests
                 {
                     Id = e.id,
                 });
-            Assert.Equal("some_entities?$select=id&$filter=at eq 2020-12-01T00:00:00.0000000%2B00:00", str);
+            Assert.Equal("some_entities?$select=id&$filter=at eq 2020-12-01T00%3A00%3A00.0000000%2B00%3A00", str);
         }
 
         [Fact]
@@ -288,7 +288,7 @@ namespace OData.Client.UnitTests
                 {
                     Id = e.id,
                 });
-            Assert.Equal("some_entities?$select=id&$filter=partyDay eq 2020-12-01T00:00:00.0000000", str);
+            Assert.Equal("some_entities?$select=id&$filter=partyDay eq 2020-12-01T00%3A00%3A00.0000000", str);
         }
 
         [Fact]
@@ -434,7 +434,7 @@ namespace OData.Client.UnitTests
             }),
                 "some_entities");
             ODataResult<SomeEntity> result = await set
-                .Execute(e => new SomeEntity
+                .ToResultAsync(e => new SomeEntity
             {
                 Id = e.id,
                 Name = e.name + "z",

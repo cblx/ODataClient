@@ -24,7 +24,7 @@ namespace Cblx.OData.Client
         protected async Task<T> Get<T>(Guid id)
           where T : class, TEntity, new()
         {
-            T e = await oDataClient.From<TTable>().Find<T>(id);
+            T e = await oDataClient.From<TTable>().FindAsync<T>(id);
             if (e != null) { changeTracker.Attach(e); }
             return e;
         }
