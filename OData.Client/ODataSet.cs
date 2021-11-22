@@ -55,31 +55,12 @@ namespace OData.Client
             return new ODataSetSelected(this, selectExpression);
            
         }
-
-        //public async Task<List<TProjection>> ToListAsync<TProjection>(Func<TSource, TProjection> transform)
-        //{
-        //    string url = ToString(currentSelectExpression);
-        //    ODataResult<TSource> result = await Get(url);
-        //    return result.Value.Select(transform).ToList();
-        //}
-
-        //public async Task<TProjection> FirstOrDefaultAsync<TProjection>(Func<TSource, TProjection> transform)
-        //{
-        //    string url = ToString(currentSelectExpression);
-        //    ODataResult<TSource> result = await Get(url);
-        //    return result.Value.Select(transform).FirstOrDefault();
-        //}
-
-        //public async Task<ODataResult<TProjection>> ToResultAsync<TProjection>(Func<TSource, TProjection> transform)
-        //{
-        //    string url = ToString(currentSelectExpression);
-        //    ODataResult<TSource> result = await Get(url);
-        //    return new ODataResult<TProjection>
-        //    {
-        //        Count = result.Count,
-        //        Value = result.Value.Select(transform).ToArray()
-        //    };
-        //}
+     
+        public async Task<List<TProjection>> ToListAsync<TProjection>(Expression<Func<TSource, TProjection>> selectExpression)
+        {
+            var result = await ToResultAsync(selectExpression);
+            return result.Value.ToList();
+        }
 
         public Task<ODataResult<TSource>> ToResultAsync()
         {

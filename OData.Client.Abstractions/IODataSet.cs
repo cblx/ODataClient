@@ -29,29 +29,13 @@ namespace OData.Client.Abstractions
 
         IODataSet<TSource> IncludeCount();
 
-        ///// <summary>
-        ///// Utilize esta forma + (ToListaAsync,ToResultAsync ou FirstOrDefaultAsync) para usar separadamente
-        ///// a lógica de execução de projeção vs lógica de seleção.
-        ///// As vezes isso é necessário pois podem existir Expands complexos
-        ///// que devem ser representados para a seleção, mas não devem ser executados na projeção.
-        ///// Pensar em talvez manter apenas desta forma e não oferecer mais as opções "Execute", apesar de serem convenientes
-        ///// na maioria das consultas.
-        ///// </summary>
-        ///// <param name="selectExpression"></param>
-        ///// <returns></returns>
-        //IODataSet<TSource> Select(Expression<Func<TSource, object>> selectExpression);
-
         IODataSetSelected<TSource> Select(Expression<Func<TSource, object>> selectExpression);
 
         Task<TSource> FindAsync(Guid id);
 
         Task<TEntity> FindAsync<TEntity>(Guid id) where TEntity: class;
 
-        //Task<List<TProjection>> ToListAsync<TProjection>(Func<TSource, TProjection> transform);
-
-        //Task<TProjection> FirstOrDefaultAsync<TProjection>(Func<TSource, TProjection> transform);
-
-        //Task<ODataResult<TProjection>> ToResultAsync<TProjection>(Func<TSource, TProjection> transform);
+        Task<List<TProjection>> ToListAsync<TProjection>(Expression<Func<TSource, TProjection>> transform);
 
         Task<ODataResult<TSource>> ToResultAsync();
 
