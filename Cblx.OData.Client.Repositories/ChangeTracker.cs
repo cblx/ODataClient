@@ -25,15 +25,7 @@ namespace Cblx.OData.Client
             Guid? id = GetId(o);
             if (id == null || id == Guid.Empty)
             {
-                PropertyInfo idProp = o.GetType().GetProperty("Id");
-                if (idProp.PropertyType == typeof(Guid))
-                {
-                    idProp.SetValue(o, Guid.NewGuid());
-                }
-                else
-                {
-                    idProp.SetValue(o, Activator.CreateInstance(idProp.PropertyType, Guid.NewGuid()));
-                }
+                InitId(o);
                 id = GetId(o);
             }
             entities.Add(id.Value, o);
@@ -60,12 +52,32 @@ namespace Cblx.OData.Client
             }
         }
 
+        internal PropertyInfo GetIdProp(object entity)
+        {
+            PropertyInfo idProp = entity.GetType().GetProperty("Id");
+            if(idProp is null) { throw new Exception("Entity class must have an 'Id' property"); }
+            return idProp;
+        }
+
         internal Guid? GetId(object entity)
         {
-            object val = entity.GetType().GetProperty("Id").GetValue(entity);
+            object val = GetIdProp(entity).GetValue(entity);
             if(val == null) { return null; }
             if(val is Guid guid) { return guid; }
             return JsonSerializer.Deserialize<Guid>(JsonSerializer.Serialize(val));
+        }
+
+        internal void InitId(object entity)
+        {
+            PropertyInfo idProp = GetIdProp(entity);
+            if (idProp.PropertyType == typeof(Guid))
+            {
+                idProp.SetValue(entity, Guid.NewGuid());
+            }
+            else
+            {
+                idProp.SetValue(entity, Activator.CreateInstance(idProp.PropertyType, Guid.NewGuid()));
+            }
         }
 
         internal void AcceptChange(Change change)
