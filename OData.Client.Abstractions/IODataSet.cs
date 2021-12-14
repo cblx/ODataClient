@@ -37,11 +37,15 @@ namespace OData.Client.Abstractions
 
         Task<List<TProjection>> ToListAsync<TProjection>(Expression<Func<TSource, TProjection>> transform);
 
+        Task<List<TSource>> ToListAsync();
+
         Task<ODataResult<TSource>> ToResultAsync();
 
         Task<ODataResult<TProjection>> ToResultAsync<TProjection>(Expression<Func<TSource, TProjection>> selectExpression);
 
         Task<TProjection> FirstOrDefaultAsync<TProjection>(Expression<Func<TSource, TProjection>> selectExpression);
+
+        Task<TSource> FirstOrDefaultAsync();
 
         string ToString<TProjection>(Expression<Func<TSource, TProjection>> selectExpression);
         Task<ODataResult<TEntity>> ToResultAsync<TEntity>() where TEntity : class;

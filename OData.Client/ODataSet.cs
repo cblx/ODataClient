@@ -62,6 +62,12 @@ namespace OData.Client
             return result.Value.ToList();
         }
 
+        public async Task<List<TSource>> ToListAsync()
+        {
+            var result = await ToResultAsync();
+            return result.Value.ToList();
+        }
+
         public Task<ODataResult<TSource>> ToResultAsync()
         {
             string url = this.ToString();
@@ -102,6 +108,13 @@ namespace OData.Client
         {
             var set = Top(1);
             var result = await set.ToResultAsync(selectExpression);
+            return result.Value.FirstOrDefault();
+        }
+
+        public async Task<TSource> FirstOrDefaultAsync()
+        {
+            var set = Top(1);
+            var result = await set.ToResultAsync();
             return result.Value.FirstOrDefault();
         }
 
