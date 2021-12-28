@@ -217,9 +217,9 @@ namespace OData.Client
         static void ThrowODataErrorIfItFits(string json)
         {
 
-            var error = JsonSerializer.Deserialize<ODataError>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             try
             {
+                var error = JsonSerializer.Deserialize<ODataError>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                 if (error?.Error is not null)
                 {
                     throw new ODataErrorException(error.Error.Code, error.Error.Message);
