@@ -218,10 +218,14 @@ namespace OData.Client
         {
 
             var error = JsonSerializer.Deserialize<ODataError>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-            if (error?.Error is not null)
+            try
             {
-                throw new ODataErrorException(error.Error.Code, error.Error.Message);
+                if (error?.Error is not null)
+                {
+                    throw new ODataErrorException(error.Error.Code, error.Error.Message);
+                }
             }
+            catch { }
         }
 
     }
