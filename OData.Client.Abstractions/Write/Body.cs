@@ -45,13 +45,7 @@ namespace OData.Client.Abstractions.Write
             return this;
         }
 
-        public Body<T> Bind(Expression<Func<T, Guid?>> prop, Guid id)
-        {
-            string nav = (prop.Body as MemberExpression).Member.Name;
-            return Bind(nav, id);
-        }
-
-        public Body<T> Bind(Expression<Func<T, Guid>> prop, Guid id)
+        public Body<T> Bind<TNav>(Expression<Func<T, TNav>> prop, Guid id) where TNav: class
         {
             string nav = (prop.Body as MemberExpression).Member.Name;
             return Bind(nav, id);
