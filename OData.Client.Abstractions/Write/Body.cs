@@ -31,6 +31,26 @@ namespace OData.Client.Abstractions.Write
             return this;
         }
 
+        public Body<T> Set<TValue>(string propName, TValue value)
+        {
+            var kvp = new Set<T, TValue>(propName, value).ToKeyValuePair();
+            data.Add(kvp.Key, kvp.Value);
+            return this;
+        }
+
+        public Body<T> Bind(string nav, Guid id)
+        {
+            var kvp = new Bind<T>(nav, id).ToKeyValuePair();
+            data.Add(kvp.Key, kvp.Value);
+            return this;
+        }
+
+        public Body<T> Bind(Expression<Func<T, Guid>> prop, Guid id)
+        {
+            string nav = (prop.Body as MemberExpression).Member.Name;
+            return Bind(nav, id);
+        }
+
         static bool IsDate(string propName)
         {
             // Use DateTime? for Edm.Date
@@ -58,19 +78,7 @@ namespace OData.Client.Abstractions.Write
             return o;
         }
 
-        public Body<T> Set<TValue>(string propName, TValue value)
-        {
-            var kvp = new Set<T, TValue>(propName, value).ToKeyValuePair();
-            data.Add(kvp.Key, kvp.Value);
-            return this;
-        }
-
-        public Body<T> Bind(string nav, Guid id)
-        {
-            var kvp = new Bind<T>(nav, id).ToKeyValuePair();
-            data.Add(kvp.Key, kvp.Value);
-            return this;
-        }
+        
 
         public IDictionary<string, object> ToDictionary() => new ReadOnlyDictionary<string, object>(this.data);
     }
