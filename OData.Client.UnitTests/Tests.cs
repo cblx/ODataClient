@@ -1,4 +1,6 @@
-﻿using Moq;
+﻿using Cblx.OData.Client.Abstractions;
+using FluentAssertions;
+using Moq;
 using OData.Client.Abstractions;
 using System;
 using System.Collections;
@@ -402,6 +404,28 @@ namespace OData.Client.UnitTests
             Assert.Equal("some_entities?$select=id&$filter=id eq 00000000-0000-0000-0000-000000000000", str);
         }
 
+        [Fact]
+        public async Task DynamicsErrorTest()
+        {
+            var data = new ODataError
+            {
+                Error = new ODataErrorCodeMessage
+                {
+                    Code = "xxx",
+                    Message = "yyy"
+                }
+            };
+
+            var set = new ODataSet<some_entity>(new(new HttpClient(
+               new MockHttpMessageHandler(JsonSerializer.Serialize(data), HttpStatusCode.BadRequest))
+            {
+                BaseAddress = new Uri("http://localhost")
+            }),
+               "some_entities");
+
+            Func<Task> a = () => set.ToListAsync();
+            await a.Should().ThrowAsync<ODataErrorException>();
+        }
 
         [Fact]
         public async Task TestExecution()
@@ -458,9 +482,11 @@ namespace OData.Client.UnitTests
         public class MockHttpMessageHandler : HttpMessageHandler
         {
             readonly string content;
-            public MockHttpMessageHandler(string content)
+            readonly HttpStatusCode statusCode;
+            public MockHttpMessageHandler(string content, HttpStatusCode statusCode = HttpStatusCode.OK)
             {
                 this.content = content;
+                this.statusCode = statusCode;
             }
 
             protected override async Task<HttpResponseMessage> SendAsync(
@@ -469,7 +495,8 @@ namespace OData.Client.UnitTests
             {
                 var responseMessage = new HttpResponseMessage(HttpStatusCode.OK)
                 {
-                    Content = new StringContent(content)
+                    Content = new StringContent(content),
+                    StatusCode = statusCode
                 };
 
                 return await Task.FromResult(responseMessage);

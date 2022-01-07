@@ -216,16 +216,18 @@ namespace OData.Client
 
         static void ThrowODataErrorIfItFits(string json)
         {
+            ODataError error = null;
 
             try
             {
-                var error = JsonSerializer.Deserialize<ODataError>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                if (error?.Error is not null)
-                {
-                    throw new ODataErrorException(error.Error.Code, error.Error.Message);
-                }
+                error = JsonSerializer.Deserialize<ODataError>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             }
             catch { }
+
+            if (error?.Error is not null)
+            {
+                throw new ODataErrorException(error.Error.Code, error.Error.Message);
+            }
         }
 
     }
