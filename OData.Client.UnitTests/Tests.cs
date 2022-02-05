@@ -458,7 +458,7 @@ namespace OData.Client.UnitTests
             }),
                 "some_entities");
             ODataResult<SomeEntity> result = await set
-                .ToResultAsync(e => new SomeEntity
+                .SelectResultAsync(e => new SomeEntity
             {
                 Id = e.id,
                 Name = e.name + "z",

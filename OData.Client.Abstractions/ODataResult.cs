@@ -10,5 +10,4 @@ namespace OData.Client.Abstractions
 
         public IEnumerable<T> Value { get; set; }
     }
-
 }

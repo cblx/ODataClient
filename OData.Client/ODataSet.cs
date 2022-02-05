@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Threading.Tasks;
 
 namespace OData.Client
@@ -50,21 +49,26 @@ namespace OData.Client
         Task<TResult> Get<TResult>(string url) => HttpHelpers.Get<TResult>(new(client, requestMessageConfiguration, url));
 
         
-        public IODataSetSelected<TSource> Select(Expression<Func<TSource, object>> selectExpression)
+        public IODataSetSelected<TSource> PrepareSelect(Expression<Func<TSource, object>> selectExpression)
         {
             return new ODataSetSelected(this, selectExpression);
-           
         }
      
-        public async Task<List<TProjection>> ToListAsync<TProjection>(Expression<Func<TSource, TProjection>> selectExpression)
+        public async Task<List<TProjection>> SelectListAsync<TProjection>(Expression<Func<TSource, TProjection>> selectExpression)
         {
-            var result = await ToResultAsync(selectExpression);
+            var result = await SelectResultAsync(selectExpression);
             return result.Value.ToList();
         }
 
         public async Task<List<TSource>> ToListAsync()
         {
             var result = await ToResultAsync();
+            return result.Value.ToList();
+        }
+
+        public async Task<List<TEntity>> ToListAsync<TEntity>() where TEntity : class
+        {
+            var result = await ToResultAsync<TEntity>();
             return result.Value.ToList();
         }
 
@@ -81,7 +85,7 @@ namespace OData.Client
             return Get<ODataResult<TEntity>>(url);
         }
 
-        public async Task<ODataResult<TProjection>> ToResultAsync<TProjection>(Expression<Func<TSource, TProjection>> selectExpression)
+        public async Task<ODataResult<TProjection>> SelectResultAsync<TProjection>(Expression<Func<TSource, TProjection>> selectExpression)
         {
             string url = this.ToString(selectExpression);
             ODataResult<TSource> result = await Get(url);
@@ -104,10 +108,10 @@ namespace OData.Client
             }
         }
 
-        public async Task<TProjection> FirstOrDefaultAsync<TProjection>(Expression<Func<TSource, TProjection>> selectExpression)
+        public async Task<TProjection> SelectFirstOrDefaultAsync<TProjection>(Expression<Func<TSource, TProjection>> selectExpression)
         {
             var set = Top(1);
-            var result = await set.ToResultAsync(selectExpression);
+            var result = await set.SelectResultAsync(selectExpression);
             return result.Value.FirstOrDefault();
         }
 
@@ -240,7 +244,7 @@ namespace OData.Client
                 this.selectExpression = selectExpression;
             }
 
-            public async Task<TProjection> FirstOrDefaultAsync<TProjection>(Func<TSource, TProjection> transform)
+            public async Task<TProjection> MapFirstOrDefaultAsync<TProjection>(Func<TSource, TProjection> transform)
             {
                 string url = dataSet.ToString(selectExpression);
                 ODataResult<TSource> result = await dataSet.Get(url);
@@ -248,14 +252,14 @@ namespace OData.Client
             }
 
 
-            public async Task<List<TProjection>> ToListAsync<TProjection>(Func<TSource, TProjection> transform)
+            public async Task<List<TProjection>> MapToListAsync<TProjection>(Func<TSource, TProjection> transform)
             {
                 string url = dataSet.ToString(selectExpression);
                 ODataResult<TSource> result = await dataSet.Get(url);
                 return result.Value.Select(transform).ToList();
             }
 
-            public async Task<ODataResult<TProjection>> ToResultAsync<TProjection>(Func<TSource, TProjection> transform)
+            public async Task<ODataResult<TProjection>> MapToResultAsync<TProjection>(Func<TSource, TProjection> transform)
             {
                 string url = dataSet.ToString(selectExpression);
                 ODataResult<TSource> result = await dataSet.Get(url);
@@ -266,8 +270,5 @@ namespace OData.Client
                 };
             }
         }
-
     }
-
-
 }

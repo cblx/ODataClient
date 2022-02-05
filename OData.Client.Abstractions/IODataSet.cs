@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Threading.Tasks;
 
 namespace OData.Client.Abstractions
@@ -29,21 +27,23 @@ namespace OData.Client.Abstractions
 
         IODataSet<TSource> IncludeCount();
 
-        IODataSetSelected<TSource> Select(Expression<Func<TSource, object>> selectExpression);
+        IODataSetSelected<TSource> PrepareSelect(Expression<Func<TSource, object>> selectExpression);
 
         Task<TSource> FindAsync(Guid id);
 
         Task<TEntity> FindAsync<TEntity>(Guid id) where TEntity: class;
 
-        Task<List<TProjection>> ToListAsync<TProjection>(Expression<Func<TSource, TProjection>> transform);
+        Task<List<TProjection>> SelectListAsync<TProjection>(Expression<Func<TSource, TProjection>> transform);
 
         Task<List<TSource>> ToListAsync();
 
+        Task<List<TEntity>> ToListAsync<TEntity>() where TEntity : class;
+
         Task<ODataResult<TSource>> ToResultAsync();
 
-        Task<ODataResult<TProjection>> ToResultAsync<TProjection>(Expression<Func<TSource, TProjection>> selectExpression);
+        Task<ODataResult<TProjection>> SelectResultAsync<TProjection>(Expression<Func<TSource, TProjection>> selectExpression);
 
-        Task<TProjection> FirstOrDefaultAsync<TProjection>(Expression<Func<TSource, TProjection>> selectExpression);
+        Task<TProjection> SelectFirstOrDefaultAsync<TProjection>(Expression<Func<TSource, TProjection>> selectExpression);
 
         Task<TSource> FirstOrDefaultAsync();
 
