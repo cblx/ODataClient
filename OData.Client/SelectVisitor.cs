@@ -1,9 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text.Json.Serialization;
 
 namespace OData.Client
 {
@@ -47,14 +45,17 @@ namespace OData.Client
                         target = callExpression.Arguments[0];
                     }
                 }
-                string field = target.ToString().Substring(paramPrefix.Length).Replace(".", "/");
+                //string field = target.ToString().Substring(paramPrefix.Length).Replace(".", "/");
                 switch (node.Method.Name)
                 {
                     case "Select":
                         {
                             var subVisitor = new SelectAndExpandVisitor(false, subExpandFilter);
                             subVisitor.Visit(node.Arguments[1]);
-                            this.selectExpand.Expand.Add(field, subVisitor.selectExpand);
+                            this.selectExpand.Expand.Add(
+                                (target as MemberExpression).GetFieldName(), 
+                                subVisitor.selectExpand
+                            );
                             return node;
                         }
                     //case "Where":
@@ -98,27 +99,19 @@ namespace OData.Client
                 prop.PropertyType == typeof(string))
             )
             {
-                IEnumerable<string> splitted = node.ToString().Split('.');
-                var pair = selectExpand;
-                while(splitted.Count() > 2)
+                SelectExpandPair pair = selectExpand;
+                Stack<MemberExpression> memberStack = node.CreateMemberParentsStack();
+                while (memberStack.TryPop(out MemberExpression memberExpression))
                 {
-                    string child = splitted.ElementAt(1);
-                    if (!pair.Expand.ContainsKey(child))
+                    string extendFieldName = memberExpression.GetFieldName();
+                    if (!pair.Expand.ContainsKey(extendFieldName))
                     {
-                        pair.Expand[child] = new SelectExpandPair(false, null);
+                        pair.Expand[extendFieldName] = new SelectExpandPair(false, null);
                     }
-                    pair = pair.Expand[child];
-                    splitted = splitted.Skip(1);
-                }
-                string field = node.Member.Name;
-
-                // Supporting mapped names in projections
-                var jsonPropertyNameAttr = node.Member.GetCustomAttribute<JsonPropertyNameAttribute>();
-                if(jsonPropertyNameAttr != null)
-                {
-                    field = jsonPropertyNameAttr.Name;
+                    pair = pair.Expand[extendFieldName];
                 }
 
+                string field = node.GetFieldName();
                 // Supporting OData annotations
                 if (field.Contains("@"))
                 {
@@ -130,6 +123,8 @@ namespace OData.Client
             }
             return base.VisitMember(node);
         }
+
+      
 
         public override string ToString()
         {

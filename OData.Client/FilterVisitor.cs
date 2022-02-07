@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
+using System.Linq;
 using System.Linq.Expressions;
-using System.Net;
 using System.Reflection;
+using System.Text;
 
 namespace OData.Client
 {
@@ -46,7 +46,11 @@ namespace OData.Client
             string paramPrefix = parameter.Name + ".";
             if (str.StartsWith(paramPrefix))
             {
-                string field = (node.Object ?? node.Arguments[0]).ToString().Substring(paramPrefix.Length).Replace(".", "/");
+                var memberExpression = (node.Object ?? node.Arguments[0]) as MemberExpression;
+                string field = string.Join(
+                    '/', 
+                    memberExpression.CreateMemberFullStack().Select(m => m.GetFieldName())
+                );
                 switch (node.Method.Name)
                 {
                     case "Contains":
@@ -142,12 +146,15 @@ namespace OData.Client
         protected override Expression VisitMember(MemberExpression node)
         {
             string str = node.ToString();
-            string paramPrefix = parameter.Name + ".";
+            string paramPrefix = $"{parameter.Name}.";
             if (str.StartsWith(paramPrefix))
             {
-                str = keepParamName ? str : str.Substring(paramPrefix.Length);
-                str = str.Replace(".", "/");
-                Query += str;
+                IEnumerable<string> fieldPath = node.CreateMemberFullStack().Select(m => m.GetFieldName());
+                var sb = new StringBuilder();
+                if (keepParamName) {
+                    fieldPath = new string[] { parameter.Name }.Union(fieldPath);
+                }
+                Query += string.Join('/', fieldPath);
                 return node;
             }
 

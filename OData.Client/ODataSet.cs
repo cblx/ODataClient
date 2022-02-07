@@ -89,6 +89,10 @@ namespace OData.Client
         {
             string url = this.ToString(selectExpression);
             ODataResult<TSource> result = await Get(url);
+            if (!client.Options.DisableNullNavigationPropertiesProtectionInProjections)
+            {
+                InstantiateNullNavigationProperties(result.Value);
+            }
             var project = selectExpression.Compile();
             try
             {
@@ -105,6 +109,15 @@ namespace OData.Client
             catch (Exception ex)
             {
                 throw new Exception("Could no project query. Check for null references in the projection expression.", ex);
+            }
+        }
+
+        void InstantiateNullNavigationProperties(IEnumerable<TSource> items)
+        {
+            foreach(TSource item in items)
+            {
+                Type itemType = item.GetType();
+
             }
         }
 

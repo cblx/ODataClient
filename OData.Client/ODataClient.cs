@@ -3,16 +3,11 @@ using OData.Client.Abstractions.Write;
 using System;
 using System.Linq.Expressions;
 using System.Net.Http;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace OData.Client
 {
-    public class ODataClientOptions
-    {
-        public bool ShowLog { get; set; } = false;
-        public bool ReadResponsesAsString { get; set; } = false;
-    }
-
     public class ODataClient : IODataClient
     {
         public ODataClientOptions Options { get; private set; }
@@ -71,7 +66,9 @@ namespace OData.Client
 
         static string ResolveEndpointName<T>()
         {
-            string endpointName = typeof(T).Name;
+            string endpointName = typeof(T).GetCustomAttribute<ODataTableAttribute>()?.Endpoint;
+            if(endpointName != null) { return endpointName; }
+            endpointName = typeof(T).Name;
             if (endpointName.EndsWith("s"))
             {
                 endpointName += "es";

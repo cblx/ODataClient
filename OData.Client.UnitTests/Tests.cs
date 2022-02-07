@@ -47,11 +47,49 @@ namespace OData.Client.UnitTests
         }
 
         [Fact]
+        public void TblTestFilters()
+        {
+            var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+            var eAux = new SomeEntity();
+            eAux.Id = Guid.Empty;
+            string str = set
+                .Filter(e => e.Name == "123")
+                .Filter(e => e.Id == eAux.Id)
+                .ToString(e => new SomeEntity
+                {
+                    Id = e.Id,
+                    Name = e.Name,
+                    Child = new SomeEntity
+                    {
+                        Id = e.Child.Id,
+                        Name = e.Child.Name,
+                        Child = new SomeEntity
+                        {
+                            Id = e.Child.Child.Id,
+                            Name = e.Child.Child.Name
+                        }
+                    }
+                });
+            Assert.Equal("some_entities?$select=id,name&$expand=child($select=id,name;$expand=child($select=id,name))&$filter=name eq '123' and id eq 00000000-0000-0000-0000-000000000000", str);
+        }
+
+        [Fact]
         public void ExpandOtherTypeChildTest()
         {
             var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
             string str = set.ToString(e => new SomeEntity { 
                 Name = e.otherChild.name
+            });
+            Assert.Equal("some_entities?$expand=otherChild($select=name)", str);
+        }
+
+        [Fact]
+        public void TblExpandOtherTypeChildTest()
+        {
+            var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+            string str = set.ToString(e => new SomeEntity
+            {
+                Name = e.OtherChild.Name
             });
             Assert.Equal("some_entities?$expand=otherChild($select=name)", str);
         }
@@ -67,6 +105,24 @@ namespace OData.Client.UnitTests
                     Name = c.name,
                     Children = c.children.Select(cc =>new SomeEntity { 
                         Name = cc.name
+                    })
+                })
+            });
+            Assert.Equal("some_entities?$expand=children($select=name;$expand=children($select=name))", str);
+        }
+
+        [Fact]
+        public void TblSubExpandCollectionsTest()
+        {
+            var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+            string str = set.ToString(e => new SomeEntity
+            {
+                Children = e.Children.Select(c => new SomeEntity
+                {
+                    Name = c.Name,
+                    Children = c.Children.Select(cc => new SomeEntity
+                    {
+                        Name = cc.Name
                     })
                 })
             });
@@ -101,6 +157,21 @@ namespace OData.Client.UnitTests
         }
 
         [Fact]
+        public void TblExpandArrayTest()
+        {
+            var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+            string str = set.ToString(e => new SomeEntity
+            {
+                Children = e.Children.Select(c => new SomeEntity
+                {
+                    Id = c.Id,
+                    Name = c.Name
+                })
+            });
+            Assert.Equal("some_entities?$expand=children($select=id,name)", str);
+        }
+
+        [Fact]
         public void ClientMethodTest()
         {
             var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
@@ -112,12 +183,34 @@ namespace OData.Client.UnitTests
         }
 
         [Fact]
+        public void TblClientMethodTest()
+        {
+            var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+            string str = set.ToString(e => new SomeEntity
+            {
+                Name = e.Name.ToLower()
+            });
+            Assert.Equal("some_entities?$select=name", str);
+        }
+
+        [Fact]
         public void ClientExtensionMethodTest()
         {
             var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
             string str = set.ToString(e => new SomeEntity
             {
                 Name = e.name.Ext()
+            });
+            Assert.Equal("some_entities?$select=name", str);
+        }
+
+        [Fact]
+        public void TblClientExtensionMethodTest()
+        {
+            var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+            string str = set.ToString(e => new SomeEntity
+            {
+                Name = e.Name.Ext()
             });
             Assert.Equal("some_entities?$select=name", str);
         }
@@ -137,6 +230,20 @@ namespace OData.Client.UnitTests
         }
 
         [Fact]
+        public void TblTestFilterWithMethodCall()
+        {
+            var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+            int i = 123;
+            string str = set
+                .Filter(e => e.Name == i.ToString())
+                .ToString(e => new SomeEntity
+                {
+                    Id = e.Id,
+                });
+            Assert.Equal("some_entities?$select=id&$filter=name eq '123'", str);
+        }
+
+        [Fact]
         public void FitlerByChildPropTest()
         {
             var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
@@ -145,6 +252,19 @@ namespace OData.Client.UnitTests
                 .ToString(e => new SomeEntity
                 {
                     Id = e.id,
+                });
+            Assert.Equal("some_entities?$select=id&$filter=child/child/name eq '123'", str);
+        }
+
+        [Fact]
+        public void TblFitlerByChildPropTest()
+        {
+            var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+            string str = set
+                .Filter(e => e.Child.Child.Name == "123")
+                .ToString(e => new SomeEntity
+                {
+                    Id = e.Id,
                 });
             Assert.Equal("some_entities?$select=id&$filter=child/child/name eq '123'", str);
         }
@@ -161,7 +281,20 @@ namespace OData.Client.UnitTests
                 });
             Assert.Equal("some_entities?$select=id&$filter=name eq null", str);
         }
-        
+
+        [Fact]
+        public void TblNullComparisonTest()
+        {
+            var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+            string str = set
+                .Filter(e => e.Name == null)
+                .ToString(e => new SomeEntity
+                {
+                    Id = e.Id,
+                });
+            Assert.Equal("some_entities?$select=id&$filter=name eq null", str);
+        }
+
         [Fact]
         public void HasValueInProjectionTest()
         {
@@ -170,6 +303,19 @@ namespace OData.Client.UnitTests
                 .ToString(e => new SomeEntity
                 {
                     Id = e.nullableInt.HasValue ? Guid.NewGuid() : Guid.Empty,
+                });
+            Assert.Equal("some_entities?$select=nullableInt", str);
+        }
+
+
+        [Fact]
+        public void TblHasValueInProjectionTest()
+        {
+            var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+            string str = set
+                .ToString(e => new SomeEntity
+                {
+                    Id = e.NullableInt.HasValue ? Guid.NewGuid() : Guid.Empty,
                 });
             Assert.Equal("some_entities?$select=nullableInt", str);
         }
@@ -188,6 +334,19 @@ namespace OData.Client.UnitTests
         }
 
         [Fact]
+        public void TblOrderByTest()
+        {
+            var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+            string str = set
+                .OrderBy(e => e.Name)
+                .ToString(e => new SomeEntity
+                {
+                    Id = e.Id,
+                });
+            Assert.Equal("some_entities?$select=id&$orderby=name", str);
+        }
+
+        [Fact]
         public void OrderByNestedTest()
         {
             var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
@@ -196,6 +355,19 @@ namespace OData.Client.UnitTests
                 .ToString(e => new SomeEntity
                 {
                     Id = e.id,
+                });
+            Assert.Equal("some_entities?$select=id&$orderby=child/name", str);
+        }
+
+        [Fact]
+        public void TblOrderByNestedTest()
+        {
+            var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+            string str = set
+                .OrderBy(e => e.Child.Name)
+                .ToString(e => new SomeEntity
+                {
+                    Id = e.Id,
                 });
             Assert.Equal("some_entities?$select=id&$orderby=child/name", str);
         }
@@ -214,6 +386,19 @@ namespace OData.Client.UnitTests
         }
 
         [Fact]
+        public void TblOrderByDescendingTest()
+        {
+            var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+            string str = set
+                .OrderByDescending(e => e.PartyDay)
+                .ToString(e => new SomeEntity
+                {
+                    Id = e.Id,
+                });
+            Assert.Equal("some_entities?$select=id&$orderby=partyDay desc", str);
+        }
+
+        [Fact]
         public void ContainsTest()
         {
             var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
@@ -222,6 +407,19 @@ namespace OData.Client.UnitTests
                 .ToString(e => new SomeEntity
                 {
                     Id = e.id,
+                });
+            Assert.Equal("some_entities?$select=id&$filter=contains(name,'123')", str);
+        }
+
+        [Fact]
+        public void TblContainsTest()
+        {
+            var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+            string str = set
+                .Filter(e => e.Name.Contains("123"))
+                .ToString(e => new SomeEntity
+                {
+                    Id = e.Id,
                 });
             Assert.Equal("some_entities?$select=id&$filter=contains(name,'123')", str);
         }
@@ -240,6 +438,19 @@ namespace OData.Client.UnitTests
         }
 
         [Fact]
+        public void TblContainsNestedTest()
+        {
+            var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+            string str = set
+                .Filter(e => e.Child.Name.Contains("123"))
+                .ToString(e => new SomeEntity
+                {
+                    Id = e.Id,
+                });
+            Assert.Equal("some_entities?$select=id&$filter=contains(child/name,'123')", str);
+        }
+
+        [Fact]
         public void CompareBooleanTest()
         {
             var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
@@ -253,6 +464,19 @@ namespace OData.Client.UnitTests
         }
 
         [Fact]
+        public void TblCompareBooleanTest()
+        {
+            var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+            string str = set
+                .Filter(e => e.Active == true)
+                .ToString(e => new SomeEntity
+                {
+                    Id = e.Id,
+                });
+            Assert.Equal("some_entities?$select=id&$filter=active eq true", str);
+        }
+
+        [Fact]
         public void CompareIntTest()
         {
             var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
@@ -261,6 +485,19 @@ namespace OData.Client.UnitTests
                 .ToString(e => new SomeEntity
                 {
                     Id = e.id,
+                });
+            Assert.Equal("some_entities?$select=id&$filter=age eq 123", str);
+        }
+
+        [Fact]
+        public void TblCompareIntTest()
+        {
+            var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+            string str = set
+                .Filter(e => e.Age == 123)
+                .ToString(e => new SomeEntity
+                {
+                    Id = e.Id,
                 });
             Assert.Equal("some_entities?$select=id&$filter=age eq 123", str);
         }
@@ -280,6 +517,20 @@ namespace OData.Client.UnitTests
         }
 
         [Fact]
+        public void TblCompareDateTimeOffsetTest()
+        {
+            var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+            var dt = new DateTimeOffset(2020, 12, 1, 0, 0, 0, TimeSpan.Zero);
+            string str = set
+                .Filter(e => e.At == dt)
+                .ToString(e => new SomeEntity
+                {
+                    Id = e.Id,
+                });
+            Assert.Equal("some_entities?$select=id&$filter=at eq 2020-12-01T00%3A00%3A00.0000000%2B00%3A00", str);
+        }
+
+        [Fact]
         public void CompareDateTimeTest()
         {
             var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
@@ -289,6 +540,20 @@ namespace OData.Client.UnitTests
                 .ToString(e => new SomeEntity
                 {
                     Id = e.id,
+                });
+            Assert.Equal("some_entities?$select=id&$filter=partyDay eq 2020-12-01T00%3A00%3A00.0000000", str);
+        }
+
+        [Fact]
+        public void TblCompareDateTimeTest()
+        {
+            var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+            var dt = new DateTime(2020, 12, 1, 0, 0, 0);
+            string str = set
+                .Filter(e => e.PartyDay == dt)
+                .ToString(e => new SomeEntity
+                {
+                    Id = e.Id,
                 });
             Assert.Equal("some_entities?$select=id&$filter=partyDay eq 2020-12-01T00%3A00%3A00.0000000", str);
         }
@@ -307,6 +572,19 @@ namespace OData.Client.UnitTests
         }
 
         [Fact]
+        public void TblOrTest()
+        {
+            var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+            string str = set
+                .Filter(e => e.Age == 123 || e.Age == 321)
+                .ToString(e => new SomeEntity
+                {
+                    Id = e.Id,
+                });
+            Assert.Equal("some_entities?$select=id&$filter=(age eq 123 or age eq 321)", str);
+        }
+
+        [Fact]
         public void MultiOrTest()
         {
             var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
@@ -320,11 +598,19 @@ namespace OData.Client.UnitTests
             Assert.Equal("some_entities?$select=id&$filter=(age eq 123 or age eq 321) and (age eq 456 or age eq 789)", str);
         }
 
-        //[Fact]
-        //public void CompileFreezesTest()
-        //{
-
-        //}
+        [Fact]
+        public void TblMultiOrTest()
+        {
+            var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+            string str = set
+                .Filter(e => e.Age == 123 || e.Age == 321)
+                .Filter(e => e.Age == 456 || e.Age == 789)
+                .ToString(e => new SomeEntity
+                {
+                    Id = e.Id,
+                });
+            Assert.Equal("some_entities?$select=id&$filter=(age eq 123 or age eq 321) and (age eq 456 or age eq 789)", str);
+        }
 
         [Fact]
         public void AndAndOrsTest2()
@@ -340,6 +626,19 @@ namespace OData.Client.UnitTests
         }
 
         [Fact]
+        public void TblAndAndOrsTest2()
+        {
+            var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+            string str = set
+                .Filter(e => (e.Age == 123 || e.Age == 321 || e.Age == 890) && (e.Age == 456 || e.Age == 789))
+                .ToString(e => new SomeEntity
+                {
+                    Id = e.Id,
+                });
+            Assert.Equal("some_entities?$select=id&$filter=((age eq 123 or age eq 321) or age eq 890) and (age eq 456 or age eq 789)", str);
+        }
+
+        [Fact]
         public void FilteredExpandTest()
         {
             var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
@@ -347,6 +646,18 @@ namespace OData.Client.UnitTests
             string str = set.ToString(e => new SomeEntity
             {
                 Children = e.children.Where(c => c.name == "x").Select(c => new SomeEntity { Id = c.id })
+            });
+            Assert.Equal("some_entities?$expand=children($select=id;$filter=name eq 'x')", str);
+        }
+
+        [Fact]
+        public void TblFilteredExpandTest()
+        {
+            var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+            var guidEmpty = Guid.Empty;
+            string str = set.ToString(e => new SomeEntity
+            {
+                Children = e.Children.Where(c => c.Name == "x").Select(c => new SomeEntity { Id = c.Id })
             });
             Assert.Equal("some_entities?$expand=children($select=id;$filter=name eq 'x')", str);
         }
@@ -365,6 +676,19 @@ namespace OData.Client.UnitTests
         }
 
         [Fact]
+        public void TblAnyTest()
+        {
+            var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+            string str = set
+                .Filter(e => e.Children.Any(c => c.Name == "hey" || c.Name == "ho"))
+                .ToString(e => new SomeEntity
+                {
+                    Id = e.Id,
+                });
+            Assert.Equal("some_entities?$select=id&$filter=children/any(c:(c/name eq 'hey' or c/name eq 'ho'))", str);
+        }
+
+        [Fact]
         public void FilterByNewGuidTest()
         {
             var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
@@ -373,6 +697,19 @@ namespace OData.Client.UnitTests
                 .ToString(e => new SomeEntity
                 {
                     Id = e.id,
+                });
+            Assert.Equal("some_entities?$select=id&$filter=id eq 00000000-0000-0000-0000-000000000000", str);
+        }
+
+        [Fact]
+        public void TblFilterByNewGuidTest()
+        {
+            var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+            string str = set
+                .Filter(e => e.Id == new Guid("00000000-0000-0000-0000-000000000000"))
+                .ToString(e => new SomeEntity
+                {
+                    Id = e.Id,
                 });
             Assert.Equal("some_entities?$select=id&$filter=id eq 00000000-0000-0000-0000-000000000000", str);
         }
@@ -391,6 +728,19 @@ namespace OData.Client.UnitTests
         }
 
         [Fact]
+        public void TblFilterByStaticTest()
+        {
+            var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+            string str = set
+                .Filter(e => e.Id == Guid.Empty)
+                .ToString(e => new SomeEntity
+                {
+                    Id = e.Id,
+                });
+            Assert.Equal("some_entities?$select=id&$filter=id eq 00000000-0000-0000-0000-000000000000", str);
+        }
+
+        [Fact]
         public void FilterByMemberTest()
         {
             var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
@@ -400,6 +750,20 @@ namespace OData.Client.UnitTests
                 .ToString(e => new SomeEntity
                 {
                     Id = e.id,
+                });
+            Assert.Equal("some_entities?$select=id&$filter=id eq 00000000-0000-0000-0000-000000000000", str);
+        }
+
+        [Fact]
+        public void TblFilterByMemberTest()
+        {
+            var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+            Guid? guid = Guid.Empty;
+            string str = set
+                .Filter(e => e.Id == guid.Value)
+                .ToString(e => new SomeEntity
+                {
+                    Id = e.Id,
                 });
             Assert.Equal("some_entities?$select=id&$filter=id eq 00000000-0000-0000-0000-000000000000", str);
         }
@@ -479,6 +843,50 @@ namespace OData.Client.UnitTests
             Assert.Equal("grandchildx", result.Value.First().Child.Child.Name);
         }
 
+        //[Fact]
+        //public async Task NullNavPropProtectionTest() {
+        //    var data = new
+        //    {
+        //        value = new[] {
+        //              new some_entity
+        //              {
+        //                  id = Guid.NewGuid(),
+        //                  name = "root",
+        //                  child = null,
+        //                  children = null,
+        //                  otherChild = null
+        //              }
+        //        }
+        //    };
+
+        //    var set = new ODataSet<some_entity>(new ODataClient(new HttpClient(
+        //        new MockHttpMessageHandler(JsonSerializer.Serialize(data)))
+        //    {
+        //        BaseAddress = new Uri("http://localhost")
+        //    }), "some_entities");
+
+        //    List<SomeEntity> entities = await set
+        //        .SelectListAsync(e => new SomeEntity
+        //        {
+        //            Id = e.id,
+        //            Name = e.name + "z",
+        //            Child = new SomeEntity
+        //            {
+        //                Id = e.child.id,
+        //                Name = e.child.name + "y",
+        //                Child = new SomeEntity
+        //                {
+        //                    Id = e.child.child.id,
+        //                    Name = e.child.child.name + "x"
+        //                }
+        //            }
+        //        });
+
+        //    entities.First().Name.Should().Be("z");
+        //    entities.First().Child.Name.Should().Be("y");
+        //    entities.First().Child.Child.Name.Should().Be("z");
+        //}
+
         public class MockHttpMessageHandler : HttpMessageHandler
         {
             readonly string content;
@@ -513,6 +921,40 @@ namespace OData.Client.UnitTests
         public SomeEntity Child { get; set; }
 
         public IEnumerable<SomeEntity> Children { get; set; }
+    }
+
+    [ODataTable("some_entities")]
+    public class TblEntity
+    {
+        [JsonPropertyName("id")]
+        public Guid Id { get; set; }
+
+        [JsonPropertyName("name")]
+        public string Name { get; set; }
+
+        [JsonPropertyName("child")]
+        public TblEntity Child { get; set; }
+
+        [JsonPropertyName("otherChild")]
+        public TblEntity OtherChild { get; set; }
+
+        [JsonPropertyName("children")]
+        public IEnumerable<TblEntity> Children { get; set; }
+
+        [JsonPropertyName("nullableInt")]
+        public int? NullableInt { get; set; }
+
+        [JsonPropertyName("partyDay")]
+        public DateTime PartyDay { get; set; }
+
+        [JsonPropertyName("active")]
+        public bool Active { get; set; }
+
+        [JsonPropertyName("age")]
+        public int Age { get; set; }
+
+        [JsonPropertyName("at")]
+        public DateTimeOffset At { get; set; }
     }
 
     public class some_entity
