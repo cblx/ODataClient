@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace OData.Client.Abstractions.Write
 {
@@ -54,6 +55,8 @@ namespace OData.Client.Abstractions.Write
         static bool IsDate(string propName)
         {
             // Use DateTime? for Edm.Date
+            PropertyInfo propertyInfo = typeof(T).GetProperty(propName);
+            if(propertyInfo == null) { throw new ArgumentOutOfRangeException($"{propName} not found in {typeof(T).Name}"); }
             return typeof(T).GetProperty(propName).PropertyType == typeof(DateTime?);
         }
 
