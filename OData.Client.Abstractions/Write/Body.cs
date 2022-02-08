@@ -57,7 +57,7 @@ namespace OData.Client.Abstractions.Write
             // Use DateTime? for Edm.Date
             PropertyInfo propertyInfo = typeof(T).GetProperty(propName);
             if(propertyInfo == null) { throw new ArgumentOutOfRangeException($"{propName} not found in {typeof(T).Name}"); }
-            return typeof(T).GetProperty(propName).PropertyType == typeof(DateTime?);
+            return propertyInfo.PropertyType == typeof(DateTime?);
         }
 
         static object ToDateFormat(object o)
