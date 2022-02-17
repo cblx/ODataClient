@@ -1,6 +1,8 @@
 ﻿using System.Collections.ObjectModel;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Text.Json.Serialization;
+
 namespace OData.Client.Abstractions.Write;
 public class Body<T> where T : class
 {
@@ -52,8 +54,16 @@ public class Body<T> where T : class
     static bool IsDate(string propName)
     {
         // Use DateTime? for Edm.Date
-        PropertyInfo propertyInfo = typeof(T).GetProperty(propName);
-        if(propertyInfo == null) { throw new ArgumentOutOfRangeException($"{propName} not found in {typeof(T).Name}"); }
+        PropertyInfo propertyInfo = typeof(T)
+            .GetProperties()
+                .FirstOrDefault(p => 
+                    p.Name == propName 
+                    || 
+                    p.GetCustomAttributes<JsonPropertyNameAttribute>().Any(jpn => jpn.Name == propName)
+                );
+        if(propertyInfo == null) { 
+            throw new ArgumentOutOfRangeException($"No {propName} property found in {typeof(T).Name} nor a property annotated with JsonPropertyNameAttribute using {propName} as Name"); 
+        }
         return IsDate(propertyInfo);
     }
 
