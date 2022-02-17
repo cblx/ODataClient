@@ -82,7 +82,7 @@ namespace Cblx.OData.Client
                             }
                             catch
                             {
-                                throw new ArgumentException($"The {fieldName} field must be able to be serialized as Guid");
+                                throw new ArgumentException($"The {fieldName} field must be able to be serialized as Guid. Value was {changedProperty.NewValue}");
                             }
                         }
                         else

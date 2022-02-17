@@ -59,7 +59,7 @@ public class Body<T> where T : class
                 .FirstOrDefault(p => 
                     p.Name == propName 
                     || 
-                    p.GetCustomAttributes<JsonPropertyNameAttribute>().Any(jpn => jpn.Name == propName)
+                    p.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name == propName
                 );
         if(propertyInfo == null) { 
             throw new ArgumentOutOfRangeException($"No {propName} property found in {typeof(T).Name} nor a property annotated with JsonPropertyNameAttribute using {propName} as Name"); 

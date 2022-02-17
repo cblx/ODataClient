@@ -15,7 +15,7 @@ public class Bind<T> : BodyElement<T>
 
     public Bind(string nav, object foreignId)
     {
-        this.navPropInfo = typeof(T).GetProperty(nav);
+        this.navPropInfo = typeof(T).GetProperties().FirstOrDefault(p => p.Name == nav || p.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name == nav);
         this.foreignId = foreignId;
     }
 
