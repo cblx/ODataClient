@@ -72,18 +72,19 @@ namespace Cblx.OData.Client
                     {
                         if (changedProperty.NewValue != null)
                         {
+                            Guid guid;
                             try
                             {
-                                Guid guid = (changedProperty.NewValue as Guid?)
+                                guid = (changedProperty.NewValue as Guid?)
                                             ??
                                             JsonSerializer.Deserialize<Guid>(JsonSerializer.Serialize(changedProperty.NewValue));
 
-                                body.Bind(navName, guid);
                             }
                             catch
                             {
                                 throw new ArgumentException($"The {fieldName} field must be able to be serialized as Guid. Value was {changedProperty.NewValue}");
                             }
+                            body.Bind(navName, guid);
                         }
                         else
                         {

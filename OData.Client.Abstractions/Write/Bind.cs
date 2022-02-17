@@ -16,6 +16,10 @@ public class Bind<T> : BodyElement<T>
     public Bind(string nav, object foreignId)
     {
         this.navPropInfo = typeof(T).GetProperties().FirstOrDefault(p => p.Name == nav || p.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name == nav);
+        if(this.navPropInfo == null)
+        {
+            throw new ArgumentOutOfRangeException($"No {nav} property found in {typeof(T).Name} nor a property annotated with JsonPropertyNameAttribute using {nav} as Name");
+        }
         this.foreignId = foreignId;
     }
 
