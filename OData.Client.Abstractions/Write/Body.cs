@@ -18,9 +18,10 @@ public class Body<T> where T : class
 
     public Body<T> Set<TValue>(Expression<Func<T, TValue>> prop, TValue value)
     {
+        var propInfo = (prop.Body as MemberExpression)?.Member as PropertyInfo;
         var kvp = new Set<T, TValue>(prop, value).ToKeyValuePair();
         object v = kvp.Value;
-        if (IsDate(kvp.Key))
+        if (IsDate(propInfo))
         {
             v = ToDateFormat(v);
         }
@@ -53,6 +54,11 @@ public class Body<T> where T : class
         // Use DateTime? for Edm.Date
         PropertyInfo propertyInfo = typeof(T).GetProperty(propName);
         if(propertyInfo == null) { throw new ArgumentOutOfRangeException($"{propName} not found in {typeof(T).Name}"); }
+        return IsDate(propertyInfo);
+    }
+
+    static bool IsDate(PropertyInfo propertyInfo)
+    {
         return propertyInfo.PropertyType == typeof(DateTime?);
     }
 
