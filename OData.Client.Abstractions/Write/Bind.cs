@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using Cblx.OData.Client.Abstractions;
+using System.Reflection;
 using System.Text.Json.Serialization;
 namespace OData.Client.Abstractions.Write;
 public class Bind<T> : BodyElement<T>
@@ -26,17 +27,10 @@ public class Bind<T> : BodyElement<T>
     public KeyValuePair<string, object> ToKeyValuePair()
     {
         var propType = navPropInfo.PropertyType;
-        string endpointName = propType.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name ?? propType.Name;
-        if (endpointName.EndsWith("s"))
-        {
-            endpointName += "es";
-        }
-        else
-        {
-            endpointName += "s";
-        }
+        string endpointName = ODataClientHelpers.ResolveEndpointName(propType);
+        string navPropName = navPropInfo.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name ?? navPropInfo.Name;
         return new KeyValuePair<string, object>(
-                $"{navPropInfo.Name}@odata.bind",
+                $"{navPropName}@odata.bind",
                 $"/{endpointName}({foreignId})"
         );
     }

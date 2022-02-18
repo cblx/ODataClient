@@ -1,4 +1,5 @@
-﻿using OData.Client.Abstractions;
+﻿using Cblx.OData.Client.Abstractions;
+using OData.Client.Abstractions;
 using OData.Client.Abstractions.Write;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -15,14 +16,14 @@ public class ODataClient : IODataClient
     }
 
     public IODataSet<T> From<T>() where T : class, new()
-        => new ODataSet<T>(this, ResolveEndpointName<T>());
+        => new ODataSet<T>(this, ODataClientHelpers.ResolveEndpointName<T>());
 
     public Task Post<T>(Body<T> body, Action<HttpRequestMessage> requestMessageConfiguration = null) where T : class
         => HttpHelpers.Post(
             new(
                 this,
                 requestMessageConfiguration,
-                ResolveEndpointName<T>(),
+                ODataClientHelpers.ResolveEndpointName<T>(),
                 body.ToDictionary()
             )
         );
@@ -32,7 +33,7 @@ public class ODataClient : IODataClient
             new(
                 this,
                 requestMessageConfiguration,
-                $"{ResolveEndpointName<T>()}({id})",
+                $"{ODataClientHelpers.ResolveEndpointName<T>()}({id})",
                 body.ToDictionary()
             )
         );
@@ -42,7 +43,7 @@ public class ODataClient : IODataClient
             new(
                 this,
                 requestMessageConfiguration,
-                $"{ResolveEndpointName<T>()}({id})"
+                $"{ODataClientHelpers.ResolveEndpointName<T>()}({id})"
             )
         );
 
@@ -51,27 +52,11 @@ public class ODataClient : IODataClient
             new(
                 this,
                 requestMessageConfiguration,
-                $"{ResolveEndpointName<T>()}({id})/{nav}/$ref"
+                $"{ODataClientHelpers.ResolveEndpointName<T>()}({id})/{nav}/$ref"
             )
         );
 
     public Task Unbind<T, TBind>(object id, Expression<Func<T, TBind>> navExpression, Action<HttpRequestMessage> requestMessageConfiguration = null)
         where TBind : class
         => Unbind<T>(id, (navExpression.Body as MemberExpression).Member.Name, requestMessageConfiguration);
-
-    static string ResolveEndpointName<T>()
-    {
-        string endpointName = typeof(T).GetCustomAttribute<ODataTableAttribute>()?.Endpoint;
-        if(endpointName != null) { return endpointName; }
-        endpointName = typeof(T).Name;
-        if (endpointName.EndsWith("s"))
-        {
-            endpointName += "es";
-        }
-        else
-        {
-            endpointName += "s";
-        }
-        return endpointName;
-    }
 }
