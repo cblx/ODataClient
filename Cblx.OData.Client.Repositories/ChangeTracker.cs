@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Cblx.OData.Client.Abstractions.Ids;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -9,16 +10,16 @@ namespace Cblx.OData.Client
 {
     public class ChangeTracker
     {
-        public static ICollection<Func<Type, bool>> CanTrack { get; } = new HashSet<Func<Type, bool>>();
+        public static ICollection<Func<Type, bool>> CanTrack { get; } = new HashSet<Func<Type, bool>>() { 
+            type => type.BaseType == typeof(Id)
+        };
 
         readonly Dictionary<Guid, string> states = new Dictionary<Guid, string>();
         readonly Dictionary<Guid, object> entities = new Dictionary<Guid, object>();
         readonly HashSet<Guid> markedForRemove = new HashSet<Guid>();
         readonly JsonSerializerOptions options = new JsonSerializerOptions();
 
-        public ChangeTracker()
-        {
-        }
+        public ChangeTracker(){}
 
         public void Add(object o)
         {
