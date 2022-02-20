@@ -1,7 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
-namespace Cblx.OData.SourceGenerators
+namespace Cblx.OData.Client.SourceGenerators
 {
     [Generator]
     public class StronglyTypedIdsGenerator : ISourceGenerator
