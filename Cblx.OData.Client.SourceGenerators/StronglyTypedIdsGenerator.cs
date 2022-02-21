@@ -1,6 +1,8 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
+using System.Linq;
+
 namespace Cblx.OData.Client.SourceGenerators
 {
     [Generator]
@@ -41,7 +43,8 @@ public partial record {name}(Guid Guid) : Id(Guid)
             {
                 if (syntaxNode is ClassDeclarationSyntax classDeclarationSyntax)
                 {
-                    if (classDeclarationSyntax.Identifier.ToString().StartsWith("Tb"))
+                    string attrListText = classDeclarationSyntax.AttributeLists.ToString();
+                    if (attrListText.Contains("GenerateStronglyTypedId"))
                     {
                         TbClasses.Add(classDeclarationSyntax);
                     }
