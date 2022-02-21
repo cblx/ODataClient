@@ -1,11 +1,12 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Cblx.OData.Client.SourceGenerators
 {
     [Generator]
-    public class StronglyTypedIdsGenerator : ISourceGenerator
+    public class TableConstantsGenerator : ISourceGenerator
     {
         public void Execute(GeneratorExecutionContext context)
         {
@@ -14,21 +15,19 @@ namespace Cblx.OData.Client.SourceGenerators
             {
                 SemanticModel model = context.Compilation.GetSemanticModel(classDeclarationSyntax.SyntaxTree);
                 var symbol = model.GetDeclaredSymbol(classDeclarationSyntax) as ITypeSymbol;
-                string name = $"{symbol.Name}Id";
-                string source = $@"using Cblx.OData.Client.Abstractions.Ids;
-using System.Text.Json.Serialization;
-namespace {symbol.ContainingNamespace};
-[JsonConverter(typeof(IdConverterFactory))]
-public partial record {name}(Guid Guid) : Id(Guid)
+                string source = $@"namespace {symbol.ContainingNamespace};
+public partial class {symbol.Name} 
 {{
-    public {name}(string guidString) : this(new Guid(guidString)){{}}
-    public static implicit operator Guid({name}? id) => id?.Guid ?? Guid.Empty;
-    public static implicit operator Guid?({name}? id) => id?.Guid;
-    public static explicit operator {name}(Guid guid) => new {name}(guid);
-    public static {name} Empty {{ get; }} = new {name}(Guid.Empty);
-    public static {name} NewId() => new {name}(Guid.NewGuid());
-}}";
-                context.AddSource($"{symbol.Name}Id.g.cs", source);
+    public static class Cols {{
+{string.Join("\r\n", symbol
+    .GetMembers()
+    .Where(m => !m.Name.EndsWith("_Formatted"))
+    .Where(m => m.Kind == SymbolKind.Property)
+    .Select(m => $@"        public const string {m.Name} = ""{m.GetAttributes().FirstOrDefault()?.ConstructorArguments[0].Value ?? m.Name}"";"))}
+    }}
+}}
+";
+                context.AddSource($"{symbol.Name}.g.cs", source);
             }
         }
 
@@ -46,7 +45,7 @@ public partial record {name}(Guid Guid) : Id(Guid)
                 if (syntaxNode is ClassDeclarationSyntax classDeclarationSyntax)
                 {
                     string attrListText = classDeclarationSyntax.AttributeLists.ToString();
-                    if (attrListText.Contains("GenerateStronglyTypedId"))
+                    if (attrListText.Contains("ExtendWithConstants"))
                     {
                         TbClasses.Add(classDeclarationSyntax);
                     }
