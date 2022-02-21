@@ -24,7 +24,7 @@ public partial record {name}(Guid Guid) : Id(Guid)
 {{
     public static implicit operator Guid({name}? id) => id?.Guid ?? Guid.Empty;
     public static implicit operator Guid?({name}? id) => id?.Guid;
-    public static implicit operator {name}(Guid guid) => new {name}(guid);
+    public static explicit operator {name}(Guid guid) => new {name}(guid);
 }}";
                 context.AddSource($"{symbol.Name}Id.g.cs", source);
             }
