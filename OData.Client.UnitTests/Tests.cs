@@ -1,4 +1,5 @@
 ﻿using Cblx.OData.Client.Abstractions;
+using Cblx.OData.Client.Abstractions.Ids;
 using FluentAssertions;
 using Moq;
 using OData.Client.Abstractions;
@@ -71,6 +72,18 @@ namespace OData.Client.UnitTests
                     }
                 });
             Assert.Equal("some_entities?$select=id,name&$expand=child($select=id,name;$expand=child($select=id,name))&$filter=name eq '123' and id eq 00000000-0000-0000-0000-000000000000", str);
+        }
+
+        [Fact]
+        public void SelectStronglyId()
+        {
+            var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+            string str = set
+                .ToString(e => new
+                {
+                    Id = e.StronglyId,
+                });
+            Assert.Equal("some_entities?$select=stronglyId", str);
         }
 
         [Fact]
@@ -955,7 +968,13 @@ namespace OData.Client.UnitTests
 
         [JsonPropertyName("at")]
         public DateTimeOffset At { get; set; }
+
+        [JsonPropertyName("stronglyId")]
+        public StronglyId StronglyId { get; set; }
     }
+
+    [JsonConverter(typeof(IdConverterFactory))]
+    public record StronglyId(Guid id): Id(id);
 
     public class some_entity
     {

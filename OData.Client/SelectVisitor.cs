@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+﻿using Cblx.OData.Client.Abstractions.Ids;
+using System.Linq.Expressions;
 using System.Reflection;
 namespace OData.Client;
 class SelectAndExpandVisitor : ExpressionVisitor
@@ -93,6 +94,8 @@ class SelectAndExpandVisitor : ExpressionVisitor
             (prop.PropertyType.IsValueType 
             || 
             prop.PropertyType == typeof(string))
+            ||
+            prop.PropertyType.BaseType == typeof(Id)
         )
         {
             SelectExpandPair pair = selectExpand;
