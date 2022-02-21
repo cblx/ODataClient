@@ -25,6 +25,10 @@ public partial record {name}(Guid Guid) : Id(Guid)
     public static implicit operator Guid({name}? id) => id?.Guid ?? Guid.Empty;
     public static implicit operator Guid?({name}? id) => id?.Guid;
     public static explicit operator {name}(Guid guid) => new {name}(guid);
+    public static {name} Empty {{ get; }} = new {name}(Guid.Empty);
+    public static {name} NewId() => new {name}(Guid.NewGuid());
+    public static {name} NewId(Guid guid) => new {name}(guid);
+    public static {name} NewId(string guidString) => new {name}(new Guid(guidString));
 }}";
                 context.AddSource($"{symbol.Name}Id.g.cs", source);
             }
