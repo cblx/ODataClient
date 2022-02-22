@@ -21,7 +21,7 @@ namespace Cblx.OData.Client.SourceGenerators
                 string source = $@"namespace {symbol.ContainingNamespace};
 public partial class {symbol.Name} 
 {{
-    public static string ENDPOINT = ""{endpoint}"";
+    public const string ENDPOINT = ""{endpoint}"";
     public static class Cols {{
 {string.Join("\r\n", symbol
     .GetMembers()
