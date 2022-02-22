@@ -15,7 +15,7 @@ public class ODataClient : IODataClient
         this.Options = options ?? new();
     }
 
-    public IODataSet<T> From<T>() where T : class, new()
+    public IODataSet<T> From<T>() where T : class
         => new ODataSet<T>(this, ODataClientHelpers.ResolveEndpointName<T>());
 
     public Task Post<T>(Body<T> body, Action<HttpRequestMessage> requestMessageConfiguration = null) where T : class

@@ -2,7 +2,7 @@
 using System.Linq.Expressions;
 namespace OData.Client;
 public class ODataSet<TSource> : IODataSet<TSource>
-    where TSource : class, new()
+    where TSource : class
 {
     readonly ODataClient client;
     readonly string endpoint;

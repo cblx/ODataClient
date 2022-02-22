@@ -1,7 +1,7 @@
 ﻿using System.Linq.Expressions;
 namespace OData.Client.Abstractions;
 public interface IODataSet<TSource>
-    where TSource: class, new()
+    where TSource: class
 {
     IODataSet<TSource> ConfigureRequestMessage(Action<HttpRequestMessage> requestMessageConfiguration);
 

@@ -1,5 +1,5 @@
 ﻿namespace OData.Client.Abstractions;
-public interface IODataSetSelected<TSource> where TSource : class, new()
+public interface IODataSetSelected<TSource> where TSource : class
 {
     Task<List<TProjection>> MapToListAsync<TProjection>(Func<TSource, TProjection> transform);
 
