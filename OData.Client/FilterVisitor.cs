@@ -136,7 +136,7 @@ class FilterVisitor : ExpressionVisitor
                 Query += $"{v}";
                 return true;
             case Id id:
-                Query += $"{id}";
+                Query += $"{id.Guid}";
                 return true;
         }
         return false;

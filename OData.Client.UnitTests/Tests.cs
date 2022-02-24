@@ -57,6 +57,15 @@ namespace OData.Client.UnitTests
         }
 
         [Fact]
+        public void MustBeAbleToFilterByStronglyTypedIdGuid()
+        {
+            var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+            var id = new StronglyId(Guid.NewGuid());
+            string str = set.Filter(e => e.Id == id.Guid).ToString(e => e.Id);
+            Assert.Equal($"some_entities?$select=id&$filter=id eq {id.Guid}", str);
+        }
+
+        [Fact]
         public void TblTestFilters()
         {
             var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
@@ -1039,4 +1048,6 @@ namespace OData.Client.UnitTests
         public static StronglyTipedId NewId() => new StronglyTipedId(Guid.NewGuid());
         public override string ToString() => Guid.ToString();
     }
+
+    public record CleanStronglyTypedId(Guid guid) : Id(guid);
 }
