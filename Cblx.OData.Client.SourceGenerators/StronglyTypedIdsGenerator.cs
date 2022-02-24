@@ -27,6 +27,7 @@ public partial record {name}(Guid Guid) : Id(Guid)
     public static explicit operator {name}(Guid guid) => new {name}(guid);
     public static {name} Empty {{ get; }} = new {name}(Guid.Empty);
     public static {name} NewId() => new {name}(Guid.NewGuid());
+    public override string ToString() => Guid.ToString();
 }}";
                 context.AddSource($"{symbol.Name}Id.g.cs", source);
             }
