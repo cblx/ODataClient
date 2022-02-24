@@ -30,21 +30,30 @@ namespace OData.Client.UnitTests
                 .Filter(e => e.name == "123")
                 .Filter(e => e.id == eAux.Id)
                 .ToString(e => new SomeEntity
-            {
-                Id = e.id,
-                Name = e.name,
-                Child = new SomeEntity
                 {
-                    Id = e.child.id,
-                    Name = e.child.name,
+                    Id = e.id,
+                    Name = e.name,
                     Child = new SomeEntity
                     {
-                        Id = e.child.child.id,
-                        Name = e.child.child.name
+                        Id = e.child.id,
+                        Name = e.child.name,
+                        Child = new SomeEntity
+                        {
+                            Id = e.child.child.id,
+                            Name = e.child.child.name
+                        }
                     }
-                }
-            });
+                });
             Assert.Equal("some_entities?$select=id,name&$expand=child($select=id,name;$expand=child($select=id,name))&$filter=name eq '123' and id eq 00000000-0000-0000-0000-000000000000", str);
+        }
+
+        [Fact]
+        public void MustBeAbleToFilterByStronglyTypedId()
+        {
+            var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+            var id = StronglyTipedId.NewId();
+            string str = set.Filter(e => e.Id == id).ToString(e => e.Id);
+            Assert.Equal($"some_entities?$select=id&$filter=id eq {id}", str);
         }
 
         [Fact]
@@ -90,7 +99,8 @@ namespace OData.Client.UnitTests
         public void ExpandOtherTypeChildTest()
         {
             var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
-            string str = set.ToString(e => new SomeEntity { 
+            string str = set.ToString(e => new SomeEntity
+            {
                 Name = e.otherChild.name
             });
             Assert.Equal("some_entities?$expand=otherChild($select=name)", str);
@@ -116,7 +126,8 @@ namespace OData.Client.UnitTests
                 Children = e.children.Select(c => new SomeEntity
                 {
                     Name = c.name,
-                    Children = c.children.Select(cc =>new SomeEntity { 
+                    Children = c.children.Select(cc => new SomeEntity
+                    {
                         Name = cc.name
                     })
                 })
@@ -836,20 +847,20 @@ namespace OData.Client.UnitTests
                 "some_entities");
             ODataResult<SomeEntity> result = await set
                 .SelectResultAsync(e => new SomeEntity
-            {
-                Id = e.id,
-                Name = e.name + "z",
-                Child = new SomeEntity
                 {
-                    Id = e.child.id,
-                    Name = e.child.name + "y",
+                    Id = e.id,
+                    Name = e.name + "z",
                     Child = new SomeEntity
                     {
-                        Id = e.child.child.id,
-                        Name = e.child.child.name + "x"
+                        Id = e.child.id,
+                        Name = e.child.name + "y",
+                        Child = new SomeEntity
+                        {
+                            Id = e.child.child.id,
+                            Name = e.child.child.name + "x"
+                        }
                     }
-                }
-            });
+                });
 
             Assert.Equal("rootz", result.Value.First().Name);
             Assert.Equal("childy", result.Value.First().Child.Name);
@@ -940,7 +951,7 @@ namespace OData.Client.UnitTests
     public class TblEntity
     {
         [JsonPropertyName("id")]
-        public Guid Id { get; set; }
+        public StronglyTipedId Id { get; set; }
 
         [JsonPropertyName("name")]
         public string Name { get; set; }
@@ -974,7 +985,7 @@ namespace OData.Client.UnitTests
     }
 
     [JsonConverter(typeof(IdConverterFactory))]
-    public record StronglyId(Guid id): Id(id);
+    public record StronglyId(Guid id) : Id(id);
 
     public class some_entity
     {
@@ -1016,5 +1027,16 @@ namespace OData.Client.UnitTests
         {
             return str;
         }
+    }
+
+    public record StronglyTipedId(Guid guid) : Id(guid)
+    {
+        public StronglyTipedId(string guidString) : this(new Guid(guidString)) { { } }
+        public static implicit operator Guid(StronglyTipedId? id) => id?.Guid ?? Guid.Empty;
+        public static implicit operator Guid?(StronglyTipedId? id) => id?.Guid;
+        public static explicit operator StronglyTipedId(Guid guid) => new StronglyTipedId(guid);
+        public static StronglyTipedId Empty { get; } = new StronglyTipedId(Guid.Empty);
+        public static StronglyTipedId NewId() => new StronglyTipedId(Guid.NewGuid());
+        public override string ToString() => Guid.ToString();
     }
 }

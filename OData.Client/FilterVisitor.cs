@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+﻿using Cblx.OData.Client.Abstractions.Ids;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 namespace OData.Client;
@@ -133,6 +134,9 @@ class FilterVisitor : ExpressionVisitor
                 return true;
             case object v when v.GetType() == typeof(int):
                 Query += $"{v}";
+                return true;
+            case Id id:
+                Query += $"{id}";
                 return true;
         }
         return false;
