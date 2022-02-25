@@ -89,7 +89,7 @@ class SelectAndExpandVisitor : ExpressionVisitor
         if (!str.StartsWith(paramPrefix)) { return base.VisitMember(node); }
         var prop = node.Member as PropertyInfo;
         if(prop == null) { return base.VisitMember(node); }
-        if (!prop.DeclaringType.IsClass) { return base.VisitMember(node); } // Ex: Nullable
+        if (!prop.DeclaringType.IsClass || prop.DeclaringType.IsAssignableTo(typeof(Id))) { return base.VisitMember(node); } // Ex: Nullable
         if (
             (prop.PropertyType.IsValueType 
             || 

@@ -15,7 +15,8 @@ namespace Cblx.OData.Client.SourceGenerators
                 SemanticModel model = context.Compilation.GetSemanticModel(classDeclarationSyntax.SyntaxTree);
                 var symbol = model.GetDeclaredSymbol(classDeclarationSyntax) as ITypeSymbol;
                 string name = $"{symbol.Name}Id";
-                string source = $@"using Cblx.OData.Client.Abstractions.Ids;
+                string source = $@"#nullable enable
+using Cblx.OData.Client.Abstractions.Ids;
 using System.Text.Json.Serialization;
 namespace {symbol.ContainingNamespace};
 [JsonConverter(typeof(IdConverterFactory))]
