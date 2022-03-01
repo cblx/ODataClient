@@ -2,6 +2,7 @@
 using Cblx.OData.Client.Abstractions.Ids;
 using FluentAssertions;
 using OData.Client.Abstractions;
+using OData.Client.Abstractions.Write;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -828,6 +829,14 @@ public class Tests
     }
 
     [Fact]
+    public void ShouldBeAbleToSetCastableValues()
+    {
+        Guid id = Guid.NewGuid();
+        Action exec = () => new Body<TblEntity>().Set(c => c.Id, id);
+        exec.Should().NotThrow<NullReferenceException>();
+    }
+
+    [Fact]
     public async Task TestExecution()
     {
         var data = new
@@ -959,7 +968,7 @@ public class SomeEntity
     public IEnumerable<SomeEntity> Children { get; set; }
 }
 
-[ODataTable("some_entities")]
+[ODataEndpoint("some_entities")]
 public class TblEntity
 {
     [JsonPropertyName("id")]

@@ -20,7 +20,7 @@ public class Body<T> where T : class
 
     public Body<T> Set<TValue>(Expression<Func<T, TValue>> prop, TValue value)
     {
-        var propInfo = (prop.Body as MemberExpression)?.Member as PropertyInfo;
+        var propInfo = prop.GetMemberInfo() as PropertyInfo;
         var kvp = new Set<T, TValue>(prop, value).ToKeyValuePair();
         object v = kvp.Value;
         if (IsDate(propInfo))

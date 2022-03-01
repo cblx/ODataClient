@@ -8,7 +8,7 @@ public class Set<T, TValue> : BodyElement<T> where T: class
     private readonly string propName;
     public Set(Expression<Func<T, TValue>> propExpression, object value)
     {
-        var member = (propExpression.Body as MemberExpression).Member;
+        var member = propExpression.GetMemberInfo();
         this.propName = member.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name ?? member.Name;
         this.value = value;
     }

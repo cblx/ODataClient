@@ -42,7 +42,7 @@ public class ODataRepositoryTests
         public Guid? RelId { get; set; }
     }
 
-    [ODataTable("x")]
+    [ODataEndpoint("x")]
     public class TbSaveEntity {
         [JsonPropertyName("id")]
         public Guid Id { get; set; }

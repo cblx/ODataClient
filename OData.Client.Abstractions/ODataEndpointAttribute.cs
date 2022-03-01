@@ -1,10 +1,10 @@
 ﻿namespace OData.Client.Abstractions;
 [AttributeUsage(AttributeTargets.Class)]
-public class ODataTableAttribute : Attribute
+public class ODataEndpointAttribute : Attribute
 {
     public string Endpoint { get; }
 
-    public ODataTableAttribute(string endpoint)
+    public ODataEndpointAttribute(string endpoint)
     {
         Endpoint = endpoint;
     }

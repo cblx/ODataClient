@@ -8,7 +8,7 @@ public static class ODataClientHelpers
     
     public static string ResolveEndpointName(Type type)
     {
-        string endpointName = type.GetCustomAttribute<ODataTableAttribute>()?.Endpoint;
+        string endpointName = type.GetCustomAttribute<ODataEndpointAttribute>()?.Endpoint;
         if (endpointName != null) { return endpointName; }
         endpointName = type.Name;
         if (endpointName.EndsWith("s"))
