@@ -188,11 +188,12 @@ public class ODataSet<TSource> : IODataSet<TSource>
 
     public Task<TSource> FindAsync(Guid id) => FindAsync<TSource>(id);
 
-    public Task<TEntity> FindAsync<TEntity>(Guid id) where TEntity : class
+    public Task<TEntity> FindAsync<TEntity>(Guid id) where TEntity : class => Get<TEntity>(CreateFindString<TEntity>(id));
+
+    public string CreateFindString<TEntity>(Guid id) where TEntity : class
     {
         var selectAndExpandParser = new SelectAndExpandParser<TSource, TEntity>();
-        string url = $"{endpoint}({id})?{selectAndExpandParser}";
-        return Get<TEntity>(url);
+        return $"{endpoint}({id})?{selectAndExpandParser}";
     }
 
     public override string ToString()

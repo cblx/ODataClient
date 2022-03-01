@@ -44,6 +44,52 @@ public class Tests
     }
 
     [Fact]
+    public void FindTest()
+    {
+        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        string str = set.CreateFindString<SomeEntity>(Guid.Empty);
+        str.Should().Be("some_entities(00000000-0000-0000-0000-000000000000)?$select=Id,Name&$expand=Child($select=Id,Name),Children($select=Id,Name)");
+    }
+
+    [Fact]
+    public void FindWhenJsonPropertyNameAttributesAreUseBothSides()
+    {
+        var set = new ODataSet<TbFind>(new(new HttpClient()), "some_entities");
+        string str = set.CreateFindString<EntityFind>(Guid.Empty);
+        str.Should().Be("some_entities(00000000-0000-0000-0000-000000000000)?$select=specificId&$expand=specificChild($select=specificId)");
+    }
+
+    [ODataEndpoint("some_entities")]
+    public class TbFind{
+        [JsonPropertyName("specificId")]
+        public StronglyTipedId Id { get; set; }
+
+        [JsonPropertyName("specificChild")]
+        public TbFindChild Child { get; set; }
+    }
+
+    public class TbFindChild
+    {
+        [JsonPropertyName("specificId")]
+        public StronglyTipedId Id { get; set; }
+    }
+
+    public class EntityFind
+    {
+        [JsonPropertyName("specificId")]
+        public StronglyTipedId Id { get; set; }
+
+        [JsonPropertyName("specificChild")]
+        public EntityChildFind Child { get; set; }
+    }
+
+    public class EntityChildFind
+    {
+        [JsonPropertyName("specificId")]
+        public StronglyTipedId Id { get; set; }
+    }
+
+    [Fact]
     public void MustBeAbleToFilterByStronglyTypedId()
     {
         var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
