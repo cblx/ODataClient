@@ -44,14 +44,6 @@ public class Tests
     }
 
     [Fact]
-    public void FindTest()
-    {
-        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
-        string str = set.CreateFindString<SomeEntity>(Guid.Empty);
-        str.Should().Be("some_entities(00000000-0000-0000-0000-000000000000)?$select=Id,Name&$expand=Child($select=Id,Name),Children($select=Id,Name)");
-    }
-
-    [Fact]
     public void FindWhenJsonPropertyNameAttributesAreUseBothSides()
     {
         var set = new ODataSet<TbFind>(new(new HttpClient()), "some_entities");
@@ -210,6 +202,27 @@ public class Tests
             })
         });
         Assert.Equal("some_entities?$expand=children($select=name;$expand=children($select=name))", str);
+    }
+
+    [Fact]
+    public void TblSubExpandCollectionsWithOrderByAndTakeTest()
+    {
+        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        string str = set.ToString(e => new SomeEntity
+        {
+            Children = e.Children
+                .OrderByDescending(e => e.PartyDay)
+                .Take(1)
+                .Select(c => new SomeEntity
+                {
+                    Name = c.Name,
+                    Children = c.Children.Select(cc => new SomeEntity
+                    {
+                        Name = cc.Name
+                    })
+                })
+        });
+        Assert.Equal("some_entities?$expand=children($select=name,partyDay;$orderby=partyDay desc;$top=1;$expand=children($select=name))", str);
     }
 
     [Fact]
