@@ -31,6 +31,12 @@ public partial record {name}(Guid Guid) : Id(Guid)
     public override string ToString() => Guid.ToString();
 }}";
                 context.AddSource($"{symbol.Name}Id.g.cs", source);
+
+                source = $@"using Cblx.OData.Client.Abstractions.Ids;
+namespace {symbol.ContainingNamespace};
+public partial class {symbol.Name} : IHasStronglyTypedId<{symbol.Name}Id> {{}}
+";
+                context.AddSource($"{symbol.Name}.g.cs", source);
             }
         }
 

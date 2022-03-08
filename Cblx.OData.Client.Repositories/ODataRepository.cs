@@ -1,4 +1,5 @@
-﻿using OData.Client.Abstractions;
+﻿using Cblx.OData.Client.Abstractions.Ids;
+using OData.Client.Abstractions;
 using OData.Client.Abstractions.Write;
 using System;
 using System.Collections.Generic;
@@ -9,9 +10,20 @@ using System.Threading.Tasks;
 
 namespace Cblx.OData.Client
 {
-    public class ODataRepository<TEntity,TTable>
-        where TEntity: class
-        where TTable: class, new()
+    public class ODataRepository<TEntity, TTable, TId> : ODataRepository<TEntity, TTable>
+        where TEntity : class
+        where TTable : class, IHasStronglyTypedId<TId>, new()
+        where TId : Id
+    {
+        public ODataRepository(IODataClient oDataClient) : base(oDataClient){}
+
+        public Task<TEntity> Get(TId id) => Get<TEntity>(id.Guid);
+        public Task<T> Get<T>(TId id) where T: class, TEntity => Get<T>(id.Guid);
+    }
+
+    public class ODataRepository<TEntity, TTable>
+    where TEntity : class
+    where TTable : class, new()
     {
         readonly protected ChangeTracker changeTracker = new();
         readonly protected IODataClient oDataClient;
@@ -22,7 +34,7 @@ namespace Cblx.OData.Client
         }
 
         protected async Task<T> Get<T>(Guid id)
-          where T : class, TEntity, new()
+          where T : class, TEntity
         {
             T e = await oDataClient.From<TTable>().FindAsync<T>(id);
             if (e != null) { changeTracker.Attach(e); }
