@@ -226,7 +226,7 @@ class SelectAndExpandVisitor : ExpressionVisitor
             {
                 parts.Add($"$orderby={orderBy}");
             }
-            if (!string.IsNullOrWhiteSpace(orderBy))
+            if (!string.IsNullOrWhiteSpace(top))
             {
                 parts.Add($"$top={top}");
             }
