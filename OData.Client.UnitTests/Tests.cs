@@ -746,7 +746,7 @@ public class Tests
         {
             Children = e.children.Where(c => c.name == "x").Select(c => new SomeEntity { Id = c.id })
         });
-        Assert.Equal("some_entities?$expand=children($select=id;$filter=name eq 'x')", str);
+        Assert.Equal("some_entities?$expand=children($select=id,name;$filter=name eq 'x')", str);
     }
 
     [Fact]
@@ -758,7 +758,7 @@ public class Tests
         {
             Children = e.Children.Where(c => c.Name == "x").Select(c => new SomeEntity { Id = c.Id })
         });
-        Assert.Equal("some_entities?$expand=children($select=id;$filter=name eq 'x')", str);
+        Assert.Equal("some_entities?$expand=children($select=id,name;$filter=name eq 'x')", str);
     }
 
     [Fact]
