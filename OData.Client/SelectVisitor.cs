@@ -68,7 +68,8 @@ class SelectAndExpandVisitor : ExpressionVisitor
                 {
                     var filterVisitor = new FilterVisitor(false);
                     filterVisitor.Visit(callExpression.Arguments[1]);
-                    subExpandFilter = filterVisitor.Query;
+                    subExpandFilter = subExpandFilter == null ? filterVisitor.Query : $"{subExpandFilter} and {filterVisitor.Query}";
+                    preSelect.AddRange(filterVisitor.VisitedFields);
                 }
                 if(callExpression.Method.Name == "OrderBy")
                 {

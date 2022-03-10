@@ -212,6 +212,8 @@ public class Tests
         {
             Children = e.Children
                 .OrderByDescending(e => e.PartyDay)
+                .Where(e => e.Active == true)
+                .Where(e => e.Age > 0)
                 .Take(1)
                 .Select(c => new SomeEntity
                 {
@@ -222,7 +224,8 @@ public class Tests
                     })
                 })
         });
-        Assert.Equal("some_entities?$expand=children($select=name,partyDay;$orderby=partyDay desc;$top=1;$expand=children($select=name))", str);
+        str.Should()
+           .Be("some_entities?$expand=children($select=active,age,name,partyDay;$filter=age gt 0 and active eq true;$orderby=partyDay desc;$top=1;$expand=children($select=name))");
     }
 
     [Fact]

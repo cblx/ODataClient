@@ -6,13 +6,13 @@ namespace OData.Client;
 class FilterVisitor : ExpressionVisitor
 {
     public string Query { get; set; } = "";
+    public HashSet<string> VisitedFields { get; } = new HashSet<string>();
     ParameterExpression parameter;
     readonly bool keepParamName;
     public FilterVisitor(bool keepParamName)
     {
         this.keepParamName = keepParamName;
     }
-    //bool writingOrs = false;
 
     public override Expression Visit(Expression node)
     {
@@ -153,7 +153,9 @@ class FilterVisitor : ExpressionVisitor
             if (keepParamName) {
                 fieldPath = new string[] { parameter.Name }.Union(fieldPath);
             }
-            Query += string.Join('/', fieldPath);
+            string field = string.Join('/', fieldPath);
+            VisitedFields.Add(field);
+            Query += field;
             return node;
         }
 
