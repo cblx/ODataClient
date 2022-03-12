@@ -17,6 +17,7 @@ namespace Cblx.OData.Client.SourceGenerators
                 string name = $"{symbol.Name}Id";
                 string source = $@"#nullable enable
 using Cblx.OData.Client.Abstractions.Ids;
+using System.ComponentModel;
 using System.Text.Json.Serialization;
 namespace {symbol.ContainingNamespace};
 [TypeConverter(typeof(IdTypeConverter<{name}>))]
