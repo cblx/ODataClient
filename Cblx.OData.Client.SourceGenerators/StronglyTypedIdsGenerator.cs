@@ -19,6 +19,7 @@ namespace Cblx.OData.Client.SourceGenerators
 using Cblx.OData.Client.Abstractions.Ids;
 using System.Text.Json.Serialization;
 namespace {symbol.ContainingNamespace};
+[TypeConverter(typeof(IdTypeConverter<{name}>))]
 [JsonConverter(typeof(IdConverterFactory))]
 public partial record {name}(Guid Guid) : Id(Guid)
 {{
