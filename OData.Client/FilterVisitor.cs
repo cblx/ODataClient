@@ -58,7 +58,7 @@ class FilterVisitor : ExpressionVisitor
                     var subVisitor = new FilterVisitor(keepParamName: true);
                     var subQuery = node.Arguments[1] as LambdaExpression;
                     subVisitor.Visit(subQuery);
-                    Query += $"{field}/any({subQuery.Parameters[0].Name}:{subVisitor.Query})";
+                    Query += $"{field}/any({subQuery.Parameters[0].Name}%3A{subVisitor.Query})";
                     break;
                 default:
                     throw new Exception($"Método {node.Method.Name} não suportado");
