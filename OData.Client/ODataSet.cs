@@ -82,10 +82,10 @@ public class ODataSet<TSource> : IODataSet<TSource>
     {
         string url = this.ToString(selectExpression);
         ODataResult<TSource> result = await Get(url);
-        if (!client.Options.DisableNullNavigationPropertiesProtectionInProjections)
-        {
-            InstantiateNullNavigationProperties(result.Value);
-        }
+        //if (!client.Options.DisableNullNavigationPropertiesProtectionInProjections)
+        //{
+        //    InstantiateNullNavigationProperties(result.Value);
+        //}
         var project = selectExpression.Compile();
         try
         {
@@ -105,14 +105,14 @@ public class ODataSet<TSource> : IODataSet<TSource>
         }
     }
 
-    void InstantiateNullNavigationProperties(IEnumerable<TSource> items)
-    {
-        foreach(TSource item in items)
-        {
-            Type itemType = item.GetType();
+    //void InstantiateNullNavigationProperties(IEnumerable<TSource> items)
+    //{
+    //    foreach(TSource item in items)
+    //    {
+    //        Type itemType = item.GetType();
 
-        }
-    }
+    //    }
+    //}
 
     public async Task<TProjection> SelectFirstOrDefaultAsync<TProjection>(Expression<Func<TSource, TProjection>> selectExpression)
     {

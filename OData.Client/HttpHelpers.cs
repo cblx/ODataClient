@@ -2,6 +2,7 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
+
 namespace OData.Client;
 record RequestParameters(
     ODataClient ODataClient,
@@ -19,9 +20,21 @@ record RequestParametersWithValue(
 
 static class HttpHelpers
 {
+    static readonly JsonSerializerOptions _jsonSerializerOptionsForWrite = new()
+    {
+        WriteIndented = true
+    };
+
+    static readonly DateOnlyJsonConverter _dateOnlyJsonConverter = new();
+
+    static HttpHelpers()
+    {
+        _jsonSerializerOptionsForWrite.Converters.Add(_dateOnlyJsonConverter);
+    }
+
     public static async Task Patch(RequestParametersWithValue parameters)
     {
-        string jsonValue = Serialize(parameters.Value);
+        string jsonValue = SerializeForWrite(parameters.Value);
         StringBuilder sbLog = new();
         if (parameters.ShowLog)
         {
@@ -46,7 +59,7 @@ static class HttpHelpers
 
     public static async Task Post(RequestParametersWithValue parameters)
     {
-        string jsonValue = Serialize(parameters.Value);
+        string jsonValue = SerializeForWrite(parameters.Value);
         StringBuilder sbLog = new();
         if (parameters.ShowLog)
         {
@@ -70,14 +83,7 @@ static class HttpHelpers
         ThrowErrorIfNotOk(responseMessage, json);
     }
 
-    static string Serialize<TValue>(TValue value)
-    {
-        var options = new JsonSerializerOptions
-        {
-            WriteIndented = true,
-        };
-        return JsonSerializer.Serialize(value, options);
-    }
+    static string SerializeForWrite<TValue>(TValue value) => JsonSerializer.Serialize(value, _jsonSerializerOptionsForWrite);
 
     public static async Task Delete(RequestParameters parameters)
     {
@@ -115,7 +121,7 @@ static class HttpHelpers
         await ThrowErrorIfNotOk(responseMessage);
 
         var jsonSerializerOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-
+        jsonSerializerOptions.Converters.Add(_dateOnlyJsonConverter);
         string json = "*JSON FROM STREAM*";
         try
         {
@@ -168,9 +174,11 @@ static class HttpHelpers
         string formattedResponseText;
         try
         {
+            var options = new JsonSerializerOptions { WriteIndented = true };
+            options.Converters.Add(_dateOnlyJsonConverter);
             formattedResponseText = string.Join("",
                     JsonSerializer
-                    .Serialize(JsonSerializer.Deserialize<Dictionary<string, object>>(responseText), new JsonSerializerOptions { WriteIndented = true })
+                    .Serialize(JsonSerializer.Deserialize<Dictionary<string, object>>(responseText), options)
                     .Take(limit)
                     );
         }

@@ -771,7 +771,7 @@ public class Tests
             {
                 Id = e.id,
             });
-        Assert.Equal("some_entities?$select=id&$filter=children/any(c:(c/name eq 'hey' or c/name eq 'ho'))", str);
+        Assert.Equal("some_entities?$select=id&$filter=children/any(c%3A(c/name eq 'hey' or c/name eq 'ho'))", str);
     }
 
     [Fact]
@@ -784,7 +784,7 @@ public class Tests
             {
                 Id = e.Id,
             });
-        Assert.Equal("some_entities?$select=id&$filter=children/any(c:(c/name eq 'hey' or c/name eq 'ho'))", str);
+        Assert.Equal("some_entities?$select=id&$filter=children/any(c%3A(c/name eq 'hey' or c/name eq 'ho'))", str);
     }
 
     [Fact]
@@ -901,6 +901,7 @@ public class Tests
     [Fact]
     public async Task TestExecution()
     {
+        var atOnly = new DateOnly(1983, 5, 23);
         var data = new
         {
             value = new[] {
@@ -908,6 +909,7 @@ public class Tests
                   {
                       id = Guid.NewGuid(),
                       name = "root",
+                      atOnly = atOnly,
                       child = new some_entity
                       {
                           id = Guid.NewGuid(),
@@ -921,9 +923,10 @@ public class Tests
                   }
             }
         };
-
+        var options = new JsonSerializerOptions();
+        options.Converters.Add(new DateOnlyJsonConverter());
         var set = new ODataSet<some_entity>(new(new HttpClient(
-            new MockHttpMessageHandler(JsonSerializer.Serialize(data)))
+            new MockHttpMessageHandler(JsonSerializer.Serialize(data, options)))
         {
             BaseAddress = new Uri("http://localhost")
         }),
@@ -933,6 +936,7 @@ public class Tests
             {
                 Id = e.id,
                 Name = e.name + "z",
+                AtOnly = e.atOnly,
                 Child = new SomeEntity
                 {
                     Id = e.child.id,
@@ -945,6 +949,7 @@ public class Tests
                 }
             });
 
+        result.Value.First().AtOnly.Should().Be(atOnly);
         Assert.Equal("rootz", result.Value.First().Name);
         Assert.Equal("childy", result.Value.First().Child.Name);
         Assert.Equal("grandchildx", result.Value.First().Child.Child.Name);
@@ -1025,6 +1030,8 @@ public class SomeEntity
 
     public string Name { get; set; }
 
+    public DateOnly? AtOnly { get; set; }
+
     public SomeEntity Child { get; set; }
 
     public IEnumerable<SomeEntity> Children { get; set; }
@@ -1087,6 +1094,8 @@ public class some_entity
     public int age { get; set; }
 
     public int? nullableInt { get; set; }
+
+    public DateOnly atOnly { get; set; }
 
     public DateTimeOffset at { get; set; }
 
