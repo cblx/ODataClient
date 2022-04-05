@@ -1,6 +1,7 @@
 ﻿using OData.Client.Abstractions;
 using System.Linq.Expressions;
 namespace OData.Client;
+
 public class ODataSet<TSource> : IODataSet<TSource>
     where TSource : class
 {
@@ -37,7 +38,7 @@ public class ODataSet<TSource> : IODataSet<TSource>
         return new ODataSet<TSource>(this, options.Clone().Add(option, value));
     }
 
-    Task<ODataResult<TSource>> Get(string url) => Get<ODataResult<TSource>>(url);
+    async Task<ODataResult<TSource>> Get(string url) => await Get<ODataResultInternal<TSource>>(url);
 
     Task<TResult> Get<TResult>(string url) => HttpHelpers.Get<TResult>(new(client, requestMessageConfiguration, url));
 
@@ -71,11 +72,11 @@ public class ODataSet<TSource> : IODataSet<TSource>
         return Get(url);
     }
 
-    public Task<ODataResult<TEntity>> ToResultAsync<TEntity>() where TEntity : class
+    public async Task<ODataResult<TEntity>> ToResultAsync<TEntity>() where TEntity : class
     {
         var selectAndExpandParser = new SelectAndExpandParser<TSource, TEntity>();
         string url = AppendOptions(endpoint, selectAndExpandParser.ToString());
-        return Get<ODataResult<TEntity>>(url);
+        return await Get<ODataResultInternal<TEntity>>(url);
     }
 
     public async Task<ODataResult<TProjection>> SelectResultAsync<TProjection>(Expression<Func<TSource, TProjection>> selectExpression)
