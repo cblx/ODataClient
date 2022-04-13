@@ -511,6 +511,19 @@ public class Tests
     }
 
     [Fact]
+    public void NotContainsTest()
+    {
+        var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
+        string str = set
+            .Filter(e => !e.name.Contains("123"))
+            .ToString(e => new SomeEntity
+            {
+                Id = e.id,
+            });
+        Assert.Equal("some_entities?$select=id&$filter=not contains(name,'123')", str);
+    }
+
+    [Fact]
     public void TblContainsTest()
     {
         var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
@@ -772,6 +785,20 @@ public class Tests
                 Id = e.id,
             });
         Assert.Equal("some_entities?$select=id&$filter=children/any()", str);
+    }
+
+
+    [Fact]
+    public void NotAnyTest()
+    {
+        var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
+        string str = set
+            .Filter(e => !e.children.Any())
+            .ToString(e => new SomeEntity
+            {
+                Id = e.id,
+            });
+        Assert.Equal("some_entities?$select=id&$filter=not children/any()", str);
     }
 
     [Fact]

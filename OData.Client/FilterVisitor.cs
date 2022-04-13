@@ -23,19 +23,6 @@ class FilterVisitor : ExpressionVisitor
         return base.Visit(node);
     }
 
-
-    protected override Expression VisitUnary(UnaryExpression node)
-    {
-        switch (node.NodeType)
-        {
-            case ExpressionType.Convert:
-                Visit(node.Operand);
-                break;
-
-        }
-        return node;
-    }
-
     protected override Expression VisitMethodCall(MethodCallExpression node)
     {
         string str = node.ToString();
@@ -192,6 +179,21 @@ class FilterVisitor : ExpressionVisitor
                     return Expression.Constant(value);
                 }
             }
+        }
+        return node;
+    }
+    protected override Expression VisitUnary(UnaryExpression node)
+    {
+        switch (node.NodeType)
+        {
+            case ExpressionType.Not:
+                Query += "not ";
+                Visit(node.Operand);
+                break;
+            case ExpressionType.Convert:
+                Visit(node.Operand);
+                break;
+
         }
         return node;
     }
