@@ -766,6 +766,19 @@ public class Tests
     {
         var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
         string str = set
+            .Filter(e => e.children.Any())
+            .ToString(e => new SomeEntity
+            {
+                Id = e.id,
+            });
+        Assert.Equal("some_entities?$select=id&$filter=children/any()", str);
+    }
+
+    [Fact]
+    public void AnyWithFilterTest()
+    {
+        var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
+        string str = set
             .Filter(e => e.children.Any(c => c.name == "hey" || c.name == "ho"))
             .ToString(e => new SomeEntity
             {
@@ -775,7 +788,7 @@ public class Tests
     }
 
     [Fact]
-    public void TblAnyTest()
+    public void TblAnyWithFilterTest()
     {
         var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
         string str = set
