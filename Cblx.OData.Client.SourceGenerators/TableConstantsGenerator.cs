@@ -30,7 +30,7 @@ public partial class {symbol.Name}
     .GetMembers()
     .Where(m => !m.Name.EndsWith("_Formatted"))
     .Where(m => m.Kind == SymbolKind.Property)
-    .Select(m => $@"        public const string {m.Name} = ""{m.GetAttributes().FirstOrDefault()?.ConstructorArguments[0].Value ?? m.Name}"";"))}
+    .Select(m => $@"        public const string {m.Name} = ""{m.GetAttributes().FirstOrDefault(attr => attr.AttributeClass?.Name == "JsonPropertyNameAttribute")?.ConstructorArguments[0].Value ?? m.Name}"";"))}
     }}
 }}
 ";
