@@ -9,6 +9,12 @@ public class ODataClient : IODataClient
     public ODataClientOptions Options { get; private set; }
     public HttpMessageInvoker Invoker { get; private set; }
 
+    public ODataClient(HttpClient httpClient, ODataClientOptions? options = null)
+    {
+        Invoker = httpClient;
+        Options = options ?? new();
+    }
+
     public ODataClient(HttpMessageInvoker invoker, ODataClientOptions options = null)
     {
         this.Invoker = invoker;
