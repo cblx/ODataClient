@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Cblx.OData.Client.Repositories.Abstractions\Cblx.OData.Client.Repositories.Abstractions.csproj" />
+      <ProjectReference Include="..\Cblx.OData.Client.Repositories\Cblx.OData.Client.Repositories.csproj" />
+      <ProjectReference Include="..\Cblx.OData.Client.SourceGenerators\Cblx.OData.Client.SourceGenerators.csproj" />
+      <ProjectReference Include="..\OData.Client.Abstractions\Cblx.OData.Client.Abstractions.csproj" />
+      <ProjectReference Include="..\OData.Client\Cblx.OData.Client.csproj" />
+    </ItemGroup>
+
+</Project>
