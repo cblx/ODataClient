@@ -24,7 +24,7 @@ public static class ServicesExtensions
         {
             var dynamicsAuthenticator = sp.GetService<DynamicsAuthenticator>()!;
             var onCreateClientContext = new OnCreateClientContext();
-            
+            options.OnCreateClient?.DynamicInvoke(onCreateClientContext);
             dynamicsAuthenticator.AuthenticateHttpClient(client, onCreateClientContext.OverrideResourceUrl).GetAwaiter().GetResult();
         });
         services.AddScoped<IODataClient, ODataClient>(sp =>
