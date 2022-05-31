@@ -14,7 +14,7 @@ class FilterVisitor : ExpressionVisitor
         this.keepParamName = keepParamName;
     }
 
-    public override Expression Visit(Expression node)
+    public override Expression? Visit(Expression? node)
     {
         if (node is LambdaExpression lambdaExpression)
         {
@@ -76,7 +76,7 @@ class FilterVisitor : ExpressionVisitor
         return base.VisitConstant(node);
     }
 
-    bool WriteValue(object o)
+    bool WriteValue(object? o)
     {
         if (o == null)
         {

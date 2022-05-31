@@ -9,7 +9,7 @@ public class ODataClient : IODataClient
     public ODataClientOptions Options { get; private set; }
     public HttpMessageInvoker Invoker { get; private set; }
 
-    public ODataClient(HttpMessageInvoker invoker, ODataClientOptions options = null)
+    public ODataClient(HttpMessageInvoker invoker, ODataClientOptions? options = null)
     {
         this.Invoker = invoker;
         this.Options = options ?? new();
@@ -18,7 +18,7 @@ public class ODataClient : IODataClient
     public IODataSet<T> From<T>() where T : class
         => new ODataSet<T>(this, ODataClientHelpers.ResolveEndpointName<T>());
 
-    public Task Post<T>(Body<T> body, Action<HttpRequestMessage> requestMessageConfiguration = null) where T : class
+    public Task Post<T>(Body<T> body, Action<HttpRequestMessage>? requestMessageConfiguration = null) where T : class
         => HttpHelpers.Post(
             new(
                 this,
@@ -28,7 +28,7 @@ public class ODataClient : IODataClient
             )
         );
 
-    public Task Patch<T>(object id, Body<T> body, Action<HttpRequestMessage> requestMessageConfiguration = null) where T : class
+    public Task Patch<T>(object id, Body<T> body, Action<HttpRequestMessage>? requestMessageConfiguration = null) where T : class
         => HttpHelpers.Patch(
             new(
                 this,
@@ -38,7 +38,7 @@ public class ODataClient : IODataClient
             )
         );
 
-    public Task Delete<T>(object id, Action<HttpRequestMessage> requestMessageConfiguration = null)
+    public Task Delete<T>(object id, Action<HttpRequestMessage>? requestMessageConfiguration = null)
         => HttpHelpers.Delete(
             new(
                 this,
@@ -47,7 +47,7 @@ public class ODataClient : IODataClient
             )
         );
 
-    public Task Unbind<T>(object id, string nav, Action<HttpRequestMessage> requestMessageConfiguration = null)
+    public Task Unbind<T>(object id, string nav, Action<HttpRequestMessage>? requestMessageConfiguration = null)
         => HttpHelpers.Delete(
             new(
                 this,
@@ -56,7 +56,7 @@ public class ODataClient : IODataClient
             )
         );
 
-    public Task Unbind<T, TBind>(object id, Expression<Func<T, TBind>> navExpression, Action<HttpRequestMessage> requestMessageConfiguration = null)
+    public Task Unbind<T, TBind>(object id, Expression<Func<T, TBind>> navExpression, Action<HttpRequestMessage>? requestMessageConfiguration = null)
         where TBind : class
-        => Unbind<T>(id, (navExpression.Body as MemberExpression).Member.Name, requestMessageConfiguration);
+        => Unbind<T>(id, (navExpression.Body as MemberExpression)!.Member.Name, requestMessageConfiguration);
 }

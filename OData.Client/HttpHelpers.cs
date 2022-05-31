@@ -6,11 +6,11 @@ using System.Text.Json;
 namespace OData.Client;
 record RequestParameters(
     ODataClient ODataClient,
-    Action<HttpRequestMessage> RequestMessageConfiguration,
+    Action<HttpRequestMessage>? RequestMessageConfiguration,
     string Url)
 {
-    internal HttpMessageInvoker Invoker { get => ODataClient.Invoker; }
-    internal bool ShowLog { get => ODataClient.Options.ShowLog; }
+    internal HttpMessageInvoker Invoker => ODataClient.Invoker;
+    internal bool ShowLog => ODataClient.Options.ShowLog;
 };
 
 record RequestParametersWithValue(
@@ -20,16 +20,16 @@ record RequestParametersWithValue(
 
 static class HttpHelpers
 {
-    static readonly JsonSerializerOptions _jsonSerializerOptionsForWrite = new()
+    static readonly JsonSerializerOptions JsonSerializerOptionsForWrite = new()
     {
         WriteIndented = true
     };
 
-    static readonly DateOnlyJsonConverter _dateOnlyJsonConverter = new();
+    static readonly DateOnlyJsonConverter DateOnlyJsonConverter = new();
 
     static HttpHelpers()
     {
-        _jsonSerializerOptionsForWrite.Converters.Add(_dateOnlyJsonConverter);
+        JsonSerializerOptionsForWrite.Converters.Add(DateOnlyJsonConverter);
     }
 
     public static async Task Patch(RequestParametersWithValue parameters)
@@ -83,7 +83,7 @@ static class HttpHelpers
         ThrowErrorIfNotOk(responseMessage, json);
     }
 
-    static string SerializeForWrite<TValue>(TValue value) => JsonSerializer.Serialize(value, _jsonSerializerOptionsForWrite);
+    static string SerializeForWrite<TValue>(TValue value) => JsonSerializer.Serialize(value, JsonSerializerOptionsForWrite);
 
     public static async Task Delete(RequestParameters parameters)
     {
@@ -107,7 +107,7 @@ static class HttpHelpers
         ThrowErrorIfNotOk(responseMessage, json);
     }
 
-    public static async Task<TResult> Get<TResult>(RequestParameters parameters)
+    public static async Task<TResult?> Get<TResult>(RequestParameters parameters)
     {
         StringBuilder sbLog = new();
         if (parameters.ShowLog)
@@ -121,7 +121,7 @@ static class HttpHelpers
         await ThrowErrorIfNotOk(responseMessage);
 
         var jsonSerializerOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-        jsonSerializerOptions.Converters.Add(_dateOnlyJsonConverter);
+        jsonSerializerOptions.Converters.Add(DateOnlyJsonConverter);
         string json = "*JSON FROM STREAM*";
         try
         {
@@ -151,7 +151,7 @@ static class HttpHelpers
         sbLog.AppendLine("########################");
         sbLog.AppendLine("# ODataClient");
         sbLog.AppendLine("#");
-        sbLog.AppendLine("# TOKEN: " + (invoker as HttpClient).DefaultRequestHeaders.Authorization?.Parameter);
+        sbLog.AppendLine("# TOKEN: " + (invoker as HttpClient)?.DefaultRequestHeaders.Authorization?.Parameter);
         sbLog.AppendLine("#");
         sbLog.AppendLine($"# {method}");
         sbLog.AppendLine("#");
@@ -175,7 +175,7 @@ static class HttpHelpers
         try
         {
             var options = new JsonSerializerOptions { WriteIndented = true };
-            options.Converters.Add(_dateOnlyJsonConverter);
+            options.Converters.Add(DateOnlyJsonConverter);
             formattedResponseText = string.Join("",
                     JsonSerializer
                     .Serialize(JsonSerializer.Deserialize<Dictionary<string, object>>(responseText), options)
@@ -217,13 +217,16 @@ static class HttpHelpers
 
     static void ThrowODataErrorIfItFits(string json)
     {
-        ODataError error = null;
+        ODataError? error = null;
 
         try
         {
             error = JsonSerializer.Deserialize<ODataError>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         }
-        catch { }
+        catch
+        {
+            // ignored
+        }
 
         if (error?.Error is not null)
         {
@@ -235,11 +238,11 @@ static class HttpHelpers
 
 public class ODataError
 {
-    public ODataErrorCodeMessage Error { get; set; }
+    public ODataErrorCodeMessage? Error { get; set; }
 }
 
 public class ODataErrorCodeMessage
 {
-    public string Code { get; set; }
-    public string Message { get; set; }
+    public string? Code { get; set; }
+    public string? Message { get; set; }
 }
