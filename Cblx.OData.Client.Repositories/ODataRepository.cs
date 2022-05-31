@@ -17,8 +17,8 @@ namespace Cblx.OData.Client
     {
         public ODataRepository(IODataClient oDataClient) : base(oDataClient){}
 
-        public Task<TEntity> Get(TId id) => Get<TEntity>(id.Guid);
-        public Task<T> Get<T>(TId id) where T: class, TEntity => Get<T>(id.Guid);
+        public Task<TEntity?> Get(TId id) => Get<TEntity>(id.Guid);
+        public Task<T?> Get<T>(TId id) where T: class, TEntity => Get<T>(id.Guid);
     }
 
     public class ODataRepository<TEntity, TTable>
@@ -33,7 +33,7 @@ namespace Cblx.OData.Client
             this.oDataClient = oDataClient;
         }
 
-        protected async Task<T> Get<T>(Guid id)
+        protected async Task<T?> Get<T>(Guid id)
           where T : class, TEntity
         {
             T e = await oDataClient.From<TTable>().FindAsync<T>(id);
@@ -56,7 +56,7 @@ namespace Cblx.OData.Client
             IEnumerable<Change> changes = changeTracker.GetChanges();
             foreach (Change change in changes)
             {
-                await SaveChangesFor(change.Entity as TEntity);
+                await SaveChangesFor((change.Entity as TEntity)!);
             }
 
         }
@@ -64,7 +64,11 @@ namespace Cblx.OData.Client
         async Task SaveChangesFor(TEntity entity)
         {
             Guid? id = changeTracker.GetId(entity);
-            Change change = changeTracker.GetChange(id.Value);
+            if (id == null)
+            {
+                throw new Exception("Could not find Id for entity");
+            }
+            Change? change = changeTracker.GetChange(id.Value);
             if (change == null) { return; }
 
             if (change.ChangeType == ChangeType.Remove)

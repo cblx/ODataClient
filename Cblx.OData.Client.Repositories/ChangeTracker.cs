@@ -27,7 +27,7 @@ namespace Cblx.OData.Client
             if (id == null || id == Guid.Empty)
             {
                 InitId(o);
-                id = GetId(o);
+                id = GetId(o)!;
             }
             entities.Add(id.Value, o);
         }
@@ -35,17 +35,26 @@ namespace Cblx.OData.Client
         public void Remove(object o)
         {
             Guid? id = GetId(o);
+            if (id is null)
+            {
+                throw new Exception("Could not find Id for entity in remove");
+            }
             markedForRemove.Add(id.Value);
         }
 
-        public void Attach(object o)
+        public void Attach(object? o)
         {
+            if(o is null){ return; }
             Guid? id = GetId(o);
+            if (id is null)
+            {
+                throw new Exception("Could not find Id for attached entity");
+            }
             states.Add(id.Value, JsonSerializer.Serialize(o, o.GetType(), options));
             entities.Add(id.Value, o);
         }
 
-        public void AttachRange(IEnumerable<object> items)
+        public void AttachRange(IEnumerable<object?> items)
         {
             foreach (var o in items)
             {
@@ -55,14 +64,14 @@ namespace Cblx.OData.Client
 
         internal PropertyInfo GetIdProp(object entity)
         {
-            PropertyInfo idProp = entity.GetType().GetProperty("Id");
+            PropertyInfo? idProp = entity.GetType().GetProperty("Id");
             if(idProp is null) { throw new Exception("Entity class must have an 'Id' property"); }
             return idProp;
         }
 
         internal Guid? GetId(object entity)
         {
-            object val = GetIdProp(entity).GetValue(entity);
+            object? val = GetIdProp(entity).GetValue(entity);
             if(val == null) { return null; }
             if(val is Guid guid) { return guid; }
             return JsonSerializer.Deserialize<Guid>(JsonSerializer.Serialize(val));
@@ -95,10 +104,10 @@ namespace Cblx.OData.Client
             }
         }
 
-        public Change GetChange(Guid id)
+        public Change? GetChange(Guid id)
         {
             IEnumerable<Change> changes = GetChanges();
-            Change change = changes.FirstOrDefault(c => c.Id.Equals(id));
+            Change? change = changes.FirstOrDefault(c => c.Id.Equals(id));
             return change;
         }
 
