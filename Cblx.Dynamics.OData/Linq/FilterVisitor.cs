@@ -1,5 +1,4 @@
 ﻿using Cblx.OData.Client.Abstractions.Ids;
-using OData.Client;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
@@ -33,7 +32,7 @@ class FilterVisitor : ExpressionVisitor
             var memberExpression = (node.Object ?? node.Arguments[0]) as MemberExpression;
             string field = string.Join(
                 '/',
-                memberExpression.CreateMemberFullStack().Select(m => m.GetFieldName())
+                memberExpression!.CreateMemberFullStack().Select(m => m.GetFieldName())
             );
             switch (node.Method.Name)
             {
@@ -52,7 +51,7 @@ class FilterVisitor : ExpressionVisitor
                     {
                         var subQuery = node.Arguments[1] as LambdaExpression;
                         subVisitor.Visit(subQuery);
-                        Query += $"{field}/any({subQuery.Parameters[0].Name}%3A{subVisitor.Query})";
+                        Query += $"{field}/any({subQuery!.Parameters[0].Name}%3A{subVisitor.Query})";
                     }
                     break;
                 default:
@@ -88,7 +87,7 @@ class FilterVisitor : ExpressionVisitor
 
         if (o.GetType().IsGenericType && o.GetType().GetGenericTypeDefinition() == typeof(Nullable<>))
         {
-            o = o.GetType().GetProperty("Value").GetValue(o, null);
+            o = o.GetType().GetProperty("Value")?.GetValue(o, null);
         }
         switch (o)
         {
@@ -108,7 +107,7 @@ class FilterVisitor : ExpressionVisitor
                 Query += $"'{str}'";
                 return true;
             case object v when v.GetType() == typeof(bool):
-                Query += v.ToString().ToLower();
+                Query += v.ToString()?.ToLower();
                 return true;
             case object v when v is DateTimeOffset dtoff:
                 string strDateTimeOffset = $"{dtoff:O}";
@@ -140,14 +139,14 @@ class FilterVisitor : ExpressionVisitor
     protected override Expression VisitMember(MemberExpression node)
     {
         string str = node.ToString();
-        string paramPrefix = $"{parameter.Name}.";
+        string paramPrefix = $"{parameter?.Name}.";
         if (str.StartsWith(paramPrefix))
         {
-            IEnumerable<string> fieldPath = node.CreateMemberFullStack().Select(m => m.GetFieldName());
+            IEnumerable<string?> fieldPath = node.CreateMemberFullStack().Select(m => m.GetFieldName());
             var sb = new StringBuilder();
             if (keepParamName)
             {
-                fieldPath = new string[] { parameter.Name }.Union(fieldPath);
+                fieldPath = new string?[] { parameter?.Name }.Union(fieldPath);
             }
             string field = string.Join('/', fieldPath);
             VisitedFields.Add(field);
@@ -158,7 +157,7 @@ class FilterVisitor : ExpressionVisitor
         var expression = Visit(node.Expression);
         if (expression == null || expression is ConstantExpression)
         {
-            object container = null;
+            object? container = null;
             if (expression is ConstantExpression constantExpression)
             {
                 container = constantExpression.Value;
@@ -167,7 +166,7 @@ class FilterVisitor : ExpressionVisitor
             var member = node.Member;
             if (member is FieldInfo info1)
             {
-                object value = info1.GetValue(container);
+                object? value = info1.GetValue(container);
                 //Visit(Expression.Constant(value));
                 if (!WriteValue(value))
                 {
@@ -176,7 +175,7 @@ class FilterVisitor : ExpressionVisitor
             }
             if (member is PropertyInfo info)
             {
-                object value = info.GetValue(container, null);
+                object? value = info.GetValue(container, null);
                 if (!WriteValue(value))
                 {
                     return Expression.Constant(value);

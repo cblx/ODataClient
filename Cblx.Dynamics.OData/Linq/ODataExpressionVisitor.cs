@@ -21,7 +21,7 @@ public class ODataExpressionVisitor : ExpressionVisitor
     {
         Type? type = node.Value?.GetType();
         // Should exist just one access to a constant of ODataQueryable
-        if(type != null && type.IsGenericType && type?.GetGenericTypeDefinition() == typeof(ODataQueryable<>))
+        if (type != null && type.IsGenericType && type?.GetGenericTypeDefinition() == typeof(ODataQueryable<>))
         {
             Type entityType = type.GenericTypeArguments[0];
             Endpoint = entityType.GetEndpointName();
@@ -62,7 +62,7 @@ public class ODataExpressionVisitor : ExpressionVisitor
 
     public string ToRelativeUrl()
     {
-        if(_rootExpression is null) { throw new Exception("The expression should be visited first"); }
+        if (_rootExpression is null) { throw new Exception("The expression should be visited first"); }
         string select = CreateSelectFromProjection(_rootExpression);
         var queryString = new SortedDictionary<string, string>(_queryString);
         queryString.Add("$select", select);
@@ -129,7 +129,7 @@ public class ODataExpressionVisitor : ExpressionVisitor
             "Select" => base.VisitMethodCall(node),
             // Join/from form
             //"SelectMany" => VisitSelectMany(node),
-            //"Where" => VisitWhere(node),
+            "Where" => VisitWhere(node),
             //"Join" => VisitJoin(node),
             //"OrderBy" => VisitOrderBy(node),
             //"OrderByDescending" => VisitOrderBy(node, true),
@@ -276,104 +276,15 @@ public class ODataExpressionVisitor : ExpressionVisitor
     //    return node;
     //}
 
-    //Expression VisitSelectMany(MethodCallExpression selectManyExpression)
-    //{
-    //    bool isFirstJoin = joinCount == 0;
-    //    joinCount++;
 
-    //    //Ex:
-    //    //  from p in db.PreviousTable
-    //    //  from t in db.TargetTable.Where(t => t.Id == p.TargetTableId).DefaultIfEmpty()
-    //    var previousTableExpression = selectManyExpression.Arguments[0];
-    //    var whereOrDefaultIfEmptyLambdaExpression = selectManyExpression.Arguments[1].UnBox() as LambdaExpression;
-    //    var whereOrDefaultIfEmptyMethodCallExpression =
-    //        whereOrDefaultIfEmptyLambdaExpression!.Body as MethodCallExpression;
-    //    bool isLeftJoin = whereOrDefaultIfEmptyMethodCallExpression!.Method.Name == "DefaultIfEmpty";
-    //    var whereExpression = isLeftJoin
-    //        ?
-    //        // getting the Where call in Where(...).DefaultIfEmpty()
-    //        whereOrDefaultIfEmptyMethodCallExpression!.Arguments[0] as MethodCallExpression
-    //        // getting the Where call in Where(...)
-    //        : whereOrDefaultIfEmptyMethodCallExpression;
-
-    //    var targetTableExpression = whereExpression!.Arguments[0];
-    //    var wherePredicateLambdaExpression = whereExpression!.Arguments[1].UnBox() as LambdaExpression;
-    //    var binaryExpression = (whereExpression!.Arguments[1].UnBox() as LambdaExpression)!.Body as BinaryExpression;
-
-    //    var resultSelectorExpression = selectManyExpression.Arguments[2].UnBox() as LambdaExpression;
-
-    //    string targetTableAlias = resultSelectorExpression!.Parameters.Last().Name!;
-    //    if (previousTableExpression is MethodCallExpression prevMethodCall)
-    //    {
-    //        Visit(previousTableExpression);
-    //    }
-
-    //    var memberAccessesByExpression = new[]
-    //    {
-    //        (binaryExpression!.Left as MemberExpression)!,
-    //        (binaryExpression!.Right as MemberExpression)!
-    //    }.ToDictionary(m => m.Expression!);
-
-    //    // Target table member access is from the where parameter
-    //    MemberExpression targetTableMemberAccess =
-    //        memberAccessesByExpression[wherePredicateLambdaExpression!.Parameters[0]];
-    //    // Previous table member access is the other one
-    //    MemberExpression previousTableMemberAccess = memberAccessesByExpression
-    //        .First(m => m.Value != targetTableMemberAccess)
-    //        .Value;
-    //    // We can trust the previous parameter alias from the binary expression because it comes from external expressions,
-    //    // so it is impossible to change it's alias in the comparison
-    //    string previousTableAlias =
-    //        //It can come from direct parameter
-    //        (previousTableMemberAccess.Expression is ParameterExpression parameterExpression)
-    //            ?
-    //            //Or member of a computed parameter
-    //            parameterExpression.Name!
-    //            : (previousTableMemberAccess.Expression as MemberExpression)!.Member.Name;
-
-    //    XElement previousTableElement = new FindOrCreateXElementVisitor(
-    //        this,
-    //        previousTableAlias,
-    //        FetchElement
-    //    ).FindOrCreateXElement(previousTableExpression);
-
-    //    XElement targetTableElement = new FindOrCreateXElementVisitor(
-    //        this,
-    //        targetTableAlias,
-    //        previousTableElement
-    //    ).FindOrCreateXElement(targetTableExpression);
-    //    if (isLeftJoin)
-    //    {
-    //        targetTableElement.SetAttributeValue("link-type", "outer");
-    //    }
-
-    //    targetTableElement.SetAttributeValue("from", targetTableMemberAccess.GetColName());
-    //    targetTableElement.SetAttributeValue("to", previousTableMemberAccess.GetColName());
-    //    return selectManyExpression;
-    //}
-
-
-    //Expression VisitWhere(MethodCallExpression node)
-    //{
-    //    if (node.Arguments[0] is MethodCallExpression methodCallExpression)
-    //    {
-    //        Visit(methodCallExpression);
-    //    }
-    //    else
-    //    {
-    //        CreateRootEntityFromSource(node);
-    //    }
-
-    //    LambdaExpression filterExpression = ((node.Arguments[1] as UnaryExpression)!.Operand as LambdaExpression)!;
-    //    var whereVisitor = new FetchXmlWhereVisitor(this);
-    //    whereVisitor.Visit(filterExpression);
-    //    if (!whereVisitor.IsEmpty)
-    //    {
-    //        FetchElement.Descendants().First().Add(whereVisitor.FilterElement);
-    //    }
-
-    //    return node;
-    //}
+    Expression VisitWhere(MethodCallExpression node)
+    {
+        LambdaExpression filterExpression = ((node.Arguments[1] as UnaryExpression)!.Operand as LambdaExpression)!;
+        var filterVisitor = new FilterVisitor(false);
+        filterVisitor.Visit(filterExpression);
+        _queryString["$filter"] = filterVisitor.Query;
+        return base.VisitMethodCall(node);
+    }
 
     //void CreateRootEntityFromSource(MethodCallExpression node)
     //{

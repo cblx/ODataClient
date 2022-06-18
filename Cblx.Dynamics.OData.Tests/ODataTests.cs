@@ -269,23 +269,25 @@ public class ODataTests
         .Be("some_tables?$select=_another_table_value,_other_table_value,some_name,some_tableid,status,value&$top=1");
     }
 
-    //    [Fact]
-    //    public async Task QueryableWhereToListAsyncTest()
-    //    {
-    //        var db = GetSimpleMockDb(new JsonArray
-    //        {
-    //            new JsonObject
-    //            {
-    //                {"Id", _exampleId}
-    //            }
-    //        });
+    [Fact]
+    public async Task QueryableWhereToListAsyncTest()
+    {
+        var db = GetSimpleMockDb(new JsonArray
+            {
+                new JsonObject
+                {
+                    {"some_tableid", _exampleId}
+                }
+            });
 
-    //        var items = await db.SomeTables.Where(s => s.Value > 0).ToListAsync();
+        var items = await db.SomeTables.Where(s => s.Value > 0).ToListAsync();
+        items.First().Id.Should().Be(_exampleId);
 
-    //        items
-    //            .Should()
-    //            .ContainSingle(s => s.Id == _exampleId);
-    //    }
+        db.Provider
+          .LastUrl
+          .Should()
+          .Be("some_tables?$filter=value gt 0&$select=_another_table_value,_other_table_value,some_name,some_tableid,status,value");
+    }
 
     //    [Fact]
     //    public async Task MultipleWheresWithParameterNameMismatchTest()
@@ -451,10 +453,10 @@ public class ODataTests
     //            .ContainSingle(a => a.Id == _exampleId);
     //    }
 
-    //    [Fact]
-    //    public async Task DistinctTest()
-    //    {
-    //        var db = GetSimpleMockDb(new JsonArray
+    //[Fact]
+    //public async Task TakeTest()
+    //{
+    //    var db = GetSimpleMockDb(new JsonArray
     //        {
     //            new JsonObject
     //            {
@@ -462,32 +464,13 @@ public class ODataTests
     //            }
     //        });
 
-    //        var items = await (from s in db.SomeTables
-    //            select new {s.Id}).Distinct().ToListAsync();
+    //    var items = await (from s in db.SomeTables
+    //                       select new { s.Id }).Take(10).ToListAsync();
 
-    //        items
-    //            .Should()
-    //            .ContainSingle(a => a.Id == _exampleId);
-    //    }
-
-    //    [Fact]
-    //    public async Task TakeTest()
-    //    {
-    //        var db = GetSimpleMockDb(new JsonArray
-    //        {
-    //            new JsonObject
-    //            {
-    //                {"s.Id", _exampleId}
-    //            }
-    //        });
-
-    //        var items = await (from s in db.SomeTables
-    //            select new {s.Id}).Take(10).ToListAsync();
-
-    //        items
-    //            .Should()
-    //            .ContainSingle(a => a.Id == _exampleId);
-    //    }
+    //    items
+    //        .Should()
+    //        .ContainSingle(a => a.Id == _exampleId);
+    //}
 
     //    [Fact]
     //    public async Task DistinctTakeTest()
