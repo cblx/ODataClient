@@ -1,6 +1,4 @@
-﻿using Cblx.Dynamics.FetchXml.Linq;
-
-namespace Cblx.Dynamics.FetchXml;
+﻿namespace Cblx.Dynamics;
 
 [AttributeUsage(AttributeTargets.Class)]
 public class DynamicsEntityAttribute : Attribute
@@ -20,6 +18,15 @@ public class ReferentialConstraintAttribute : Attribute
     public ReferentialConstraintAttribute(string property)
     {
         Property = property;
-        RawPropertyName = Helpers.TrimLookupName(property);
+        RawPropertyName = TrimLookupName(property);
+    }
+
+    static string TrimLookupName(string lookupName)
+    {
+        if (lookupName.StartsWith("_"))
+        {
+            return lookupName[1..^6];
+        }
+        return lookupName;
     }
 }

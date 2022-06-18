@@ -1,6 +1,6 @@
 ﻿using System.Reflection;
 
-namespace Cblx.Dynamics.FetchXml.Linq;
+namespace Cblx.Dynamics;
 
 public static class TypeExtensions
 {
