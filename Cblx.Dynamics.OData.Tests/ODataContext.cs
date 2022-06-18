@@ -1,6 +1,6 @@
 ﻿using Cblx.Dynamics.OData.Linq;
 
-namespace Cblx.Dynamics.FetchXml.Tests;
+namespace Cblx.Dynamics.OData.Tests;
 
 public class ODataContext
 {

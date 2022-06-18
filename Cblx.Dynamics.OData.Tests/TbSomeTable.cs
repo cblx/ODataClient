@@ -2,7 +2,7 @@
 using System.Text.Json.Serialization;
 using OData.Client.Abstractions;
 
-namespace Cblx.Dynamics.FetchXml.Tests;
+namespace Cblx.Dynamics.OData.Tests;
 
 [ODataEndpoint("some_tables")]
 [DynamicsEntity("some_table")]
@@ -10,7 +10,7 @@ public class TbSomeTable
 {
     [JsonPropertyName("some_tableid")]
     public Guid Id { get; set; }
-    
+
     // [JsonPropertyName("accent")]
     // public string? Áccent { get; set; } 
 
@@ -32,5 +32,5 @@ public class TbSomeTable
     [ReferentialConstraint("_other_table_value")]
     [JsonPropertyName("other_table")]
     public TbOtherTable? OtherTable { get; set; }
-    
+
 }

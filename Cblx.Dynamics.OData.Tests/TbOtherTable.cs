@@ -2,7 +2,7 @@
 using System.Text.Json.Serialization;
 using OData.Client.Abstractions;
 
-namespace Cblx.Dynamics.FetchXml.Tests;
+namespace Cblx.Dynamics.OData.Tests;
 
 [ODataEndpoint("other_tables")]
 [DynamicsEntity("other_table")]

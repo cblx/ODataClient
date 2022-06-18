@@ -1,77 +1,14 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Linq.Expressions;
-using System.Reflection;
-using System.Reflection.Metadata;
-using System.Xml.Linq;
-using OData.Client.Abstractions;
+﻿using System.Linq.Expressions;
 
 namespace Cblx.Dynamics.OData.Linq;
-
-public class ProjectionVisitor : ExpressionVisitor
-{
-    public string Select { get => string.Join(",", _select); }
-    private readonly SortedSet<string> _select = new SortedSet<string>();
-
-    protected override Expression VisitLambda<T>(Expression<T> node)
-    {
-        // (e => e) projection
-        if(node.Body is ParameterExpression parameterExpression)
-        {
-            Type entityType = parameterExpression.Type;
-            entityType.ToSelectSet().ToList().ForEach(s => _select.Add(s));
-            return node; // interrupt visitations
-        }
-        // skip to visit the lambda body
-        return Visit(node.Body);
-    }
-   
-    protected override Expression VisitParameter(ParameterExpression node)
-    {
-        return base.VisitParameter(node);
-    }
-
-    protected override MemberAssignment VisitMemberAssignment(MemberAssignment node)
-    {
-        return base.VisitMemberAssignment(node);
-    }
-   
-    protected override Expression VisitMember(MemberExpression node)
-    {
-        if (node.Expression is ParameterExpression parameterExpression && parameterExpression.Type.IsDynamicsEntity())
-        {
-            _select.Add(node.Member.GetColName());
-        }
-        return base.VisitMember(node);
-    }
-}
-
-public static class EntityTypeToSelectParserExtension
-{
-    public static SortedSet<string> ToSelectSet(this Type entityType)
-    {
-        SortedSet<string> select = new();
-        foreach (var prop in entityType.GetProperties())
-        {
-            if (prop.IsCol())
-            {
-                select.Add(prop.GetColName());
-            }
-        }
-        return select;
-    }
-
-    public static string ToSelectString(this Type entityType)
-    {
-        return string.Join(",", entityType.ToSelectSet());
-    }
-}
-
 
 public class ODataExpressionVisitor : ExpressionVisitor
 {
 
     private Expression? _rootExpression = null;
     public string? Endpoint { get; private set; }
+
+    private SortedDictionary<string, string> _queryString = new();
 
     public override Expression? Visit(Expression? node)
     {
@@ -86,8 +23,7 @@ public class ODataExpressionVisitor : ExpressionVisitor
         if(type != null && type.IsGenericType && type?.GetGenericTypeDefinition() == typeof(ODataQueryable<>))
         {
             Type entityType = type.GenericTypeArguments[0];
-            Endpoint = entityType.GetCustomAttribute<ODataEndpointAttribute>()?.Endpoint ??
-                           throw new Exception($"No endpoint found for Entity {entityType.Name}");
+            Endpoint = entityType.GetEndpointName();
         }
         return base.VisitConstant(node);
     }
@@ -127,7 +63,9 @@ public class ODataExpressionVisitor : ExpressionVisitor
     {
         if(_rootExpression is null) { throw new Exception("The expression should be visited first"); }
         string select = CreateSelectFromProjection(_rootExpression);
-        return $"{Endpoint}?$select={select}";
+        var queryString = new SortedDictionary<string, string>(_queryString);
+        queryString.Add("$select", select);
+        return $"{Endpoint}?{string.Join("&", queryString.Select(kvp => $"{kvp.Key}={kvp.Value}"))}";
         //string fetchXml = ToFetchXml();
         //if (string.IsNullOrWhiteSpace(Endpoint))
         //{
@@ -172,6 +110,7 @@ public class ODataExpressionVisitor : ExpressionVisitor
         else if (expression is ConstantExpression constantExpression && constantExpression.Value is IQueryable queryable)
         {
             Type entityType = queryable.GetType().GetGenericArguments().First();
+            Endpoint = entityType.GetEndpointName();
             return entityType.ToSelectString();
         }
         throw new Exception($"Expression {expression} is not supported");
@@ -179,24 +118,24 @@ public class ODataExpressionVisitor : ExpressionVisitor
 
     //int joinCount = 0;
 
-    //protected override Expression VisitMethodCall(MethodCallExpression node)
-    //{
-    //    return node.Method.Name switch
-    //    {
-    //        //"Distinct" => VisitDistinct(node),
-    //        //"Take" => VisitTake(node),
-    //        //"FirstOrDefault" => VisitFirstOrDefault(node),
-    //        //"Select" => VisitSelect(node),
-    //        // Join/from form
-    //        //"SelectMany" => VisitSelectMany(node),
-    //        //"Where" => VisitWhere(node),
-    //        //"Join" => VisitJoin(node),
-    //        //"OrderBy" => VisitOrderBy(node),
-    //        //"OrderByDescending" => VisitOrderBy(node, true),
-    //        //"GroupBy" => VisitGroupBy(node),
-    //        _ => base.VisitMethodCall(node),
-    //    };
-    //}
+    protected override Expression VisitMethodCall(MethodCallExpression node)
+    {
+        return node.Method.Name switch
+        {
+            //"Distinct" => VisitDistinct(node),
+            "Take" => VisitTake(node),
+            "FirstOrDefault" => VisitFirstOrDefault(node),
+            "Select" => base.VisitMethodCall(node),
+            // Join/from form
+            //"SelectMany" => VisitSelectMany(node),
+            //"Where" => VisitWhere(node),
+            //"Join" => VisitJoin(node),
+            //"OrderBy" => VisitOrderBy(node),
+            //"OrderByDescending" => VisitOrderBy(node, true),
+            //"GroupBy" => VisitGroupBy(node),
+            _ => throw new Exception($"Unsupported method {node.Method.Name}") //base.VisitMethodCall(node),
+        };
+    }
 
     //Expression VisitFirstOrDefault(MethodCallExpression node)
     //{
@@ -224,20 +163,18 @@ public class ODataExpressionVisitor : ExpressionVisitor
     //    return node;
     //}
 
-    //Expression VisitTake(MethodCallExpression node)
-    //{
-    //    Expression fromExpression = node.Arguments[0];
-    //    if (fromExpression is MethodCallExpression methodCallExpression)
-    //    {
-    //        Visit(methodCallExpression);
-    //    }
+    Expression VisitFirstOrDefault(MethodCallExpression node)
+    {
+        _queryString["$top"] = "1";
+        return base.VisitMethodCall(node);
+    }
 
-    //    FetchElement.SetAttributeValue(
-    //        "top",
-    //        new FetchXmlFindCostantVisitor().GetValue(node.Arguments[1])
-    //    );
-    //    return node;
-    //}
+    Expression VisitTake(MethodCallExpression node)
+    {
+        object? top = Expression.Lambda(node.Arguments[1]).Compile().DynamicInvoke();
+        _queryString["$top"] = top?.ToString() ?? "";
+        return base.VisitMethodCall(node);
+    }
 
     //Expression VisitDistinct(MethodCallExpression node)
     //{
@@ -291,7 +228,7 @@ public class ODataExpressionVisitor : ExpressionVisitor
     //Expression VisitSelect(MethodCallExpression node)
     //{
     //    var projectionExpression = ((node.Arguments[1] as UnaryExpression)!.Operand as LambdaExpression)!;
-    //    if(projectionExpression is NewExpression newExpression)
+    //    if (projectionExpression is NewExpression newExpression)
     //    {
 
     //    }

@@ -1,15 +1,9 @@
-﻿using System;
-using System.Linq;
-using System.Net;
-using System.Net.Http;
+﻿using System.Net;
 using System.Text.Json.Nodes;
-using System.Threading;
-using System.Threading.Tasks;
 using Cblx.Dynamics.OData.Linq;
 using FluentAssertions;
-using Xunit;
 
-namespace Cblx.Dynamics.FetchXml.Tests;
+namespace Cblx.Dynamics.OData.Tests;
 
 public class ODataTests
 {
@@ -92,7 +86,7 @@ public class ODataTests
 
         name.Should().Be("x");
 
-        db.Provider.LastUrl.Should().Be("some_tables?$select=some_name");
+        db.Provider.LastUrl.Should().Be("some_tables?$select=some_name&$top=1");
     }
 
     [Fact]
@@ -149,6 +143,11 @@ public class ODataTests
         item!.Id.Should().Be(_exampleId);
         item!.Name.Should().Be("John");
         item!.Status.Should().Be(SomeStatusEnum.Active);
+
+        db.Provider
+           .LastUrl
+           .Should()
+           .Be("some_tables?$select=_another_table_value,_other_table_value,some_name,some_tableid,status,value&$top=1");
     }
 
     [Fact]
@@ -170,6 +169,11 @@ public class ODataTests
         item!.Id.Should().Be(_exampleId);
         item!.Name.Should().Be("John");
         item!.Status.Should().Be(SomeStatusEnum.Active);
+
+        db.Provider
+         .LastUrl
+         .Should()
+         .Be("some_tables?$select=_another_table_value,_other_table_value,some_name,some_tableid,status,value&$top=1");
     }
 
     [Fact]
@@ -194,46 +198,33 @@ public class ODataTests
         db.Provider
             .LastUrl
             .Should()
-            .Be("some_tables?$select=_another_table_value,_other_table_value,some_name,some_tableid,status,value");
+            .Be("some_tables?$select=_another_table_value,_other_table_value,some_name,some_tableid,status,value&$top=1");
     }
 
-    //    [Fact]
-    //    public void FirstOrDefaultWithPredicateTest()
-    //    {
-    //        var db = GetSimpleMockDb(new JsonArray
+    //[Fact]
+    //public void FirstOrDefaultWithPredicateTest()
+    //{
+    //    var db = GetSimpleMockDb(new JsonArray
     //        {
     //            new JsonObject
     //            {
-    //                {"Id", _exampleId},
-    //                {"Name", "John"},
-    //                {"Status", (int) SomeStatusEnum.Active}
+    //                {"some_tableid", _exampleId},
+    //                {"some_name", "John"},
+    //                {"status", (int) SomeStatusEnum.Active}
     //            }
     //        });
 
-    //        var item = db.SomeTables.FirstOrDefault(s => s.Value > 0);
+    //    var item = db.SomeTables.FirstOrDefault(s => s.Value > 0);
 
-    //        item!.Id.Should().Be(_exampleId);
-    //        item!.Name.Should().Be("John");
-    //        item!.Status.Should().Be(SomeStatusEnum.Active);
+    //    item!.Id.Should().Be(_exampleId);
+    //    item!.Name.Should().Be("John");
+    //    item!.Status.Should().Be(SomeStatusEnum.Active);
 
-    //        db.Provider
-    //            .LastUrl
-    //            .Should()
-    //            .Be(
-    //                $@"some_tables?fetchXml=<fetch mapping=""logical"" top=""1"">
-    //  <entity name=""some_table"">
-    //    <filter>
-    //      <condition attribute=""value"" operator=""gt"" value=""0"" />
-    //    </filter>
-    //    <attribute name=""some_tableid"" alias=""Id"" />
-    //    <attribute name=""other_table"" alias=""OtherTableId"" />
-    //    <attribute name=""another_table"" alias=""AnotherTableId"" />
-    //    <attribute name=""value"" alias=""Value"" />
-    //    <attribute name=""some_name"" alias=""Name"" />
-    //    <attribute name=""status"" alias=""Status"" />
-    //  </entity>
-    //</fetch>");
-    //    }
+    //    db.Provider
+    //        .LastUrl
+    //        .Should()
+    //        .Be("some_tables?$select=_another_table_value,_other_table_value,some_name,some_tableid,status,value&$filter=value gt 0");
+    //}
 
 
     [Fact]
@@ -276,7 +267,7 @@ public class ODataTests
         db.Provider
         .LastUrl
         .Should()
-        .Be("some_tables?$select=_another_table_value,_other_table_value,some_name,some_tableid,status,value");
+        .Be("some_tables?$select=_another_table_value,_other_table_value,some_name,some_tableid,status,value&$top=1");
     }
 
     //    [Fact]

@@ -1,4 +1,4 @@
-﻿namespace Cblx.Dynamics.FetchXml.Tests;
+﻿namespace Cblx.Dynamics.OData.Tests;
 
 public enum SomeStatusEnum
 {
