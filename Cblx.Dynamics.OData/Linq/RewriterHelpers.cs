@@ -18,15 +18,12 @@ public static class RewriterHelpers
         foreach (PropertyInfo prop in typeof(T).GetProperties())
         {
             if(!prop.IsCol()){ continue; }
+            string fieldName = prop.GetColName();
             prop.SetValue(
                 entity, 
                 AuxGetValueMethod
                     .MakeGenericMethod(prop.PropertyType)
-                    .Invoke(null, new object[]
-                    {
-                        jsonObject,
-                        string.IsNullOrWhiteSpace(entityAlias) ? prop.Name : $"{prop.GetColName()}"
-                    })
+                    .Invoke(null, new object[] { jsonObject, fieldName })
             );            
         }
         return entity;

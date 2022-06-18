@@ -130,82 +130,72 @@ public class ODataTests
             .Be("some_tables?$select=_another_table_value,_other_table_value,some_name,some_tableid,status,value");
     }
 
-    //    [Fact]
-    //    public async Task FirstOrDefaultAsyncEntityTest()
-    //    {
-    //        var db = GetSimpleMockDb(new JsonArray
-    //        {
-    //            new JsonObject
-    //            {
-    //                {"s.Id", _exampleId},
-    //                {"s.Name", "John"},
-    //                {"s.Status", (int) SomeStatusEnum.Active}
-    //            }
-    //        });
+    [Fact]
+    public async Task FirstOrDefaultAsyncEntityTest()
+    {
+        var db = GetSimpleMockDb(new JsonArray
+            {
+                new JsonObject
+                {
+                    {"some_tableid", _exampleId},
+                    {"some_name", "John"},
+                    {"status", (int) SomeStatusEnum.Active}
+                }
+            });
 
-    //        var item = await (from s in db.SomeTables
-    //            select s).FirstOrDefaultAsync();
+        var item = await (from s in db.SomeTables
+                          select s).FirstOrDefaultAsync();
 
-    //        item!.Id.Should().Be(_exampleId);
-    //        item!.Name.Should().Be("John");
-    //        item!.Status.Should().Be(SomeStatusEnum.Active);
-    //    }
+        item!.Id.Should().Be(_exampleId);
+        item!.Name.Should().Be("John");
+        item!.Status.Should().Be(SomeStatusEnum.Active);
+    }
 
-    //    [Fact]
-    //    public void FirstOrDefaultEntityTest()
-    //    {
-    //        var db = GetSimpleMockDb(new JsonArray
-    //        {
-    //            new JsonObject
-    //            {
-    //                {"s.Id", _exampleId},
-    //                {"s.Name", "John"},
-    //                {"s.Status", (int) SomeStatusEnum.Active}
-    //            }
-    //        });
+    [Fact]
+    public void FirstOrDefaultEntityTest()
+    {
+        var db = GetSimpleMockDb(new JsonArray
+            {
+                new JsonObject
+                {
+                    {"some_tableid", _exampleId},
+                    {"some_name", "John"},
+                    {"status", (int) SomeStatusEnum.Active}
+                }
+            });
 
-    //        var item = (from s in db.SomeTables
-    //            select s).FirstOrDefault();
+        var item = (from s in db.SomeTables
+                    select s).FirstOrDefault();
 
-    //        item!.Id.Should().Be(_exampleId);
-    //        item!.Name.Should().Be("John");
-    //        item!.Status.Should().Be(SomeStatusEnum.Active);
-    //    }
+        item!.Id.Should().Be(_exampleId);
+        item!.Name.Should().Be("John");
+        item!.Status.Should().Be(SomeStatusEnum.Active);
+    }
 
-    //    [Fact]
-    //    public void FirstOrDefaultTest()
-    //    {
-    //        var db = GetSimpleMockDb(new JsonArray
-    //        {
-    //            new JsonObject
-    //            {
-    //                {"Id", _exampleId},
-    //                {"Name", "John"},
-    //                {"Status", (int) SomeStatusEnum.Active}
-    //            }
-    //        });
+    [Fact]
+    public void FirstOrDefaultTest()
+    {
+        var db = GetSimpleMockDb(new JsonArray
+            {
+                new JsonObject
+                {
+                    {"some_tableid", _exampleId},
+                    {"some_name", "John"},
+                    {"status", (int) SomeStatusEnum.Active}
+                }
+            });
 
-    //        var item = db.SomeTables.FirstOrDefault();
+        var item = db.SomeTables.FirstOrDefault();
 
-    //        item!.Id.Should().Be(_exampleId);
-    //        item!.Name.Should().Be("John");
-    //        item!.Status.Should().Be(SomeStatusEnum.Active);
+        item!.Id.Should().Be(_exampleId);
+        item!.Name.Should().Be("John");
+        item!.Status.Should().Be(SomeStatusEnum.Active);
 
-    //        db.Provider
-    //            .LastUrl
-    //            .Should()
-    //            .Be(
-    //                $@"some_tables?fetchXml=<fetch mapping=""logical"" top=""1"">
-    //  <entity name=""some_table"">
-    //    <attribute name=""some_tableid"" alias=""Id"" />
-    //    <attribute name=""other_table"" alias=""OtherTableId"" />
-    //    <attribute name=""another_table"" alias=""AnotherTableId"" />
-    //    <attribute name=""value"" alias=""Value"" />
-    //    <attribute name=""some_name"" alias=""Name"" />
-    //    <attribute name=""status"" alias=""Status"" />
-    //  </entity>
-    //</fetch>");
-    //    }
+        db.Provider
+            .LastUrl
+            .Should()
+            .Be("some_tables?$select=_another_table_value,_other_table_value,some_name,some_tableid,status,value");
+    }
 
     //    [Fact]
     //    public void FirstOrDefaultWithPredicateTest()
@@ -246,38 +236,48 @@ public class ODataTests
     //    }
 
 
-    //    [Fact]
-    //    public async Task QueryableToListAsyncTest()
-    //    {
-    //        var db = GetSimpleMockDb(new JsonArray
-    //        {
-    //            new JsonObject
-    //            {
-    //                {"Id", _exampleId}
-    //            }
-    //        });
+    [Fact]
+    public async Task QueryableToListAsyncTest()
+    {
+        var db = GetSimpleMockDb(new JsonArray
+            {
+                new JsonObject
+                {
+                    {"some_tableid", _exampleId}
+                }
+            });
 
-    //        var items = await db.SomeTables.ToListAsync();
+        var items = await db.SomeTables.ToListAsync();
 
-    //        items
-    //            .Should()
-    //            .ContainSingle(s => s.Id == _exampleId);
-    //    }
+        items
+            .Should()
+            .ContainSingle(s => s.Id == _exampleId);
 
-    //    [Fact]
-    //    public async Task QueryableFirstOrDefaultAsyncTest()
-    //    {
-    //        var db = GetSimpleMockDb(new JsonArray
-    //        {
-    //            new JsonObject
-    //            {
-    //                {"Id", _exampleId}
-    //            }
-    //        });
+        db.Provider
+          .LastUrl
+          .Should()
+          .Be("some_tables?$select=_another_table_value,_other_table_value,some_name,some_tableid,status,value");
+    }
 
-    //        var item = await db.SomeTables.FirstOrDefaultAsync();
-    //        item!.Id.Should().Be(_exampleId);
-    //    }
+    [Fact]
+    public async Task QueryableFirstOrDefaultAsyncTest()
+    {
+        var db = GetSimpleMockDb(new JsonArray
+            {
+                new JsonObject
+                {
+                    {"some_tableid", _exampleId}
+                }
+            });
+
+        var item = await db.SomeTables.FirstOrDefaultAsync();
+        item!.Id.Should().Be(_exampleId);
+
+        db.Provider
+        .LastUrl
+        .Should()
+        .Be("some_tables?$select=_another_table_value,_other_table_value,some_name,some_tableid,status,value");
+    }
 
     //    [Fact]
     //    public async Task QueryableWhereToListAsyncTest()
@@ -441,57 +441,6 @@ public class ODataTests
     //  </entity>
     //</fetch>");
     //    }
-
-    //    [Fact]
-    //    public async Task JoinWhereTest()
-    //    {
-    //        var oId = new Guid("3fa47b9b-d4c1-45df-9e96-4aecefcf85a8");
-    //        var db = GetSimpleMockDb(new JsonArray
-    //        {
-    //            new JsonObject
-    //            {
-    //                {"s.Id", _exampleId},
-    //                {"o.Id", oId}
-    //            }
-    //        });
-
-    //        var items = await (from s in db.SomeTables
-    //            join o in db.OtherTables on s.OtherTableId equals o.Id
-    //            where o.Value > 0
-    //            select new {s.Id, OtherTableId = o.Id}).ToListAsync();
-
-    //        items
-    //            .Should()
-    //            .ContainSingle(a => a.Id == _exampleId && a.OtherTableId == oId);
-    //    }
-
-
-    //    [Fact]
-    //    public async void ThreeLeftJoinsWithWhereTest()
-    //    {
-    //        var db = GetSimpleMockDb(new JsonArray
-    //        {
-    //            new JsonObject
-    //            {
-    //                {"someTable.AnotherTableId", _exampleId}
-    //            }
-    //        });
-
-    //#pragma warning disable CS8073
-    //        var items =
-    //            await (from someTable in db.SomeTables
-    //                from otherTable in db.OtherTables.Where(otherTable => otherTable.Id == someTable.OtherTableId)
-    //                from anotherTable in db.AnotherTables
-    //                    .Where(anotherTable => anotherTable.Id == otherTable.AnotherTableId).DefaultIfEmpty()
-    //                where anotherTable.Id == null
-    //                select new {someTable.AnotherTableId}).Distinct().ToListAsync();
-    //#pragma warning restore CS8073
-
-    //        items
-    //            .Should()
-    //            .ContainSingle(a => a.AnotherTableId == _exampleId);
-    //    }
-
 
     //    [Fact]
     //    public async Task SelectProjectionNavigationTest()
