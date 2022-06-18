@@ -17,6 +17,6 @@ public static class EntityTypeToSelectParserExtension
 
     public static string ToSelectString(this Type entityType)
     {
-        return string.Join(",", entityType.ToSelectSet());
+        return $"$select={string.Join(",", entityType.ToSelectSet())}";
     }
 }

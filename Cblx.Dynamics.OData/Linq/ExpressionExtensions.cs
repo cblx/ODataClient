@@ -34,6 +34,18 @@ public static class ExpressionExtensions
         return memberStack;
     }
 
+    public static Stack<MemberExpression> CreateMemberParentsStack(this MemberExpression memberExpression)
+    {
+        Stack<MemberExpression> memberStack = new();
+        Expression? expression = memberExpression.Expression;
+        while (expression is MemberExpression parentMemberExpression)
+        {
+            memberStack.Push(parentMemberExpression);
+            expression = parentMemberExpression.Expression;
+        }
+        return memberStack;
+    }
+
     public static string GetFieldName(this MemberExpression memberExpression)
     {
         string fieldName = memberExpression.Member.Name;

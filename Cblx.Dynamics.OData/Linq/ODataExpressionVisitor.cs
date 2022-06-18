@@ -63,10 +63,10 @@ public class ODataExpressionVisitor : ExpressionVisitor
     public string ToRelativeUrl()
     {
         if (_rootExpression is null) { throw new Exception("The expression should be visited first"); }
-        string select = CreateSelectFromProjection(_rootExpression);
-        var queryString = new SortedDictionary<string, string>(_queryString);
-        queryString.Add("$select", select);
-        return $"{Endpoint}?{string.Join("&", queryString.Select(kvp => $"{kvp.Key}={kvp.Value}"))}";
+        string selectAndExpand = CreateSelectAndExpandFromProjection(_rootExpression);
+        IEnumerable<string> options = _queryString.Select(kvp => $"{kvp.Key}={kvp.Value}");
+        options = new[] { selectAndExpand }.Union(options);
+        return $"{Endpoint}?{string.Join("&", options)}";
         //string fetchXml = ToFetchXml();
         //if (string.IsNullOrWhiteSpace(Endpoint))
         //{
@@ -83,7 +83,7 @@ public class ODataExpressionVisitor : ExpressionVisitor
     //    return base.Visit(node);
     //}
 
-    string CreateSelectFromProjection(Expression expression)
+    string CreateSelectAndExpandFromProjection(Expression expression)
     {
         if (expression is MethodCallExpression methodCallExpression)
         {
@@ -96,14 +96,18 @@ public class ODataExpressionVisitor : ExpressionVisitor
                 case "Take":
                 case "Where":
                 case "FirstOrDefault":
-                    return CreateSelectFromProjection(methodCallExpression.Arguments[0]);
+                    return CreateSelectAndExpandFromProjection(methodCallExpression.Arguments[0]);
                 case "Select":
                     {
                         // Interpret the lambda projection arg in db.Entities...etc..Extensions.Select(queryable, arg);
                         var projectionExpression = (methodCallExpression.Arguments.Last().UnBox() as LambdaExpression)!;
-                        var projectionVisitor = new ProjectionVisitor();
-                        projectionVisitor.Visit(projectionExpression);
-                        return projectionVisitor.Select;
+                        var selectAndExpandVisitor = new SelectAndExpandVisitor(true, null);
+                        //var projectionVisitor = new ProjectionVisitor();
+                        //projectionVisitor.Visit(projectionExpression);
+                        //return projectionVisitor.Select;
+                        selectAndExpandVisitor.Visit(projectionExpression);
+                        string select = selectAndExpandVisitor.ToString();
+                        return select;
                     }
                 default: throw new Exception($"{methodCallExpression?.Method.Name} is not supported");
             }
