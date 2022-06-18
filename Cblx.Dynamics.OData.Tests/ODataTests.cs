@@ -290,151 +290,6 @@ public class ODataTests
     }
 
     //    [Fact]
-    //    public async Task MultipleWheresWithParameterNameMismatchTest()
-    //    {
-    //        var db = GetSimpleMockDb(new JsonArray
-    //        {
-    //            new JsonObject
-    //            {
-    //                {"Id", _exampleId}
-    //            }
-    //        });
-
-    //        var items = await db.SomeTables
-    //            .Where(s => s.Value > 0)
-    //            .Where(x => x.Value < 0)
-    //            .Where(y => y.Name == "X")
-    //            .Where(z => z.Status == SomeStatusEnum.Active)
-    //            .ToListAsync();
-
-    //        items
-    //            .Should()
-    //            .ContainSingle(s => s.Id == _exampleId);
-
-    //        db.Provider
-    //            .LastUrl
-    //            .Should()
-    //            .Be(
-    //                $@"some_tables?fetchXml=<fetch mapping=""logical"">
-    //  <entity name=""some_table"">
-    //    <filter>
-    //      <condition attribute=""value"" operator=""gt"" value=""0"" />
-    //    </filter>
-    //    <filter>
-    //      <condition attribute=""value"" operator=""lt"" value=""0"" />
-    //    </filter>
-    //    <filter>
-    //      <condition attribute=""some_name"" operator=""eq"" value=""X"" />
-    //    </filter>
-    //    <filter>
-    //      <condition attribute=""status"" operator=""eq"" value=""1"" />
-    //    </filter>
-    //    <attribute name=""some_tableid"" alias=""Id"" />
-    //    <attribute name=""other_table"" alias=""OtherTableId"" />
-    //    <attribute name=""another_table"" alias=""AnotherTableId"" />
-    //    <attribute name=""value"" alias=""Value"" />
-    //    <attribute name=""some_name"" alias=""Name"" />
-    //    <attribute name=""status"" alias=""Status"" />
-    //  </entity>
-    //</fetch>");
-    //    }
-
-    //    [Fact]
-    //    public void MultipleWheresWithParameterNameMismatchFirstOrDefaultTest()
-    //    {
-    //        var db = GetSimpleMockDb(new JsonArray
-    //        {
-    //            new JsonObject
-    //            {
-    //                {"Id", _exampleId}
-    //            }
-    //        });
-
-    //        var item = db.SomeTables
-    //            .Where(s => s.Value > 0)
-    //            .Where(x => x.Value < 0)
-    //            .Where(y => y.Name == "X")
-    //            .Where(z => z.Status == SomeStatusEnum.Active)
-    //            .FirstOrDefault();
-
-    //        item?.Id.Should().Be(_exampleId);
-
-    //        db.Provider
-    //            .LastUrl
-    //            .Should()
-    //            .Be(
-    //                $@"some_tables?fetchXml=<fetch mapping=""logical"" top=""1"">
-    //  <entity name=""some_table"">
-    //    <filter>
-    //      <condition attribute=""value"" operator=""gt"" value=""0"" />
-    //    </filter>
-    //    <filter>
-    //      <condition attribute=""value"" operator=""lt"" value=""0"" />
-    //    </filter>
-    //    <filter>
-    //      <condition attribute=""some_name"" operator=""eq"" value=""X"" />
-    //    </filter>
-    //    <filter>
-    //      <condition attribute=""status"" operator=""eq"" value=""1"" />
-    //    </filter>
-    //    <attribute name=""some_tableid"" alias=""Id"" />
-    //    <attribute name=""other_table"" alias=""OtherTableId"" />
-    //    <attribute name=""another_table"" alias=""AnotherTableId"" />
-    //    <attribute name=""value"" alias=""Value"" />
-    //    <attribute name=""some_name"" alias=""Name"" />
-    //    <attribute name=""status"" alias=""Status"" />
-    //  </entity>
-    //</fetch>");
-    //    }
-
-    //    [Fact]
-    //    public void MultipleWheresWithParameterNameMismatchFirstOrDefaultPredicateTest()
-    //    {
-    //        var db = GetSimpleMockDb(new JsonArray
-    //        {
-    //            new JsonObject
-    //            {
-    //                {"Id", _exampleId}
-    //            }
-    //        });
-
-    //        var item = db.SomeTables
-    //            .Where(s => s.Value > 0)
-    //            .Where(x => x.Value < 0)
-    //            .Where(y => y.Name == "X")
-    //            .FirstOrDefault(z => z.Status == SomeStatusEnum.Active);
-
-    //        item?.Id.Should().Be(_exampleId);
-
-    //        db.Provider
-    //            .LastUrl
-    //            .Should()
-    //            .Be(
-    //                $@"some_tables?fetchXml=<fetch mapping=""logical"" top=""1"">
-    //  <entity name=""some_table"">
-    //    <filter>
-    //      <condition attribute=""value"" operator=""gt"" value=""0"" />
-    //    </filter>
-    //    <filter>
-    //      <condition attribute=""value"" operator=""lt"" value=""0"" />
-    //    </filter>
-    //    <filter>
-    //      <condition attribute=""some_name"" operator=""eq"" value=""X"" />
-    //    </filter>
-    //    <filter>
-    //      <condition attribute=""status"" operator=""eq"" value=""1"" />
-    //    </filter>
-    //    <attribute name=""some_tableid"" alias=""Id"" />
-    //    <attribute name=""other_table"" alias=""OtherTableId"" />
-    //    <attribute name=""another_table"" alias=""AnotherTableId"" />
-    //    <attribute name=""value"" alias=""Value"" />
-    //    <attribute name=""some_name"" alias=""Name"" />
-    //    <attribute name=""status"" alias=""Status"" />
-    //  </entity>
-    //</fetch>");
-    //    }
-
-    //    [Fact]
     //    public async Task SelectProjectionNavigationTest()
     //    {
     //        var db = GetSimpleMockDb(new JsonArray
@@ -453,59 +308,30 @@ public class ODataTests
     //            .ContainSingle(a => a.Id == _exampleId);
     //    }
 
-    //[Fact]
-    //public async Task TakeTest()
-    //{
-    //    var db = GetSimpleMockDb(new JsonArray
-    //        {
-    //            new JsonObject
-    //            {
-    //                {"s.Id", _exampleId}
-    //            }
-    //        });
+    [Fact]
+    public async Task TakeTest()
+    {
+        var db = GetSimpleMockDb(new JsonArray
+            {
+                new JsonObject
+                {
+                    {"some_tableid", _exampleId}
+                }
+            });
 
-    //    var items = await (from s in db.SomeTables
-    //                       select new { s.Id }).Take(10).ToListAsync();
+        var items = await (from s in db.SomeTables
+                           select new { s.Id }).Take(10).ToListAsync();
 
-    //    items
-    //        .Should()
-    //        .ContainSingle(a => a.Id == _exampleId);
-    //}
+        items
+            .Should()
+            .ContainSingle(a => a.Id == _exampleId);
 
-    //    [Fact]
-    //    public async Task DistinctTakeTest()
-    //    {
-    //        var id = new Guid("3fa47b9b-d4c1-45df-9e96-4aecefcf85a8");
-    //        var jsonObject = new JsonObject
-    //        {
-    //            {
-    //                "value",
-    //                new JsonArray
-    //                {
-    //                    new JsonObject
-    //                    {
-    //                        {"s.Id", id}
-    //                    }
-    //                }
-    //            }
-    //        };
-    //        var httpClient = new HttpClient(
-    //            new MockHttpMessageHandler(jsonObject.ToJsonString())
-    //        )
-    //        {
-    //            BaseAddress = new Uri("http://test.tst")
-    //        };
-    //        var db = new ODataContext(httpClient);
-
-    //        var items = await (from s in db.SomeTables
-    //            select new {s.Id}).Distinct().Take(10).ToListAsync();
-
-    //        items
-    //            .Should()
-    //            .ContainSingle(a => a.Id == id);
-    //    }
-    //}
-
+        db.Provider
+       .LastUrl
+       .Should()
+       .Be("some_tables?$select=some_tableid&$top=10");
+    }
+    
     public class MockHttpMessageHandler : HttpMessageHandler
     {
         readonly string content;
