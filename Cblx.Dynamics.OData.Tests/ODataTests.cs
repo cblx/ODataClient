@@ -289,31 +289,31 @@ public class ODataTests
           .Be("some_tables?$select=_another_table_value,_other_table_value,some_name,some_tableid,status,value&$filter=value gt 0");
     }
 
-    //[Fact]
-    //public async Task SelectProjectionNavigationTest()
-    //{
-    //    var db = GetSimpleMockDb(new JsonArray
-    //        {
-    //            new JsonObject
-    //            {
-    //                { 
-    //                    "other_table", new JsonObject{
-    //                        { "other_tableid", _exampleId }
-    //                    } 
-    //                }
-    //            }
-    //        });
+    [Fact]
+    public async Task SelectProjectionNavigationTest()
+    {
+        var db = GetSimpleMockDb(new JsonArray
+            {
+                new JsonObject
+                {
+                    {
+                        "other_table", new JsonObject{
+                            { "other_tableid", _exampleId }
+                        }
+                    }
+                }
+            });
 
-    //    var items = await (from s in db.SomeTables
-    //                       select new { s.OtherTable!.Id }).ToListAsync();
+        var items = await (from s in db.SomeTables
+                           select new { s.OtherTable!.Id }).ToListAsync();
 
-    //    items.First().Id.Should().Be(_exampleId);
+        items.First().Id.Should().Be(_exampleId);
 
-    //    db.Provider
-    //     .LastUrl
-    //     .Should()
-    //     .Be("some_tables?$expand=other_table($select=other_tableid)");
-    //}
+        db.Provider
+         .LastUrl
+         .Should()
+         .Be("some_tables?$expand=other_table($select=other_tableid)");
+    }
 
     [Fact]
     public async Task TakeTest()

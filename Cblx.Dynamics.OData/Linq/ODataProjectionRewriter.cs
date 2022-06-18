@@ -81,8 +81,14 @@ public class ODataProjectionRewriter : ExpressionVisitor
     protected override Expression VisitMember(MemberExpression node)
     {
         MemberInfo memberInfo = node.Member;
-        //string propAlias = node.ToProjectionAttributeAlias();
-        string colName = node.Member.GetColName();
+        Stack<string> fieldsStack = new();
+        //string colName = node.Member.GetColName();
+        fieldsStack.Push(node.Member.GetColName());
+        while(node.Expression is MemberExpression parentMemberExpression)
+        {
+            fieldsStack.Push(parentMemberExpression.Member.GetColName());
+            node = parentMemberExpression;
+        }
 
         MethodInfo auxGetValueMethod =
             typeof(RewriterHelpers)
@@ -106,7 +112,7 @@ public class ODataProjectionRewriter : ExpressionVisitor
                 null,
                 genericAuxGetValueMethod,
                 _jsonParameterExpression,
-                Expression.Constant(colName)
+                Expression.Constant(fieldsStack)
             );
 
             string toEnumMethodName =
@@ -129,7 +135,7 @@ public class ODataProjectionRewriter : ExpressionVisitor
                 null,
                 genericAuxGetValueMethod,
                 _jsonParameterExpression,
-                Expression.Constant(colName)
+                Expression.Constant(fieldsStack)
             );
         }
     }
