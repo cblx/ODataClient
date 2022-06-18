@@ -21,6 +21,30 @@ public static class ExpressionExtensions
         return expression;
     }
 
+    public static Stack<MemberExpression> CreateMemberFullStack(this MemberExpression memberExpression)
+    {
+        Stack<MemberExpression> memberStack = new();
+        memberStack.Push(memberExpression);
+        Expression? expression = memberExpression.Expression;
+        while (expression is MemberExpression parentMemberExpression)
+        {
+            memberStack.Push(parentMemberExpression);
+            expression = parentMemberExpression.Expression;
+        }
+        return memberStack;
+    }
+
+    public static string GetFieldName(this MemberExpression memberExpression)
+    {
+        string fieldName = memberExpression.Member.Name;
+        var jsonPropertyNameAttr = memberExpression.Member.GetCustomAttribute<JsonPropertyNameAttribute>();
+        if (jsonPropertyNameAttr != null)
+        {
+            fieldName = jsonPropertyNameAttr.Name;
+        }
+        return fieldName;
+    }
+
     //public static string ToProjectionAttributeAlias(this MemberExpression memberExpression)
     //{
     //    string propAlias = memberExpression.ToString();
@@ -31,7 +55,7 @@ public static class ExpressionExtensions
     //            ));
     //    return propAlias;
     //}
-   
+
     //public static string GetColName(this MemberExpression memberExpression) => memberExpression.Member.GetColName();
 
     public static bool IsCol(this MemberInfo memberInfo)

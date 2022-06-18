@@ -201,31 +201,30 @@ public class ODataTests
             .Be("some_tables?$select=_another_table_value,_other_table_value,some_name,some_tableid,status,value&$top=1");
     }
 
-    //[Fact]
-    //public void FirstOrDefaultWithPredicateTest()
-    //{
-    //    var db = GetSimpleMockDb(new JsonArray
-    //        {
-    //            new JsonObject
-    //            {
-    //                {"some_tableid", _exampleId},
-    //                {"some_name", "John"},
-    //                {"status", (int) SomeStatusEnum.Active}
-    //            }
-    //        });
+    [Fact]
+    public void FirstOrDefaultWithPredicateTest()
+    {
+        var db = GetSimpleMockDb(new JsonArray
+            {
+                new JsonObject
+                {
+                    {"some_tableid", _exampleId},
+                    {"some_name", "John"},
+                    {"status", (int) SomeStatusEnum.Active}
+                }
+            });
 
-    //    var item = db.SomeTables.FirstOrDefault(s => s.Value > 0);
+        var item = db.SomeTables.FirstOrDefault(s => s.Value > 0);
 
-    //    item!.Id.Should().Be(_exampleId);
-    //    item!.Name.Should().Be("John");
-    //    item!.Status.Should().Be(SomeStatusEnum.Active);
+        item!.Id.Should().Be(_exampleId);
+        item!.Name.Should().Be("John");
+        item!.Status.Should().Be(SomeStatusEnum.Active);
 
-    //    db.Provider
-    //        .LastUrl
-    //        .Should()
-    //        .Be("some_tables?$select=_another_table_value,_other_table_value,some_name,some_tableid,status,value&$filter=value gt 0");
-    //}
-
+        db.Provider
+            .LastUrl
+            .Should()
+            .Be("some_tables?$filter=value gt 0&$select=_another_table_value,_other_table_value,some_name,some_tableid,status,value&$top=1");
+    }
 
     [Fact]
     public async Task QueryableToListAsyncTest()

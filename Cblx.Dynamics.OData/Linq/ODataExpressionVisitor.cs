@@ -2,6 +2,7 @@
 
 namespace Cblx.Dynamics.OData.Linq;
 
+
 public class ODataExpressionVisitor : ExpressionVisitor
 {
 
@@ -166,6 +167,13 @@ public class ODataExpressionVisitor : ExpressionVisitor
     Expression VisitFirstOrDefault(MethodCallExpression node)
     {
         _queryString["$top"] = "1";
+        if (node.Arguments.Count > 1)
+        {
+            LambdaExpression filterExpression = ((node.Arguments[1] as UnaryExpression)!.Operand as LambdaExpression)!;
+            var filterVisitor = new FilterVisitor(false);
+            filterVisitor.Visit(filterExpression);
+            _queryString["$filter"] = filterVisitor.Query;
+        }
         return base.VisitMethodCall(node);
     }
 
