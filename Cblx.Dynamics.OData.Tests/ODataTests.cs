@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using System.Text.Json.Nodes;
+using Cblx.Dynamics.FetchXml.Linq;
 using Cblx.Dynamics.OData.Linq;
 using FluentAssertions;
 
@@ -87,6 +88,27 @@ public class ODataTests
         name.Should().Be("x");
 
         db.Provider.LastUrl.Should().Be("some_tables?$select=some_name&$top=1");
+    }
+
+    [Fact]
+    public async Task SelectFormattedValueInNewObjectTest()
+    {
+        var db = GetSimpleMockDb(new JsonArray
+            {
+                new JsonObject
+                {
+                    {"value@OData.Community.Display.V1.FormattedValue", "x"}
+                }
+            });
+
+        var item = await (from s in db.SomeTables
+                              select new { 
+                                  FormattedValue = DynFunctions.FormattedValue(s.Value) 
+                              }).FirstOrDefaultAsync();
+
+        item!.FormattedValue.Should().Be("x");
+
+        db.Provider.LastUrl.Should().Be("some_tables?$select=value@OData.Community.Display.V1.FormattedValue&$top=1");
     }
 
     [Fact]

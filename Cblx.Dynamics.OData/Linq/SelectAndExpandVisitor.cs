@@ -110,6 +110,9 @@ internal class SelectAndExpandVisitor : ExpressionVisitor
             //string field = target.ToString().Substring(paramPrefix.Length).Replace(".", "/");
             switch (node.Method.Name)
             {
+                case "FormattedValue":
+                    AddFieldFromMember((node.Arguments[0] as MemberExpression)!, "@OData.Community.Display.V1.FormattedValue");
+                    return node;
                 case "Select":
                     {
                         var subVisitor = new SelectAndExpandVisitor(false, subExpandFilter, subExpandOrderBy, subExpandTop,
@@ -150,6 +153,12 @@ internal class SelectAndExpandVisitor : ExpressionVisitor
 
     protected override Expression VisitMember(MemberExpression node)
     {
+        AddFieldFromMember(node, null);
+        return base.VisitMember(node);
+    }
+
+    Expression AddFieldFromMember(MemberExpression node, string? applyAnnotation) 
+    {
         var str = node.ToString();
         var paramPrefix = _parameter!.Name + ".";
         if (!str.StartsWith(paramPrefix)) return base.VisitMember(node);
@@ -183,7 +192,7 @@ internal class SelectAndExpandVisitor : ExpressionVisitor
                 if (string.IsNullOrWhiteSpace(field)) return base.VisitMember(node);
             }
 
-            pair.Select.Add(field);
+            pair.Select.Add($"{field}{applyAnnotation}");
         }
 
         return base.VisitMember(node);

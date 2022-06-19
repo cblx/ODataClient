@@ -7,8 +7,6 @@ public class ODataExpressionVisitor : ExpressionVisitor
 {
 
     private Expression? _rootExpression = null;
-    public string? Endpoint { get; private set; }
-
     private SortedDictionary<string, string> _queryString = new();
 
     public override Expression? Visit(Expression? node)
@@ -17,17 +15,17 @@ public class ODataExpressionVisitor : ExpressionVisitor
         return base.Visit(node);
     }
 
-    protected override Expression VisitConstant(ConstantExpression node)
-    {
-        Type? type = node.Value?.GetType();
-        // Should exist just one access to a constant of ODataQueryable
-        if (type != null && type.IsGenericType && type?.GetGenericTypeDefinition() == typeof(ODataQueryable<>))
-        {
-            Type entityType = type.GenericTypeArguments[0];
-            Endpoint = entityType.GetEndpointName();
-        }
-        return base.VisitConstant(node);
-    }
+    //protected override Expression VisitConstant(ConstantExpression node)
+    //{
+    //    Type? type = node.Value?.GetType();
+    //    // Should exist just one access to a constant of ODataQueryable
+    //    if (type != null && type.IsGenericType && type?.GetGenericTypeDefinition() == typeof(ODataQueryable<>))
+    //    {
+    //        Type entityType = type.GenericTypeArguments[0];
+    //        Endpoint = entityType.GetEndpointName();
+    //    }
+    //    return base.VisitConstant(node);
+    //}
 
     //protected override Expression VisitMember(MemberExpression node)
     //{
@@ -63,10 +61,10 @@ public class ODataExpressionVisitor : ExpressionVisitor
     public string ToRelativeUrl()
     {
         if (_rootExpression is null) { throw new Exception("The expression should be visited first"); }
-        string selectAndExpand = CreateSelectAndExpandFromProjection(_rootExpression);
+        var selectAndExpand = CreateSelectAndExpandFromProjection(_rootExpression);
         IEnumerable<string> options = _queryString.Select(kvp => $"{kvp.Key}={kvp.Value}");
-        options = new[] { selectAndExpand }.Union(options);
-        return $"{Endpoint}?{string.Join("&", options)}";
+        options = new[] { selectAndExpand.SelectAndExpand }.Union(options);
+        return $"{selectAndExpand.Endpoint}?{string.Join("&", options)}";
         //string fetchXml = ToFetchXml();
         //if (string.IsNullOrWhiteSpace(Endpoint))
         //{
@@ -83,7 +81,7 @@ public class ODataExpressionVisitor : ExpressionVisitor
     //    return base.Visit(node);
     //}
 
-    string CreateSelectAndExpandFromProjection(Expression expression)
+    (string Endpoint, string SelectAndExpand) CreateSelectAndExpandFromProjection(Expression expression)
     {
         if (expression is MethodCallExpression methodCallExpression)
         {
@@ -99,6 +97,13 @@ public class ODataExpressionVisitor : ExpressionVisitor
                     return CreateSelectAndExpandFromProjection(methodCallExpression.Arguments[0]);
                 case "Select":
                     {
+                        string endpoint = "";
+                        if(methodCallExpression.Arguments.First() is ConstantExpression constantExpression && constantExpression.Value is IQueryable queryable)
+                        {
+                            Type entityType = queryable.GetType().GetGenericArguments().First();
+                            endpoint = entityType.GetEndpointName();
+                        }
+
                         // Interpret the lambda projection arg in db.Entities...etc..Extensions.Select(queryable, arg);
                         var projectionExpression = (methodCallExpression.Arguments.Last().UnBox() as LambdaExpression)!;
                         var selectAndExpandVisitor = new SelectAndExpandVisitor(true, null);
@@ -107,7 +112,7 @@ public class ODataExpressionVisitor : ExpressionVisitor
                         //return projectionVisitor.Select;
                         selectAndExpandVisitor.Visit(projectionExpression);
                         string select = selectAndExpandVisitor.ToString();
-                        return select;
+                        return (endpoint, select);
                     }
                 default: throw new Exception($"{methodCallExpression?.Method.Name} is not supported");
             }
@@ -115,8 +120,8 @@ public class ODataExpressionVisitor : ExpressionVisitor
         else if (expression is ConstantExpression constantExpression && constantExpression.Value is IQueryable queryable)
         {
             Type entityType = queryable.GetType().GetGenericArguments().First();
-            Endpoint = entityType.GetEndpointName();
-            return entityType.ToSelectString();
+            string endpoint = entityType.GetEndpointName();
+            return (endpoint, entityType.ToSelectString());
         }
         throw new Exception($"Expression {expression} is not supported");
     }
@@ -130,11 +135,8 @@ public class ODataExpressionVisitor : ExpressionVisitor
             //"Distinct" => VisitDistinct(node),
             "Take" => VisitTake(node),
             "FirstOrDefault" => VisitFirstOrDefault(node),
-            "Select" => base.VisitMethodCall(node),
-            // Join/from form
-            //"SelectMany" => VisitSelectMany(node),
-            "Where" => VisitWhere(node),
-            //"Join" => VisitJoin(node),
+            "Select" => node, // manage by SelectAndExpandVisitor
+            "Where" => VisitWhere(node), // managed by FilterVisitor
             //"OrderBy" => VisitOrderBy(node),
             //"OrderByDescending" => VisitOrderBy(node, true),
             //"GroupBy" => VisitGroupBy(node),

@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+﻿using Cblx.Dynamics.FetchXml.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.Json.Nodes;
 
@@ -22,7 +23,8 @@ public class ODataProjectionRewriter : ExpressionVisitor
                         or "Where"
                         or "FirstOrDefault"
                 }
-            } methodCallExpression: return Rewrite(methodCallExpression.Arguments[0]);
+            } methodCallExpression:
+                return Rewrite(methodCallExpression.Arguments[0]);
             case MethodCallExpression
             {
                 Method:
@@ -78,13 +80,43 @@ public class ODataProjectionRewriter : ExpressionVisitor
         throw new Exception("Invalid expression during projection rewrite");
     }
 
-    protected override Expression VisitMember(MemberExpression node)
+    protected override Expression VisitMethodCall(MethodCallExpression node)
+    {
+        switch (node)
+        {
+            case MethodCallExpression
+            {
+                Method.DeclaringType.Name: nameof(DynFunctions)
+            } methodCallExpression:
+                switch (methodCallExpression.Method.Name)
+                {
+                    case nameof(DynFunctions.FormattedValue):
+                        var argument = methodCallExpression.Arguments[0];
+                        if(argument is UnaryExpression unaryExpression)
+                        {
+                            argument = unaryExpression.Operand;
+                        }
+                        if (argument is MemberExpression memberExpression)
+                        {
+                            return VisitMember(memberExpression, "@OData.Community.Display.V1.FormattedValue", methodCallExpression.Method.ReturnType);
+                        }
+                        else
+                        {
+                            throw new Exception("The argument in FormattedValue must be a Dynamics field");
+                        }
+                    default: throw new Exception($"The dynamics function {methodCallExpression.Method.Name} is not implemented");
+                }
+        }
+        return base.VisitMethodCall(node);
+    }
+
+    Expression VisitMember(MemberExpression node, string? applyAnnotation, Type? overrideType)
     {
         MemberInfo memberInfo = node.Member;
         Stack<string> fieldsStack = new();
         //string colName = node.Member.GetColName();
-        fieldsStack.Push(node.Member.GetColName());
-        while(node.Expression is MemberExpression parentMemberExpression)
+        fieldsStack.Push($"{node.Member.GetColName()}{applyAnnotation}");
+        while (node.Expression is MemberExpression parentMemberExpression)
         {
             fieldsStack.Push(parentMemberExpression.Member.GetColName());
             node = parentMemberExpression;
@@ -100,7 +132,7 @@ public class ODataProjectionRewriter : ExpressionVisitor
             throw new ArgumentException("Member must be a property");
         }
 
-        Type propertyType = propertyInfo.PropertyType;
+        Type propertyType = overrideType ?? propertyInfo.PropertyType;
         bool isNullable = propertyType.IsGenericType && propertyType.GetGenericTypeDefinition() == typeof(Nullable<>);
         Type? innerType = isNullable ? propertyType.GetGenericArguments()[0] : propertyType;
 
@@ -138,5 +170,10 @@ public class ODataProjectionRewriter : ExpressionVisitor
                 Expression.Constant(fieldsStack)
             );
         }
+    }
+
+    protected override Expression VisitMember(MemberExpression node)
+    {
+        return VisitMember(node, null, null);
     }
 }
