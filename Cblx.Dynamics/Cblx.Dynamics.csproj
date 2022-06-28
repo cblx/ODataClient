@@ -7,6 +7,9 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\Cblx.Dynamics.FetchXml\Cblx.Dynamics.FetchXml.csproj" />
+      <ProjectReference Include="..\Cblx.Dynamics.Linq\Cblx.Dynamics.Linq.csproj" />
+      <ProjectReference Include="..\Cblx.Dynamics.OData\Cblx.Dynamics.OData.csproj" />
       <ProjectReference Include="..\Cblx.OData.Client.Repositories.Abstractions\Cblx.OData.Client.Repositories.Abstractions.csproj" />
       <ProjectReference Include="..\Cblx.OData.Client.Repositories\Cblx.OData.Client.Repositories.csproj" />
       <ProjectReference Include="..\Cblx.OData.Client.SourceGenerators\Cblx.OData.Client.SourceGenerators.csproj" />
