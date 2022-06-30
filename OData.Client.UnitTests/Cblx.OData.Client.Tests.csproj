@@ -3,6 +3,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <RunSettingsFilePath>$(SolutionDir)\coverlet.runsettings</RunSettingsFilePath>
     <IsPackable>false</IsPackable>
+	<LangVersion>preview</LangVersion>
     <NoWarn>IDE1006</NoWarn>
   </PropertyGroup>
   <ItemGroup>

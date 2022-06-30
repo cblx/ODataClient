@@ -1,4 +1,6 @@
-﻿using System.Linq.Expressions;
+﻿#nullable enable
+using Cblx.Dynamics;
+using System.Linq.Expressions;
 namespace OData.Client.Abstractions;
 public interface IODataSet<TSource>
     where TSource: class
@@ -23,9 +25,9 @@ public interface IODataSet<TSource>
 
     IODataSetSelected<TSource> PrepareSelect(Expression<Func<TSource, object>> selectExpression);
 
-    Task<TSource> FindAsync(Guid id);
+    Task<TSource?> FindAsync(Guid id);
 
-    Task<TEntity> FindAsync<TEntity>(Guid id) where TEntity: class;
+    Task<TEntity?> FindAsync<TEntity>(Guid id) where TEntity: class;
 
     Task<List<TProjection>> SelectListAsync<TProjection>(Expression<Func<TSource, TProjection>> transform);
 
@@ -37,12 +39,13 @@ public interface IODataSet<TSource>
 
     Task<ODataResult<TProjection>> SelectResultAsync<TProjection>(Expression<Func<TSource, TProjection>> selectExpression);
 
-    Task<TProjection> SelectFirstOrDefaultAsync<TProjection>(Expression<Func<TSource, TProjection>> selectExpression);
+    Task<TProjection?> SelectFirstOrDefaultAsync<TProjection>(Expression<Func<TSource, TProjection>> selectExpression);
 
-    Task<TSource> FirstOrDefaultAsync();
+    Task<TSource?> FirstOrDefaultAsync();
 
     string ToString<TProjection>(Expression<Func<TSource, TProjection>> selectExpression);
     Task<ODataResult<TEntity>> ToResultAsync<TEntity>() where TEntity : class;
-    Task<TEntity> FirstOrDefaultAsync<TEntity>() where TEntity : class;
+    Task<TEntity?> FirstOrDefaultAsync<TEntity>() where TEntity : class;
+    Task<IEnumerable<PicklistOption>> GetPicklistOptionsAsync(Expression<Func<TSource, object>> propertyExpression);
 }
 

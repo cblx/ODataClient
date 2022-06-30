@@ -1,4 +1,9 @@
 ﻿using System.Linq.Expressions;
+using System.Reflection;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
+using Cblx.Dynamics;
 using OData.Client.Abstractions;
 
 namespace OData.Client;
@@ -9,7 +14,7 @@ public class ODataSet<TSource> : IODataSet<TSource>
     private readonly string _endpoint;
     private readonly ODataClient client;
     private readonly ODataOptions options = new();
-    private Action<HttpRequestMessage> requestMessageConfiguration;
+    private Action<HttpRequestMessage>? requestMessageConfiguration;
 
 
     public ODataSet(ODataClient client, string endpoint)
@@ -74,7 +79,7 @@ public class ODataSet<TSource> : IODataSet<TSource>
     {
         var selectAndExpandParser = new SelectAndExpandParser<TSource, TEntity>();
         var url = AppendOptions(_endpoint, selectAndExpandParser.ToString());
-        return await Get<ODataResultInternal<TEntity>>(url);
+        return (await Get<ODataResultInternal<TEntity>>(url))!;
     }
 
     public async Task<ODataResult<TProjection>> SelectResultAsync<TProjection>(
@@ -106,7 +111,7 @@ public class ODataSet<TSource> : IODataSet<TSource>
     }
 
 
-    public async Task<TProjection> SelectFirstOrDefaultAsync<TProjection>(
+    public async Task<TProjection?> SelectFirstOrDefaultAsync<TProjection>(
         Expression<Func<TSource, TProjection>> selectExpression)
     {
         var set = Top(1);
@@ -114,14 +119,14 @@ public class ODataSet<TSource> : IODataSet<TSource>
         return result.Value.FirstOrDefault();
     }
 
-    public async Task<TSource> FirstOrDefaultAsync()
+    public async Task<TSource?> FirstOrDefaultAsync()
     {
         var set = Top(1);
         var result = await set.ToResultAsync();
         return result.Value.FirstOrDefault();
     }
 
-    public async Task<TEntity> FirstOrDefaultAsync<TEntity>() where TEntity : class
+    public async Task<TEntity?> FirstOrDefaultAsync<TEntity>() where TEntity : class
     {
         var set = Top(1);
         var result = await set.ToResultAsync<TEntity>();
@@ -179,12 +184,12 @@ public class ODataSet<TSource> : IODataSet<TSource>
     }
 
 
-    public Task<TSource> FindAsync(Guid id)
+    public Task<TSource?> FindAsync(Guid id)
     {
         return FindAsync<TSource>(id);
     }
 
-    public Task<TEntity> FindAsync<TEntity>(Guid id) where TEntity : class
+    public Task<TEntity?> FindAsync<TEntity>(Guid id) where TEntity : class
     {
         return Get<TEntity>(CreateFindString<TEntity>(id));
     }
@@ -199,10 +204,42 @@ public class ODataSet<TSource> : IODataSet<TSource>
 
     private async Task<ODataResult<TSource>> Get(string url)
     {
-        return await Get<ODataResultInternal<TSource>>(url);
+        return (await Get<ODataResultInternal<TSource>>(url))!;
     }
 
-    private Task<TResult> Get<TResult>(string url)
+    public async Task<IEnumerable<PicklistOption>> GetPicklistOptionsAsync(Expression<Func<TSource, object>> propertyExpression)
+    {
+        string entityLogicalName = typeof(TSource).GetCustomAttribute<DynamicsEntityAttribute>()?.Name!;
+        Expression memberExpression = propertyExpression.Body;
+        if(memberExpression is UnaryExpression unaryExpression)
+        {
+            memberExpression = unaryExpression.Operand;
+        }
+        string attributeLogicalName = (memberExpression as MemberExpression)!
+            .Member!
+            .GetCustomAttribute<JsonPropertyNameAttribute>()!
+            .Name;
+
+        var requestMessage = new HttpRequestMessage(
+            HttpMethod.Get, 
+            $"EntityDefinitions(LogicalName='{entityLogicalName}')/Attributes(LogicalName='{attributeLogicalName}')/Microsoft.Dynamics.CRM.PicklistAttributeMetadata?$select=LogicalName&$expand=OptionSet($select=Options)"
+        );
+        HttpResponseMessage responseMessage = await client.Invoker.SendAsync(requestMessage, default);
+        var jsonObject = await JsonSerializer.DeserializeAsync<JsonObject>(await responseMessage.Content.ReadAsStreamAsync());
+        var jsonArray = jsonObject!["OptionSet"]!["Options"] as JsonArray;
+        var picklistOptions = new List<PicklistOption>();
+        foreach(var item in jsonArray!)
+        {
+            picklistOptions.Add(new PicklistOption
+            {
+                Text = item!["Label"]!["LocalizedLabels"]![0]!["Label"]!.GetValue<string>(),
+                Value = item["Value"]!.GetValue<int>()
+            });
+        }
+        return picklistOptions;
+    }
+
+    private Task<TResult?> Get<TResult>(string url)
     {
         return HttpHelpers.Get<TResult>(new RequestParameters(client, requestMessageConfiguration, url));
     }
@@ -259,7 +296,7 @@ public class ODataSet<TSource> : IODataSet<TSource>
             _selectExpression = selectExpression;
         }
 
-        public async Task<TProjection> MapFirstOrDefaultAsync<TProjection>(Func<TSource, TProjection> transform)
+        public async Task<TProjection?> MapFirstOrDefaultAsync<TProjection>(Func<TSource, TProjection> transform)
         {
             var url = _dataSet.ToString(_selectExpression);
             var result = await _dataSet.Get(url);
