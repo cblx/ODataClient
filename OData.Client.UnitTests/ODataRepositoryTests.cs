@@ -17,7 +17,10 @@ public class ODataRepositoryTests
         var httpClient = new HttpClient();
         var oDataClient = new ODataClient(httpClient);
         var repository = new Repo(oDataClient);
-        repository.Add(new SaveEntity() { RelId = Guid.NewGuid() });
+        repository.Add(new SaveEntity() { 
+            RelId = Guid.NewGuid(),
+            DtOnly = new DateOnly(2020,1,1)
+        });
         var exec = () => repository.SaveChanges();
         await exec.Should()
             .ThrowAsync<InvalidOperationException>()
@@ -40,6 +43,9 @@ public class ODataRepositoryTests
         [JsonPropertyName("relId")]
         [ODataBind("rel")]
         public Guid? RelId { get; set; }
+
+        [JsonPropertyName("dtOnly")]
+        public DateOnly? DtOnly { get; set; }
     }
 
     [ODataEndpoint("x")]
@@ -49,5 +55,8 @@ public class ODataRepositoryTests
 
         [JsonPropertyName("rel")]
         public object Rel { get; set; }
+
+        [JsonPropertyName("dtOnly")]
+        public DateOnly? DtOnly { get; set; }
     }
 }

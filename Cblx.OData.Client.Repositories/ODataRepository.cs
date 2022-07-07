@@ -1,4 +1,5 @@
 ﻿using Cblx.OData.Client.Abstractions.Ids;
+using OData.Client;
 using OData.Client.Abstractions;
 using OData.Client.Abstractions.Write;
 using System;
@@ -93,7 +94,9 @@ namespace Cblx.OData.Client
                             {
                                 guid = (changedProperty.NewValue as Guid?)
                                             ??
-                                            JsonSerializer.Deserialize<Guid>(JsonSerializer.Serialize(changedProperty.NewValue));
+                                            JsonSerializer.Deserialize<Guid>(
+                                                JsonSerializer.Serialize(changedProperty.NewValue)
+                                            );
 
                             }
                             catch

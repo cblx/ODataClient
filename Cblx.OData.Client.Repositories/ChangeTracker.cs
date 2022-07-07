@@ -1,4 +1,5 @@
 ﻿using Cblx.OData.Client.Abstractions.Ids;
+using OData.Client;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,7 +20,9 @@ namespace Cblx.OData.Client
         readonly HashSet<Guid> markedForRemove = new HashSet<Guid>();
         readonly JsonSerializerOptions options = new JsonSerializerOptions();
 
-        public ChangeTracker(){}
+        public ChangeTracker(){
+            options.Converters.Add(new DateOnlyJsonConverter());
+        }
 
         public void Add(object o)
         {
