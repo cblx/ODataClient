@@ -159,14 +159,14 @@ public class ODataSet<TSource> : IODataSet<TSource>
         return AddOptionValue("$count", "true");
     }
 
-    public IODataSet<TSource> OrderBy(Expression<Func<TSource, object>> orderByExpression)
+    public IODataSet<TSource> OrderBy(Expression<Func<TSource, object?>> orderByExpression)
     {
         var visitor = new FilterVisitor(false);
         visitor.Visit(orderByExpression);
         return AddOptionValue("$orderby", visitor.Query);
     }
 
-    public IODataSet<TSource> OrderByDescending(Expression<Func<TSource, object>> orderByExpression)
+    public IODataSet<TSource> OrderByDescending(Expression<Func<TSource, object?>> orderByExpression)
     {
         var visitor = new FilterVisitor(false);
         visitor.Visit(orderByExpression);

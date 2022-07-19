@@ -13,9 +13,9 @@ public interface IODataSet<TSource>
 
     IODataSet<TSource> Top(int top);
 
-    IODataSet<TSource> OrderBy(Expression<Func<TSource, object>> orderByExpression);
+    IODataSet<TSource> OrderBy(Expression<Func<TSource, object?>> orderByExpression);
 
-    IODataSet<TSource> OrderByDescending(Expression<Func<TSource, object>> orderByExpression);
+    IODataSet<TSource> OrderByDescending(Expression<Func<TSource, object?>> orderByExpression);
 
     IODataSet<TSource> SkipToken(string value);
 
