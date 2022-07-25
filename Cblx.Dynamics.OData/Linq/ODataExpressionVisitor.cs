@@ -282,13 +282,15 @@ public class ODataExpressionVisitor : ExpressionVisitor
     //    return node;
     //}
 
+    Stack<string> _filters = new();
 
     Expression VisitWhere(MethodCallExpression node)
     {
         LambdaExpression filterExpression = ((node.Arguments[1] as UnaryExpression)!.Operand as LambdaExpression)!;
         var filterVisitor = new FilterVisitor(false);
         filterVisitor.Visit(filterExpression);
-        _queryString["$filter"] = filterVisitor.Query;
+        _filters.Push(filterVisitor.Query);
+        _queryString["$filter"] = String.Join(" and ", _filters);
         return base.VisitMethodCall(node);
     }
 

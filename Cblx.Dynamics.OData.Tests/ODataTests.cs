@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Linq.Expressions;
+using System.Net;
 using System.Text.Json.Nodes;
 using Cblx.Dynamics.FetchXml.Linq;
 using Cblx.Dynamics.OData.Linq;
@@ -102,9 +103,10 @@ public class ODataTests
             });
 
         var item = await (from s in db.SomeTables
-                              select new { 
-                                  FormattedValue = DynFunctions.FormattedValue(s.Value) 
-                              }).FirstOrDefaultAsync();
+                          select new
+                          {
+                              FormattedValue = DynFunctions.FormattedValue(s.Value)
+                          }).FirstOrDefaultAsync();
 
         item!.FormattedValue.Should().Be("x");
 
@@ -312,6 +314,52 @@ public class ODataTests
     }
 
     [Fact]
+    public async Task MultiWhereTest()
+    {
+        var db = GetSimpleMockDb(new JsonArray
+            {
+                new JsonObject
+                {
+                    {"some_tableid", _exampleId}
+                }
+            });
+
+        var items = await db.SomeTables
+            .Where(s => s.Value > 0)
+            .Where(s => s.Value < 10)
+            .ToListAsync();
+        items.First().Id.Should().Be(_exampleId);
+
+        db.Provider
+          .LastUrl
+          .Should()
+          .Be("some_tables?$select=_another_table_value,_other_table_value,some_name,some_tableid,status,value&$filter=value gt 0 and value lt 10");
+    }
+
+    [Fact]
+    public async Task MultiWhereWithOrTest()
+    {
+        var db = GetSimpleMockDb(new JsonArray
+            {
+                new JsonObject
+                {
+                    {"some_tableid", _exampleId}
+                }
+            });
+
+        var items = await db.SomeTables
+            .Where(s => s.Value > 0 || s.Value <= -1)
+            .Where(s => s.Value < 10 || s.Value == 50)
+            .ToListAsync();
+        items.First().Id.Should().Be(_exampleId);
+
+        db.Provider
+          .LastUrl
+          .Should()
+          .Be("some_tables?$select=_another_table_value,_other_table_value,some_name,some_tableid,status,value&$filter=(value gt 0 or value le -1) and (value lt 10 or value eq 50)");
+    }
+
+    [Fact]
     public async Task SelectProjectionNavigationTest()
     {
         var db = GetSimpleMockDb(new JsonArray
@@ -360,7 +408,7 @@ public class ODataTests
        .Should()
        .Be("some_tables?$select=some_tableid&$top=10");
     }
-    
+
     public class MockHttpMessageHandler : HttpMessageHandler
     {
         readonly string content;
