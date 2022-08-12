@@ -207,7 +207,7 @@ public class ODataSet<TSource> : IODataSet<TSource>
         return (await Get<ODataResultInternal<TSource>>(url))!;
     }
 
-    public async Task<IEnumerable<PicklistOption>> GetPicklistOptionsAsync(Expression<Func<TSource, object>> propertyExpression)
+    public async Task<PicklistOption[]> GetPicklistOptionsAsync(Expression<Func<TSource, object>> propertyExpression)
     {
         string entityLogicalName = typeof(TSource).GetCustomAttribute<DynamicsEntityAttribute>()?.Name!;
         Expression memberExpression = propertyExpression.Body;
@@ -236,7 +236,7 @@ public class ODataSet<TSource> : IODataSet<TSource>
                 Value = item["Value"]!.GetValue<int>()
             });
         }
-        return picklistOptions;
+        return picklistOptions.ToArray();
     }
 
     private Task<TResult?> Get<TResult>(string url)
@@ -283,6 +283,29 @@ public class ODataSet<TSource> : IODataSet<TSource>
         if (!string.IsNullOrWhiteSpace(joined)) return $"{endpoint}?{joined}";
 
         return endpoint;
+    }
+
+    public async Task<TProjection[]> SelectArrayAsync<TProjection>(Expression<Func<TSource, TProjection>> selectExpression)
+    {
+        var result = await SelectResultAsync(selectExpression);
+        return result.Value.ToArray();
+    }
+
+    public async Task<TSource[]> ToArrayAsync()
+    {
+        var result = await ToResultAsync();
+        return result.Value.ToArray();
+    }
+
+    public async Task<TEntity[]> ToArrayAsync<TEntity>() where TEntity : class
+    {
+        var result = await ToResultAsync<TEntity>();
+        return result.Value.ToArray();
+    }
+
+    Task<PicklistOption[]> IODataSet<TSource>.GetPicklistOptionsAsync(Expression<Func<TSource, object>> propertyExpression)
+    {
+        throw new NotImplementedException();
     }
 
     private class ODataSetSelected : IODataSetSelected<TSource>
