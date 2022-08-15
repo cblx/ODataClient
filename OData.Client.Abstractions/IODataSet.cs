@@ -23,6 +23,7 @@ public interface IODataSet<TSource>
 
     IODataSet<TSource> IncludeCount();
 
+    [Obsolete("This method will be removed")]
     IODataSetSelected<TSource> PrepareSelect(Expression<Func<TSource, object>> selectExpression);
 
     Task<TSource?> FindAsync(Guid id);

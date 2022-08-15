@@ -303,11 +303,6 @@ public class ODataSet<TSource> : IODataSet<TSource>
         return result.Value.ToArray();
     }
 
-    Task<PicklistOption[]> IODataSet<TSource>.GetPicklistOptionsAsync(Expression<Func<TSource, object>> propertyExpression)
-    {
-        throw new NotImplementedException();
-    }
-
     private class ODataSetSelected : IODataSetSelected<TSource>
     {
         private readonly ODataSet<TSource> _dataSet;
