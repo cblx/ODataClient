@@ -228,6 +228,11 @@ public class ODataSet<TSource> : IODataSet<TSource>
         var requestMessage = new HttpRequestMessage(HttpMethod.Get, uri);
         HttpResponseMessage responseMessage = await client.Invoker.SendAsync(requestMessage, default);
         var jsonObject = await JsonSerializer.DeserializeAsync<JsonObject>(await responseMessage.Content.ReadAsStreamAsync());
+        // when searching for statuscode options, we'll get it inside an array "value"
+        if (jsonObject!.ContainsKey("value"))
+        {
+            jsonObject = jsonObject["value"]!.AsArray()!.First()!.AsObject();
+        }
         var jsonArray = jsonObject!["OptionSet"]!["Options"] as JsonArray;
         var picklistOptions = new List<PicklistOption>();
         foreach(var item in jsonArray!)
