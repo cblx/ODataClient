@@ -1032,50 +1032,6 @@ public class Tests
         picklistOptions.Should().HaveCount(43);
     }
 
-    //[Fact]
-    //public async Task NullNavPropProtectionTest() {
-    //    var data = new
-    //    {
-    //        value = new[] {
-    //              new some_entity
-    //              {
-    //                  id = Guid.NewGuid(),
-    //                  name = "root",
-    //                  child = null,
-    //                  children = null,
-    //                  otherChild = null
-    //              }
-    //        }
-    //    };
-
-    //    var set = new ODataSet<some_entity>(new ODataClient(new HttpClient(
-    //        new MockHttpMessageHandler(JsonSerializer.Serialize(data)))
-    //    {
-    //        BaseAddress = new Uri("http://localhost")
-    //    }), "some_entities");
-
-    //    List<SomeEntity> entities = await set
-    //        .SelectListAsync(e => new SomeEntity
-    //        {
-    //            Id = e.id,
-    //            Name = e.name + "z",
-    //            Child = new SomeEntity
-    //            {
-    //                Id = e.child.id,
-    //                Name = e.child.name + "y",
-    //                Child = new SomeEntity
-    //                {
-    //                    Id = e.child.child.id,
-    //                    Name = e.child.child.name + "x"
-    //                }
-    //            }
-    //        });
-
-    //    entities.First().Name.Should().Be("z");
-    //    entities.First().Child.Name.Should().Be("y");
-    //    entities.First().Child.Child.Name.Should().Be("z");
-    //}
-
     public class MockHttpMessageHandler : HttpMessageHandler
     {
         readonly string content;

@@ -209,7 +209,11 @@ public class ODataSet<TSource> : IODataSet<TSource>
 
     public async Task<PicklistOption[]> GetPicklistOptionsAsync(Expression<Func<TSource, object?>> propertyExpression)
     {
-        string entityLogicalName = typeof(TSource).GetCustomAttribute<DynamicsEntityAttribute>()?.Name!;
+        string? entityLogicalName = typeof(TSource).GetCustomAttribute<DynamicsEntityAttribute>()?.Name;
+        if(entityLogicalName is null)
+        {
+            throw new InvalidOperationException("You must annotate source class with [DynamicsEntity] to use this method");
+        }
         Expression memberExpression = propertyExpression.Body;
         if(memberExpression is UnaryExpression unaryExpression)
         {
