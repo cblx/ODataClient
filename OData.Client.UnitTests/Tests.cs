@@ -188,6 +188,18 @@ public class Tests
     }
 
     [Fact]
+    public void ExpandTwiceTest()
+    {
+        var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
+        string str = set.ToString(e => new 
+        {
+            Ages = e.children.Select(c => c.age),
+            Ages2 = e.children.Select(c => c.age),
+        });
+        Assert.Equal("some_entities?$expand=children($select=age)", str);
+    }
+
+    [Fact]
     public void TblSubExpandCollectionsTest()
     {
         var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");

@@ -98,16 +98,22 @@ internal class SelectAndExpandVisitor : ExpressionVisitor
             switch (node.Method.Name)
             {
                 case "Select":
-                {
-                    var subVisitor = new SelectAndExpandVisitor(false, subExpandFilter, subExpandOrderBy, subExpandTop,
-                        preSelect);
-                    subVisitor.Visit(node.Arguments[1]);
-                    _selectExpand.Expand.Add(
-                        (target as MemberExpression)!.GetFieldName(),
-                        subVisitor._selectExpand
-                    );
-                    return node;
-                }
+                    {
+                        var subVisitor = new SelectAndExpandVisitor(false, subExpandFilter, subExpandOrderBy, subExpandTop,
+                            preSelect);
+                        subVisitor.Visit(node.Arguments[1]);
+                        string expandingFieldName = (target as MemberExpression)!.GetFieldName();
+                        if (_selectExpand.Expand.ContainsKey(expandingFieldName))
+                        {
+                            //var existingExpand = _selectExpand.Expand[expandingFieldName];
+                            //existingExpand.MergeFrom(_selectExpand);
+                        }
+                        else
+                        {
+                            _selectExpand.Expand.Add(expandingFieldName, subVisitor._selectExpand);
+                        }
+                        return node;
+                    }
                 //case "Where":
                 //    {
                 //        var filterVisitor = new FilterVisitor(false);
