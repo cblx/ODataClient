@@ -1,14 +1,19 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Cblx.Dynamics.Linq\Cblx.Dynamics.Linq.csproj" />
-    <ProjectReference Include="..\OData.Client\Cblx.OData.Client.csproj" />
-  </ItemGroup>
+	<PropertyGroup>
+		<TargetFramework>net6.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+	<PropertyGroup>
+		<Authors>Guilherme Meinlschmiedt Abdo</Authors>
+		<RepositoryUrl>https://github.com/cblx/ODataClient</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageTags>Dynamics;OData,FetchXml</PackageTags>
+	</PropertyGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Cblx.Dynamics.Linq\Cblx.Dynamics.Linq.csproj" />
+		<ProjectReference Include="..\OData.Client\Cblx.OData.Client.csproj" />
+	</ItemGroup>
 
 </Project>

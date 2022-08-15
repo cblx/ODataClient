@@ -5,7 +5,15 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
     </PropertyGroup>
-
+	<PropertyGroup>
+		<Authors>Guilherme Meinlschmiedt Abdo</Authors>
+		<PackageDescription>
+			Tools for working with Dynamics CRM using OData and FetchXml
+		</PackageDescription>
+		<RepositoryUrl>https://github.com/cblx/ODataClient</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageTags>Dynamics;OData,FetchXml</PackageTags>
+	</PropertyGroup>
     <ItemGroup>
       <ProjectReference Include="..\Cblx.Dynamics.FetchXml\Cblx.Dynamics.FetchXml.csproj" />
       <ProjectReference Include="..\Cblx.Dynamics.Linq\Cblx.Dynamics.Linq.csproj" />

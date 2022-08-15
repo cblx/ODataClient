@@ -5,7 +5,12 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
     </PropertyGroup>
-
+	<PropertyGroup>
+		<Authors>Guilherme Meinlschmiedt Abdo</Authors>
+		<RepositoryUrl>https://github.com/cblx/ODataClient</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageTags>Dynamics;OData,FetchXml</PackageTags>
+	</PropertyGroup>
     <ItemGroup>
       <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="6.0.0" />
       <PackageReference Include="Microsoft.Extensions.Http" Version="6.0.0" />

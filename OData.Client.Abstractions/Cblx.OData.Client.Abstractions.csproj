@@ -1,7 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <ImplicitUsings>true</ImplicitUsings>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net6.0</TargetFramework>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<ImplicitUsings>true</ImplicitUsings>
+	</PropertyGroup>
+	<PropertyGroup>
+		<Authors>Guilherme Meinlschmiedt Abdo</Authors>
+		<RepositoryUrl>https://github.com/cblx/ODataClient</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageTags>Dynamics;OData,FetchXml</PackageTags>
+	</PropertyGroup>
 </Project>

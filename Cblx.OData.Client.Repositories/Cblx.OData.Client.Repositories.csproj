@@ -1,13 +1,18 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Cblx.OData.Client.Repositories.Abstractions\Cblx.OData.Client.Repositories.Abstractions.csproj" />
-    <ProjectReference Include="..\OData.Client.Abstractions\Cblx.OData.Client.Abstractions.csproj" />
-  </ItemGroup>
+	<PropertyGroup>
+		<TargetFramework>net6.0</TargetFramework>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+	<PropertyGroup>
+		<Authors>Guilherme Meinlschmiedt Abdo</Authors>
+		<RepositoryUrl>https://github.com/cblx/ODataClient</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageTags>Dynamics;OData,FetchXml</PackageTags>
+	</PropertyGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Cblx.OData.Client.Repositories.Abstractions\Cblx.OData.Client.Repositories.Abstractions.csproj" />
+		<ProjectReference Include="..\OData.Client.Abstractions\Cblx.OData.Client.Abstractions.csproj" />
+	</ItemGroup>
 
 </Project>
