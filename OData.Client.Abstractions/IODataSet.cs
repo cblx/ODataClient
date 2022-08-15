@@ -53,6 +53,6 @@ public interface IODataSet<TSource>
     string ToString<TProjection>(Expression<Func<TSource, TProjection>> selectExpression);
     Task<ODataResult<TEntity>> ToResultAsync<TEntity>() where TEntity : class;
     Task<TEntity?> FirstOrDefaultAsync<TEntity>() where TEntity : class;
-    Task<PicklistOption[]> GetPicklistOptionsAsync(Expression<Func<TSource, object>> propertyExpression);
+    Task<PicklistOption[]> GetPicklistOptionsAsync(Expression<Func<TSource, object?>> propertyExpression);
 }
 

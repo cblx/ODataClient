@@ -207,7 +207,7 @@ public class ODataSet<TSource> : IODataSet<TSource>
         return (await Get<ODataResultInternal<TSource>>(url))!;
     }
 
-    public async Task<PicklistOption[]> GetPicklistOptionsAsync(Expression<Func<TSource, object>> propertyExpression)
+    public async Task<PicklistOption[]> GetPicklistOptionsAsync(Expression<Func<TSource, object?>> propertyExpression)
     {
         string entityLogicalName = typeof(TSource).GetCustomAttribute<DynamicsEntityAttribute>()?.Name!;
         Expression memberExpression = propertyExpression.Body;
@@ -220,10 +220,12 @@ public class ODataSet<TSource> : IODataSet<TSource>
             .GetCustomAttribute<JsonPropertyNameAttribute>()!
             .Name;
 
-        var requestMessage = new HttpRequestMessage(
-            HttpMethod.Get, 
-            $"EntityDefinitions(LogicalName='{entityLogicalName}')/Attributes(LogicalName='{attributeLogicalName}')/Microsoft.Dynamics.CRM.PicklistAttributeMetadata?$select=LogicalName&$expand=OptionSet($select=Options)"
-        );
+        string uri = 
+            attributeLogicalName == "statuscode" ?
+            $"EntityDefinitions(LogicalName='{entityLogicalName}')/Attributes/Microsoft.Dynamics.CRM.StatusAttributeMetadata?$select=LogicalName&$expand=OptionSet($select=Options)" :
+            $"EntityDefinitions(LogicalName='{entityLogicalName}')/Attributes(LogicalName='{attributeLogicalName}')/Microsoft.Dynamics.CRM.PicklistAttributeMetadata?$select=LogicalName&$expand=OptionSet($select=Options)";
+
+        var requestMessage = new HttpRequestMessage(HttpMethod.Get, uri);
         HttpResponseMessage responseMessage = await client.Invoker.SendAsync(requestMessage, default);
         var jsonObject = await JsonSerializer.DeserializeAsync<JsonObject>(await responseMessage.Content.ReadAsStreamAsync());
         var jsonArray = jsonObject!["OptionSet"]!["Options"] as JsonArray;
