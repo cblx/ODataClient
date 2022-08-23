@@ -1,6 +1,6 @@
 ﻿using System.Linq.Expressions;
 
-namespace Cblx.Dynamics.FetchXml.Linq;
+namespace Cblx.Dynamics.FetchXml.Linq.Extensions;
 
 public static class IQueryableExtensions{
     public static string ToFetchXml<T>(this IQueryable<T> queryable)

@@ -1,7 +1,6 @@
-﻿using Cblx.Dynamics.OData.Linq;
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 
-namespace Cblx.Dynamics.OData.Linq;
+namespace Cblx.Dynamics.OData.Linq.Extensions;
 
 public static class IQueryableExtensions
 {

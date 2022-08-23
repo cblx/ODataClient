@@ -21,7 +21,7 @@ public class ODataRepositoryTests
             RelId = Guid.NewGuid(),
             DtOnly = new DateOnly(2020,1,1)
         });
-        var exec = () => repository.SaveChanges();
+        var exec = () => repository.SaveChangesAsync();
         await exec.Should()
             .ThrowAsync<InvalidOperationException>()
             .WithMessage("An invalid request URI was provided. Either the request URI must be an absolute URI or BaseAddress must be set.");

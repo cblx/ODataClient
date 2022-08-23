@@ -1,5 +1,4 @@
 ﻿using Cblx.OData.Client.Abstractions.Ids;
-using OData.Client;
 using OData.Client.Abstractions;
 using OData.Client.Abstractions.Write;
 using System;
@@ -18,8 +17,8 @@ namespace Cblx.OData.Client
     {
         public ODataRepository(IODataClient oDataClient) : base(oDataClient){}
 
-        public Task<TEntity?> Get(TId id) => Get<TEntity>(id.Guid);
-        public Task<T?> Get<T>(TId id) where T: class, TEntity => Get<T>(id.Guid);
+        public Task<TEntity?> GetAsync(TId id) => GetAsync<TEntity>(id.Guid);
+        public Task<T?> GetAsync<T>(TId id) where T: class, TEntity => GetAsync<T>(id.Guid);
     }
 
     public class ODataRepository<TEntity, TTable>
@@ -34,10 +33,10 @@ namespace Cblx.OData.Client
             this.oDataClient = oDataClient;
         }
 
-        protected async Task<T?> Get<T>(Guid id)
+        protected async Task<T?> GetAsync<T>(Guid id)
           where T : class, TEntity
         {
-            T e = await oDataClient.From<TTable>().FindAsync<T>(id);
+            T? e = await oDataClient.From<TTable>().FindAsync<T>(id);
             if (e != null) { changeTracker.Attach(e); }
             return e;
         }
@@ -52,17 +51,17 @@ namespace Cblx.OData.Client
             changeTracker.Remove(entity);
         }
 
-        public async Task SaveChanges()
+        public async Task SaveChangesAsync()
         {
             IEnumerable<Change> changes = changeTracker.GetChanges();
             foreach (Change change in changes)
             {
-                await SaveChangesFor((change.Entity as TEntity)!);
+                await SaveChangesForAsync((change.Entity as TEntity)!);
             }
 
         }
 
-        async Task SaveChangesFor(TEntity entity)
+        async Task SaveChangesForAsync(TEntity entity)
         {
             Guid? id = changeTracker.GetId(entity);
             if (id == null)
@@ -81,9 +80,9 @@ namespace Cblx.OData.Client
                 var body = new Body<TTable>();
                 foreach (ChangedProperty changedProperty in change.ChangedProperties)
                 {
-                    string fieldName = changedProperty.PropertyInfo.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name;
+                    string? fieldName = changedProperty.PropertyInfo.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name;
                     if (fieldName == null) { continue; }
-                    string navName = changedProperty.PropertyInfo.GetCustomAttribute<ODataBindAttribute>()?.Name;
+                    string? navName = changedProperty.PropertyInfo.GetCustomAttribute<ODataBindAttribute>()?.Name;
 
                     if (!string.IsNullOrWhiteSpace(navName))
                     {

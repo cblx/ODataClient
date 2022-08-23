@@ -87,10 +87,6 @@ public class ODataSet<TSource> : IODataSet<TSource>
     {
         var url = ToString(selectExpression);
         var result = await Get(url);
-        //if (!client.Options.DisableNullNavigationPropertiesProtectionInProjections)
-        //{
-        //    InstantiateNullNavigationProperties(result.Value);
-        //}
         var project = selectExpression.Compile();
         try
         {
