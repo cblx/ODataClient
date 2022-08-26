@@ -84,7 +84,7 @@ public class ODataQueryProvider : IAsyncQueryProvider
                 cancellationToken);
         if (jsonObject == null)
         {
-            throw new Exception("Unexpected behavior: Desserialization result is null");
+            throw new InvalidOperationException("Unexpected behavior: Desserialization result is null");
         }
         LambdaExpression projectionExpression = new ODataProjectionRewriter().Rewrite(expression);
         Delegate del = projectionExpression.Compile();

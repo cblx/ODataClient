@@ -1,5 +1,5 @@
 using System.Linq;
-using Cblx.Dynamics.FetchXml.Linq;
+using Cblx.Dynamics.FetchXml.Linq.Extensions;
 using Xunit;
 
 namespace Cblx.Dynamics.FetchXml.Tests;

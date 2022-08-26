@@ -45,6 +45,228 @@ public class Tests
     }
 
     [Fact]
+    public async Task DynFunction_FormattedValueTest()
+    {
+        var data = new
+        {
+            value = new[] {
+                  new Dictionary<string, string>
+                  {
+                      { "id", Guid.NewGuid().ToString() },
+                      { "nullableInt@OData.Community.Display.V1.FormattedValue", "formatted" }
+                  }
+            }
+        };
+        var options = new JsonSerializerOptions();
+        options.Converters.Add(new DateOnlyJsonConverter());
+        var set = new ODataSet<some_entity>(new(new HttpClient(
+            new MockHttpMessageHandler(JsonSerializer.Serialize(data, options)))
+        {
+            BaseAddress = new Uri("http://localhost")
+        }),
+            "some_entities");
+
+        var eAux = new SomeEntity();
+        eAux.Id = Guid.Empty;
+        var selection = set
+            .Select(e => new 
+            {
+                Id = e.id,
+                Formatted = DynFunctions.FormattedValue(e.nullableInt),
+            });
+        string odata = selection.ToString();
+        string expectedOdata = "some_entities?$select=id,nullableInt";
+        odata.Should().Be(expectedOdata);
+        var items = await selection.ToArrayAsync();
+        items.Should().HaveCount(1);
+        var item = items.First();
+        var firstData = data.value.First();
+        item.Id.Should().Be(Guid.Parse(firstData["id"]));
+        item.Formatted.Should().Be("formatted");
+    }
+
+    [Fact]
+    public async Task TestFilters_Selection()
+    {
+        var atOnly = new DateOnly(1983, 5, 23);
+        var data = new
+        {
+            value = new[] {
+                  new some_entity
+                  {
+                      id = Guid.NewGuid(),
+                      name = "root",
+                      atOnly = atOnly,
+                      children = new[]
+                      {
+                          new some_entity
+                          {
+                            id = Guid.NewGuid(),
+                            name = "child",
+                            child = new some_entity
+                            {
+                                id = Guid.NewGuid(),
+                                name = "grandchild",
+                            }
+                          }
+                      },
+                      child = new some_entity
+                      {
+                          id = Guid.NewGuid(),
+                          name = "child",
+                          child = new some_entity
+                          {
+                              id = Guid.NewGuid(),
+                              name = "grandchild",
+                          }
+                      }
+                  }
+            }
+        };
+        var options = new JsonSerializerOptions();
+        options.Converters.Add(new DateOnlyJsonConverter());
+        var set = new ODataSet<some_entity>(new(new HttpClient(
+            new MockHttpMessageHandler(JsonSerializer.Serialize(data, options)))
+        {
+            BaseAddress = new Uri("http://localhost")
+        }),
+            "some_entities");
+
+        var eAux = new SomeEntity();
+        eAux.Id = Guid.Empty;
+        var selection = set
+            .Filter(e => e.name == "123")
+            .Filter(e => e.id == eAux.Id)
+            .Select(e => new SomeEntity
+            {
+                Id = e.id,
+                Name = e.name,
+                AtOnly = e.atOnly,
+                Children = e.children.Select(c => new SomeEntity
+                {
+                    Id = c.id,
+                    Name = c.name
+                }).ToArray(),
+                Child = new SomeEntity
+                {
+                    Id = e.child.id,
+                    Name = e.child.name,
+                    Child = new SomeEntity
+                    {
+                        Id = e.child.child.id,
+                        Name = e.child.child.name
+                    }
+                }
+            });
+        string odata = selection.ToString();
+        string expectedOdata = "some_entities?$select=atOnly,id,name&$expand=child($select=id,name;$expand=child($select=id,name)),children($select=id,name)&$filter=name eq '123' and id eq 00000000-0000-0000-0000-000000000000";
+        odata.Should().Be(expectedOdata);
+        //selection.ToString().Should().Be("some_entities?$select=atOnly,id,name&$expand=child($select=id,name;$expand=child($select=id,name))&$filter=name eq '123' and id eq 00000000-0000-0000-0000-000000000000");
+        var items = await selection.ToArrayAsync();
+        items.Should().HaveCount(1);
+        var item = items.First();
+        var firstData = data.value.First();
+        item.AtOnly.Should().Be(firstData.atOnly);
+        item.Id.Should().Be(firstData.id);
+        item.Child.Should().NotBeNull();
+        item.Child.Id.Should().Be(firstData.child.id);
+        item.Child.Name.Should().Be(firstData.child.name);
+        item.Children.Should().HaveCount(1);
+        item.Children.First().Id.Should().Be(firstData.children.First().id);
+        item.Children.First().Name.Should().Be(firstData.children.First().name);
+    }
+
+    [Fact]
+    public async Task TestFilters_Selection_WithWhere()
+    {
+        var atOnly = new DateOnly(1983, 5, 23);
+        var data = new
+        {
+            value = new[] {
+                  new some_entity
+                  {
+                      id = Guid.NewGuid(),
+                      name = "root",
+                      atOnly = atOnly,
+                      children = new[]
+                      {
+                          new some_entity
+                          {
+                            id = Guid.NewGuid(),
+                            name = "child",
+                            child = new some_entity
+                            {
+                                id = Guid.NewGuid(),
+                                name = "grandchild",
+                            }
+                          }
+                      },
+                      child = new some_entity
+                      {
+                          id = Guid.NewGuid(),
+                          name = "child",
+                          child = new some_entity
+                          {
+                              id = Guid.NewGuid(),
+                              name = "grandchild",
+                          }
+                      }
+                  }
+            }
+        };
+        var options = new JsonSerializerOptions();
+        options.Converters.Add(new DateOnlyJsonConverter());
+        var set = new ODataSet<some_entity>(new(new HttpClient(
+            new MockHttpMessageHandler(JsonSerializer.Serialize(data, options)))
+        {
+            BaseAddress = new Uri("http://localhost")
+        }),
+            "some_entities");
+
+        var eAux = new SomeEntity();
+        eAux.Id = Guid.Empty;
+        var selection = set
+            .Filter(e => e.name == "123")
+            .Filter(e => e.id == eAux.Id)
+            .Select(e => new SomeEntity
+            {
+                Id = e.id,
+                Name = e.name,
+                AtOnly = e.atOnly,
+                Children = e.children.Where(c => c.name == "John").Select(c => new SomeEntity
+                {
+                    Id = c.id,
+                    Name = c.name
+                }).ToArray(),
+                Child = new SomeEntity
+                {
+                    Id = e.child.id,
+                    Name = e.child.name,
+                    Child = new SomeEntity
+                    {
+                        Id = e.child.child.id,
+                        Name = e.child.child.name
+                    }
+                }
+            });
+        string odata = selection.ToString();
+        string expectedOdata = "some_entities?$select=atOnly,id,name&$expand=child($select=id,name;$expand=child($select=id,name)),children($select=id,name;$filter=name eq 'John')&$filter=name eq '123' and id eq 00000000-0000-0000-0000-000000000000";
+        odata.Should().Be(expectedOdata);
+        var items = await selection.ToArrayAsync();
+        items.Should().HaveCount(1);
+        var item = items.First();
+        var firstData = data.value.First();
+        item.AtOnly.Should().Be(firstData.atOnly);
+        item.Id.Should().Be(firstData.id);
+        item.Child.Should().NotBeNull();
+        item.Child.Id.Should().Be(firstData.child.id);
+        item.Child.Name.Should().Be(firstData.child.name);
+        item.Children.Should().HaveCount(1);
+        item.Children.First().Id.Should().Be(firstData.children.First().id);
+        item.Children.First().Name.Should().Be(firstData.children.First().name);
+    }
+
+    [Fact]
     public void FindWhenJsonPropertyNameAttributesAreUseBothSides()
     {
         var set = new ODataSet<TbFind>(new(new HttpClient()), "some_entities");
@@ -53,7 +275,8 @@ public class Tests
     }
 
     [ODataEndpoint("some_entities")]
-    public class TbFind{
+    public class TbFind
+    {
         [JsonPropertyName("specificId")]
         public StronglyTipedId Id { get; set; }
 
@@ -191,7 +414,7 @@ public class Tests
     public void ExpandTwiceTest()
     {
         var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
-        string str = set.ToString(e => new 
+        string str = set.ToString(e => new
         {
             Ages = e.children.Select(c => c.age),
             Ages2 = e.children.Select(c => c.age),
@@ -1017,9 +1240,9 @@ public class Tests
 
         var set = new ODataSet<TblEntity>(new(new HttpClient(
                 new MockHttpMessageHandler(json, HttpStatusCode.BadRequest))
-            {
-                BaseAddress = new Uri("http://localhost")
-            }),
+        {
+            BaseAddress = new Uri("http://localhost")
+        }),
             "some_entities");
 
         var picklistOptions = await set.GetPicklistOptionsAsync(e => e.Age);
@@ -1126,6 +1349,7 @@ public class TblEntity
 [JsonConverter(typeof(IdConverterFactory))]
 public record StronglyId(Guid id) : Id(id);
 
+[DynamicsEntity("some_entity")]
 public class some_entity
 {
     public Guid id { get; set; }

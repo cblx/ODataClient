@@ -6,6 +6,7 @@ using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using Cblx.Dynamics.FetchXml.Linq;
+using Cblx.Dynamics.FetchXml.Linq.Extensions;
 using FluentAssertions;
 using Xunit;
 

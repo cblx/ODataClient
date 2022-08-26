@@ -35,23 +35,22 @@ public interface IODataSet<TSource>
     Task<TProjection[]> SelectArrayAsync<TProjection>(Expression<Func<TSource, TProjection>> transform);
 
     Task<List<TSource>> ToListAsync();
-
-    Task<TSource[]> ToArrayAsync();
-
     Task<List<TEntity>> ToListAsync<TEntity>() where TEntity : class;
 
+    Task<TSource[]> ToArrayAsync();
     Task<TEntity[]> ToArrayAsync<TEntity>() where TEntity : class;
 
-    Task<ODataResult<TSource>> ToResultAsync();
+    IODataSetSelection<TProjection> Select<TProjection>(Expression<Func<TSource, TProjection>> selectExpression);
 
     Task<ODataResult<TProjection>> SelectResultAsync<TProjection>(Expression<Func<TSource, TProjection>> selectExpression);
 
     Task<TProjection?> SelectFirstOrDefaultAsync<TProjection>(Expression<Func<TSource, TProjection>> selectExpression);
 
-    Task<TSource?> FirstOrDefaultAsync();
 
     string ToString<TProjection>(Expression<Func<TSource, TProjection>> selectExpression);
+    Task<ODataResult<TSource>> ToResultAsync();
     Task<ODataResult<TEntity>> ToResultAsync<TEntity>() where TEntity : class;
+    Task<TSource?> FirstOrDefaultAsync();
     Task<TEntity?> FirstOrDefaultAsync<TEntity>() where TEntity : class;
     Task<PicklistOption[]> GetPicklistOptionsAsync(Expression<Func<TSource, object?>> propertyExpression);
 }

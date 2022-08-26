@@ -1,15 +1,13 @@
-﻿using System.Linq.Expressions;
-using System.Net;
+﻿using System.Net;
 using System.Text.Json.Nodes;
-using Cblx.Dynamics.FetchXml.Linq;
-using Cblx.Dynamics.OData.Linq;
+using Cblx.Dynamics.OData.Linq.Extensions;
 using FluentAssertions;
 
 namespace Cblx.Dynamics.OData.Tests;
 
 public class ODataTests
 {
-    readonly Guid _exampleId = new Guid("3fa47b9b-d4c1-45df-9e96-4aecefcf85a8");
+    readonly Guid _exampleId = Guid.Parse("3fa47b9b-d4c1-45df-9e96-4aecefcf85a8");
 
     static ODataContext GetSimpleMockDb(JsonArray value)
     {

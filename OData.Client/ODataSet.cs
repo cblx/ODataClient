@@ -1,9 +1,11 @@
-﻿using System.Linq.Expressions;
+﻿using System.Data;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Cblx.Dynamics;
+using Cblx.Dynamics.OData.Linq;
 using OData.Client.Abstractions;
 
 namespace OData.Client;
@@ -82,6 +84,44 @@ public class ODataSet<TSource> : IODataSet<TSource>
         return (await Get<ODataResultInternal<TEntity>>(url))!;
     }
 
+    async Task<ODataResult<TProjection>> RewriteExpressionAndGetResultAsync<TProjection>(
+        Expression<Func<TSource, TProjection>> selectExpression
+    )
+    {
+        var url = ToString(selectExpression);
+        var rewriter = new ODataProjectionRewriter();
+        requestMessageConfiguration = requestMessage =>
+                    requestMessage
+                    .Headers.Add(
+                        "Prefer", 
+                        "odata.include-annotations=OData.Community.Display.V1.FormattedValue"
+                    );
+
+        var projectionExpression = rewriter.Rewrite(selectExpression);
+        var del = projectionExpression.Compile() as Func<JsonObject, TProjection>;
+        var result = await Get<JsonObject>(url);
+
+        int? count = result!["@odata.count"]?.GetValue<int?>();
+        var value = result!["value"]!.AsArray();
+
+        try
+        {
+            var projected = new ODataResult<TProjection>
+            {
+                Count = count,
+                Value = value.Select(
+                    e => del!(e!.AsObject())
+                ).ToArray()
+            };
+
+            return projected;
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException("Could no project query. Check for null references in the projection expression.", ex);
+        }
+    }
+
     public async Task<ODataResult<TProjection>> SelectResultAsync<TProjection>(
         Expression<Func<TSource, TProjection>> selectExpression)
     {
@@ -102,7 +142,7 @@ public class ODataSet<TSource> : IODataSet<TSource>
         }
         catch (Exception ex)
         {
-            throw new Exception("Could no project query. Check for null references in the projection expression.", ex);
+            throw new InvalidOperationException("Could no project query. Check for null references in the projection expression.", ex);
         }
     }
 
@@ -189,15 +229,7 @@ public class ODataSet<TSource> : IODataSet<TSource>
     {
         return Get<TEntity>(CreateFindString<TEntity>(id));
     }
-
-    public string ToString<TProjection>(Expression<Func<TSource, TProjection>>? selectExpression)
-    {
-        if (selectExpression == null) return AppendOptions(_endpoint, null);
-        var visitor = new SelectAndExpandVisitor(true, null);
-        visitor.Visit(selectExpression);
-        return AppendOptions(_endpoint, visitor.ToString());
-    }
-
+       
     private async Task<ODataResult<TSource>> Get(string url)
     {
         return (await Get<ODataResultInternal<TSource>>(url))!;
@@ -257,6 +289,15 @@ public class ODataSet<TSource> : IODataSet<TSource>
         return $"{_endpoint}({id})?{selectAndExpandParser}";
     }
 
+    public string ToString<TProjection>(Expression<Func<TSource, TProjection>>? selectExpression)
+    {
+        if (selectExpression == null) return AppendOptions(_endpoint, null);
+        var visitor = new SelectAndExpandVisitor(true, null);
+        visitor.Visit(selectExpression);
+        return AppendOptions(_endpoint, visitor.ToString());
+    }
+
+
     public override string ToString()
     {
         return AppendOptions(_endpoint, null);
@@ -310,7 +351,53 @@ public class ODataSet<TSource> : IODataSet<TSource>
         return result.Value.ToArray();
     }
 
-    private class ODataSetSelected : IODataSetSelected<TSource>
+    public IODataSetSelection<TProjection> Select<TProjection>(Expression<Func<TSource, TProjection>> selectExpression)
+    {
+        return new ODataSelection<TProjection>(this, selectExpression);
+    }
+
+    private sealed class ODataSelection<TProjection> : IODataSetSelection<TProjection>
+    {
+        private readonly ODataSet<TSource> _dataSet;
+        private readonly Expression<Func<TSource, TProjection>> _selectExpression;
+
+        public ODataSelection(ODataSet<TSource> dataSet, Expression<Func<TSource, TProjection>> selectExpression)
+        {
+            _dataSet = dataSet;
+            _selectExpression = selectExpression;
+        }
+
+        public async Task<TProjection?> FirstOrDefaultAsync()
+        {
+            var dataSet = _dataSet.Top(1) as ODataSet<TSource>;
+            var result = await dataSet!.RewriteExpressionAndGetResultAsync(_selectExpression);
+            return result.Value.FirstOrDefault();
+        }
+
+        public async Task<TProjection[]> ToArrayAsync()
+        {
+            var result = await _dataSet!.RewriteExpressionAndGetResultAsync(_selectExpression);
+            return result.Value.ToArray();
+        }
+
+        public async Task<List<TProjection>> ToListAsync()
+        {
+            var result = await _dataSet!.RewriteExpressionAndGetResultAsync(_selectExpression);
+            return result.Value.ToList();
+        }
+
+        public Task<ODataResult<TProjection>> ToResultAsync()
+        {
+            return _dataSet!.RewriteExpressionAndGetResultAsync(_selectExpression);
+        }
+
+        public override string ToString()
+        {
+            return _dataSet.ToString(_selectExpression);
+        }
+    }
+
+    private sealed class ODataSetSelected : IODataSetSelected<TSource>
     {
         private readonly ODataSet<TSource> _dataSet;
         private readonly Expression<Func<TSource, object>>? _selectExpression;

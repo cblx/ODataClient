@@ -7,4 +7,3 @@ public interface IODataSetSelected<TSource> where TSource : class
 
     Task<ODataResult<TProjection>> MapToResultAsync<TProjection>(Func<TSource, TProjection> transform);
 }
-
