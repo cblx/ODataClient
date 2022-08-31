@@ -55,6 +55,7 @@ public static class RewriterHelpers
 
     public static T? AuxGetValue<T>(JsonObject jsonObject, Stack<string> fieldsStack)
     {
+        fieldsStack = CloneStack(fieldsStack);
         JsonNode? jsonNode = jsonObject;
         while (fieldsStack.TryPop(out var p))
         {
@@ -86,6 +87,14 @@ public static class RewriterHelpers
                 return (T)Enum.Parse(type, val.ToString()!);
             default: return jsonNode.GetValue<T>();
         }
+    }
+
+    static Stack<T> CloneStack<T>(Stack<T> original)
+    {
+        var arr = new T[original.Count];
+        original.CopyTo(arr, 0);
+        Array.Reverse(arr);
+        return new Stack<T>(arr);
     }
 
     //public static T? AuxGetValueOld<T>(JsonObject jsonObject, Stack<string> fieldsStack)

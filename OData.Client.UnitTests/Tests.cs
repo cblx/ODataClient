@@ -17,6 +17,12 @@ using Xunit;
 namespace OData.Client.UnitTests;
 public class Tests
 {
+    private readonly JsonSerializerOptions _jsonMockDataOptions = new JsonSerializerOptions();
+    public Tests()
+    {
+        _jsonMockDataOptions.Converters.Add(new DateOnlyJsonConverter());
+    }
+
     [Fact]
     public void TestFilters()
     {
@@ -69,7 +75,7 @@ public class Tests
         var eAux = new SomeEntity();
         eAux.Id = Guid.Empty;
         var selection = set
-            .Select(e => new 
+            .Select(e => new
             {
                 Id = e.id,
                 Formatted = DynFunctions.FormattedValue(e.nullableInt),
@@ -83,6 +89,28 @@ public class Tests
         var firstData = data.value.First();
         item.Id.Should().Be(Guid.Parse(firstData["id"]));
         item.Formatted.Should().Be("formatted");
+    }
+
+    [Fact]
+    public async Task ResultWithMoreThan1ItemTest()
+    {
+        var data = new
+        {
+            value = new[]
+            {
+                new some_entity{ id = Guid.NewGuid() },
+                new some_entity{ id = Guid.NewGuid() }
+            }
+        };
+        var json = JsonSerializer.Serialize(data, _jsonMockDataOptions);
+        var messageHandler = new MockHttpMessageHandler(json);
+        var httpClient = new HttpClient(messageHandler) {  BaseAddress = new Uri("http://localhost") };
+        var oDataClient = new ODataClient(httpClient);
+        var set = new ODataSet<some_entity>(oDataClient , "some_entities");
+        var items = await set.Select(e => new SomeEntity { Id = e.id }).ToArrayAsync();
+        items.Should().HaveCount(2);
+        items.ElementAt(0).Id.Should().Be(data.value[0].id);
+        items.ElementAt(1).Id.Should().Be(data.value[1].id);
     }
 
     [Fact]
@@ -123,10 +151,8 @@ public class Tests
                   }
             }
         };
-        var options = new JsonSerializerOptions();
-        options.Converters.Add(new DateOnlyJsonConverter());
         var set = new ODataSet<some_entity>(new(new HttpClient(
-            new MockHttpMessageHandler(JsonSerializer.Serialize(data, options)))
+            new MockHttpMessageHandler(JsonSerializer.Serialize(data, _jsonMockDataOptions)))
         {
             BaseAddress = new Uri("http://localhost")
         }),
