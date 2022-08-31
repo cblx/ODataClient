@@ -187,7 +187,7 @@ public class ODataProjectionRewriter : ExpressionVisitor
             node = parentMemberExpression;
         }
         var rootParameter = node.Expression as ParameterExpression;
-        if(rootParameter is null) { throw new InvalidOperationException("This must be used with a valid entity parameter"); }
+        if(rootParameter is null) { throw new InvalidOperationException($"The member expression {node} must be used with a valid entity parameter. Check if the entity class is annotated with DynamicsEntityAttribute."); }
         var jsonParameterExpression = GetJsonParameterExpression(rootParameter);
         return (fieldsStack, jsonParameterExpression);
     }
