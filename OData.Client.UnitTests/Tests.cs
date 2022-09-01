@@ -114,6 +114,172 @@ public class Tests
     }
 
     [Fact]
+    public async Task SelectWithSubSelectMustWork()
+    {
+        var data = new
+        {
+            value = new[]
+            {
+                new some_entity{
+                        children = new[]{ new some_entity { name = "Child John"} }
+                },
+            }
+        };
+        var json = JsonSerializer.Serialize(data, _jsonMockDataOptions);
+        var messageHandler = new MockHttpMessageHandler(json);
+        var httpClient = new HttpClient(messageHandler) { BaseAddress = new Uri("http://localhost") };
+        var oDataClient = new ODataClient(httpClient);
+        var set = new ODataSet<some_entity>(oDataClient, "some_entities");
+
+        var selection = set.Select(e => new
+        {
+            ChildName = e.children
+                .Select(c => c.name).FirstOrDefault()
+        });
+        var item = await selection.FirstOrDefaultAsync();
+        var odata = selection.ToString();
+        odata.Should().Be("some_entities?$expand=children($select=name)");
+        item.ChildName.Should().Be(data.value[0].children[0].name);
+    }
+
+    //[Fact]
+    //public async Task SelectWithSubSelectWithMethodMustWork()
+    //{
+    //    var data = new
+    //    {
+    //        value = new[]
+    //        {
+    //            new some_entity{
+    //                    children = new[]{ new some_entity { name = "Child John"} }
+    //            },
+    //        }
+    //    };
+    //    var json = JsonSerializer.Serialize(data, _jsonMockDataOptions);
+    //    var messageHandler = new MockHttpMessageHandler(json);
+    //    var httpClient = new HttpClient(messageHandler) { BaseAddress = new Uri("http://localhost") };
+    //    var oDataClient = new ODataClient(httpClient);
+    //    var set = new ODataSet<some_entity>(oDataClient, "some_entities");
+
+    //    var selection = set.Select(e => new
+    //    {
+    //        ChildName = e.children
+    //            .Select(c => SomeMethod(c.name)).FirstOrDefault()
+    //    });
+    //    var item = await selection.FirstOrDefaultAsync();
+    //    var odata = selection.ToString();
+    //    odata.Should().Be("some_entities?$expand=children($select=name)");
+    //    item.ChildName.Should().Be(SomeMethod(data.value[0].children[0].name));
+    //}
+
+    [Fact]
+    public async Task SelectMemberDirectlyMustWork()
+    {
+        var data = new
+        {
+            value = new[]
+            {
+                new some_entity{
+                    name = "John"
+                },
+            }
+        };
+        var json = JsonSerializer.Serialize(data, _jsonMockDataOptions);
+        var messageHandler = new MockHttpMessageHandler(json);
+        var httpClient = new HttpClient(messageHandler) { BaseAddress = new Uri("http://localhost") };
+        var oDataClient = new ODataClient(httpClient);
+        var set = new ODataSet<some_entity>(oDataClient, "some_entities");
+
+        var selection = set.Select(e => e.name);
+        var item = await selection.FirstOrDefaultAsync();
+        var odata = selection.ToString();
+        odata.Should().Be("some_entities?$select=name");
+        item.Should().Be(data.value[0].name);
+    }
+
+    [Fact]
+    public async Task SelectMethodWithMemberDirectlyMustWork()
+    {
+        var data = new
+        {
+            value = new[]
+            {
+                new some_entity{
+                    name = "John"
+                },
+            }
+        };
+        var json = JsonSerializer.Serialize(data, _jsonMockDataOptions);
+        var messageHandler = new MockHttpMessageHandler(json);
+        var httpClient = new HttpClient(messageHandler) { BaseAddress = new Uri("http://localhost") };
+        var oDataClient = new ODataClient(httpClient);
+        var set = new ODataSet<some_entity>(oDataClient, "some_entities");
+
+        var selection = set.Select(e => SomeMethod(e.name));
+        var item = await selection.FirstOrDefaultAsync();
+        var odata = selection.ToString();
+        odata.Should().Be("some_entities?$select=name");
+        item.Should().Be(SomeMethod(data.value[0].name));
+    }
+
+    [Fact]
+    public async Task SelectWithSubSelectWithWhereMustWork()
+    {
+        var data = new
+        {
+            value = new[]
+            {
+                new some_entity{ 
+                        children = new[]{ new some_entity { name = "Child John"} }
+                },
+            }
+        };
+        var json = JsonSerializer.Serialize(data, _jsonMockDataOptions);
+        var messageHandler = new MockHttpMessageHandler(json);
+        var httpClient = new HttpClient(messageHandler) { BaseAddress = new Uri("http://localhost") };
+        var oDataClient = new ODataClient(httpClient);
+        var set = new ODataSet<some_entity>(oDataClient, "some_entities");
+
+        var selection = set.Select(e => new
+        {
+            ChildName = e.children
+                .Where(c => c.name == "anything")
+                .Select(c => c.name).FirstOrDefault()
+        });
+        var item = await selection.FirstOrDefaultAsync();
+        var odata = selection.ToString();
+        odata.Should().Be("some_entities?$expand=children($select=name;$filter=name eq 'anything')");
+        item.ChildName.Should().Be(data.value[0].children[0].name);
+    }
+
+    [Fact]
+    public async Task SelectWithMethodOnMember()
+    {
+        var data = new
+        {
+            value = new[]
+           {
+                new some_entity{ id = Guid.NewGuid(), name = "John" },
+           }
+        };
+        var json = JsonSerializer.Serialize(data, _jsonMockDataOptions);
+        var messageHandler = new MockHttpMessageHandler(json);
+        var httpClient = new HttpClient(messageHandler) { BaseAddress = new Uri("http://localhost") };
+        var oDataClient = new ODataClient(httpClient);
+        var set = new ODataSet<some_entity>(oDataClient, "some_entities");
+
+
+        var item = await set.Select(e => new SomeEntity { 
+            Id = e.id,
+            Name = SomeMethod(e.name)
+        }).FirstOrDefaultAsync();
+        item.Should().NotBeNull();
+        item.Id.Should().Be(data.value[0].id);
+        item.Name.Should().Be(SomeMethod(data.value[0].name));
+    }
+    string SomeMethod(string str) => str + "X";
+
+
+    [Fact]
     public async Task TestFilters_Selection()
     {
         var atOnly = new DateOnly(1983, 5, 23);

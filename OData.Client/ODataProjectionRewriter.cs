@@ -28,20 +28,13 @@ public class ODataProjectionRewriter : ExpressionVisitor
                     var jsonParameterExpression = GetJsonParameterExpression(lambda.Parameters[0]);
                     switch (body)
                     {
-                        case MemberExpression memberExpression:
+                        case MemberExpression:
+                        case MemberInitExpression:
+                        case MethodCallExpression:
+                        case NewExpression:
                             {
-                                Expression rewrittenNewExpression = Visit(memberExpression);
-                                return Expression.Lambda(rewrittenNewExpression, jsonParameterExpression);
-                            }
-                        case MemberInitExpression memberInitExpression:
-                            {
-                                Expression rewrittenNewExpression = Visit(memberInitExpression);
-                                return Expression.Lambda(rewrittenNewExpression, jsonParameterExpression);
-                            }
-                        case NewExpression newExpression:
-                            {
-                                Expression rewrittenNewExpression = Visit(newExpression);
-                                return Expression.Lambda(rewrittenNewExpression, jsonParameterExpression);
+                                Expression rewrittenExpression = Visit(body);
+                                return Expression.Lambda(rewrittenExpression, jsonParameterExpression);
                             }
                         case ParameterExpression parameterExpression
                             when parameterExpression.Type.IsDynamicsEntity():
