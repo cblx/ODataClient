@@ -138,38 +138,38 @@ public class Tests
         });
         var item = await selection.FirstOrDefaultAsync();
         var odata = selection.ToString();
-        odata.Should().Be("some_entities?$expand=children($select=name)");
+        odata.Should().Be("some_entities?$expand=children($select=name;$top=1)");
         item.ChildName.Should().Be(data.value[0].children[0].name);
     }
 
-    //[Fact]
-    //public async Task SelectWithSubSelectWithMethodMustWork()
-    //{
-    //    var data = new
-    //    {
-    //        value = new[]
-    //        {
-    //            new some_entity{
-    //                    children = new[]{ new some_entity { name = "Child John"} }
-    //            },
-    //        }
-    //    };
-    //    var json = JsonSerializer.Serialize(data, _jsonMockDataOptions);
-    //    var messageHandler = new MockHttpMessageHandler(json);
-    //    var httpClient = new HttpClient(messageHandler) { BaseAddress = new Uri("http://localhost") };
-    //    var oDataClient = new ODataClient(httpClient);
-    //    var set = new ODataSet<some_entity>(oDataClient, "some_entities");
+    [Fact]
+    public async Task SelectWithSubSelectWithMethodMustWork()
+    {
+        var data = new
+        {
+            value = new[]
+            {
+                new some_entity{
+                        children = new[]{ new some_entity { name = "Child John"} }
+                },
+            }
+        };
+        var json = JsonSerializer.Serialize(data, _jsonMockDataOptions);
+        var messageHandler = new MockHttpMessageHandler(json);
+        var httpClient = new HttpClient(messageHandler) { BaseAddress = new Uri("http://localhost") };
+        var oDataClient = new ODataClient(httpClient);
+        var set = new ODataSet<some_entity>(oDataClient, "some_entities");
 
-    //    var selection = set.Select(e => new
-    //    {
-    //        ChildName = e.children
-    //            .Select(c => SomeMethod(c.name)).FirstOrDefault()
-    //    });
-    //    var item = await selection.FirstOrDefaultAsync();
-    //    var odata = selection.ToString();
-    //    odata.Should().Be("some_entities?$expand=children($select=name)");
-    //    item.ChildName.Should().Be(SomeMethod(data.value[0].children[0].name));
-    //}
+        var selection = set.Select(e => new
+        {
+            ChildName = e.children
+                .Select(c => SomeMethod(c.name)).FirstOrDefault()
+        });
+        var item = await selection.FirstOrDefaultAsync();
+        var odata = selection.ToString();
+        odata.Should().Be("some_entities?$expand=children($select=name;$top=1)");
+        item.ChildName.Should().Be(SomeMethod(data.value[0].children[0].name));
+    }
 
     [Fact]
     public async Task SelectMemberDirectlyMustWork()
@@ -247,7 +247,7 @@ public class Tests
         });
         var item = await selection.FirstOrDefaultAsync();
         var odata = selection.ToString();
-        odata.Should().Be("some_entities?$expand=children($select=name;$filter=name eq 'anything')");
+        odata.Should().Be("some_entities?$expand=children($select=name;$filter=name eq 'anything';$top=1)");
         item.ChildName.Should().Be(data.value[0].children[0].name);
     }
 

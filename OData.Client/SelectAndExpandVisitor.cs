@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+﻿using System.Formats.Asn1;
+using System.Linq.Expressions;
 using System.Reflection;
 using Cblx.OData.Client.Abstractions.Ids;
 
@@ -46,13 +47,23 @@ internal class SelectAndExpandVisitor : ExpressionVisitor
     {
         var str = node.ToString();
         var paramPrefix = _parameter.Name + ".";
+        bool isFirstOrDefaultAfterSelect = false;
         if (str.StartsWith(paramPrefix))
         {
-            var target = node.Object ?? node.Arguments[0];
             string? subExpandFilter = null;
             string? subExpandOrderBy = null;
             string? subExpandTop = null;
             List<string> preSelect = new();
+            var target = node.Object ?? node.Arguments[0];
+
+            // Skip from the FirstOrDefault to the adjacent Select, and sets the top 1
+            if (node.Method.Name == nameof(Enumerable.FirstOrDefault) && node.Arguments[0] is MethodCallExpression { Method.Name: "Select" } selectCallExpression)
+            {
+                isFirstOrDefaultAfterSelect = true;
+                subExpandTop = "1";
+                target = selectCallExpression.Object ?? selectCallExpression.Arguments[0];
+            }
+
             while (target is MethodCallExpression callExpression
                    &&
                    new[]
@@ -90,16 +101,45 @@ internal class SelectAndExpandVisitor : ExpressionVisitor
                     subExpandOrderBy = filterVisitor.Query + " desc";
                 }
 
-                if (callExpression.Method.Name == "Take") subExpandTop = callExpression.Arguments[1].ToString();
+                if (callExpression.Method.Name == "Take")
+                {
+                    subExpandTop = callExpression.Arguments[1].ToString();
+                }
                 target = callExpression.Arguments[0];
             }
 
-            //string field = target.ToString().Substring(paramPrefix.Length).Replace(".", "/");
+            if (isFirstOrDefaultAfterSelect)
+            {
+                var subVisitor = new SelectAndExpandVisitor(
+                            false,
+                            subExpandFilter,
+                            subExpandOrderBy,
+                            subExpandTop,
+                            preSelect);
+                var selectMethodCall = node.Arguments[0] as MethodCallExpression;
+                subVisitor.Visit(selectMethodCall!.Arguments[1]);
+                string expandingFieldName = (target as MemberExpression)!.GetFieldName();
+                if (_selectExpand.Expand.ContainsKey(expandingFieldName))
+                {
+                    //var existingExpand = _selectExpand.Expand[expandingFieldName];
+                    //existingExpand.MergeFrom(_selectExpand);
+                }
+                else
+                {
+                    _selectExpand.Expand.Add(expandingFieldName, subVisitor._selectExpand);
+                }
+                return node;
+            }
             switch (node.Method.Name)
             {
+                
                 case "Select":
                     {
-                        var subVisitor = new SelectAndExpandVisitor(false, subExpandFilter, subExpandOrderBy, subExpandTop,
+                        var subVisitor = new SelectAndExpandVisitor(
+                            false,
+                            subExpandFilter,
+                            subExpandOrderBy,
+                            subExpandTop,
                             preSelect);
                         subVisitor.Visit(node.Arguments[1]);
                         string expandingFieldName = (target as MemberExpression)!.GetFieldName();
