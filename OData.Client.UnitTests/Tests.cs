@@ -116,6 +116,33 @@ public class Tests
         item.Condition.Should().BeTrue();
     }
 
+    static class StaticClass
+    {
+        public static Guid Id = Guid.NewGuid();
+    }
+
+    [Fact]
+    public async Task CompareClassStaticMemberInProjection()
+    {
+        var data = new
+        {
+            value = new[]
+           {
+                new some_entity{ id = StaticClass.Id }
+           }
+        };
+        var json = JsonSerializer.Serialize(data, _jsonMockDataOptions);
+        var messageHandler = new MockHttpMessageHandler(json);
+        var httpClient = new HttpClient(messageHandler) { BaseAddress = new Uri("http://localhost") };
+        var oDataClient = new ODataClient(httpClient);
+        var set = new ODataSet<some_entity>(oDataClient, "some_entities");
+        var selection = set.Select(e => new { Condition = e.id == StaticClass.Id });
+        var item = await selection.FirstOrDefaultAsync();
+        var odata = selection.ToString();
+        odata.Should().Be("some_entities?$select=id");
+        item.Condition.Should().BeTrue();
+    }
+
     [Fact]
     public async Task ResultWithMoreThan1ItemTest()
     {
