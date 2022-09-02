@@ -187,7 +187,10 @@ public class ODataProjectionRewriter : ExpressionVisitor
 
     Expression VisitMember(MemberExpression node, string? applyAnnotation, Type? overrideType)
     {
-        if(node.Expression?.Type.IsDynamicsEntity() is false) { return node; }
+        if(node.Expression?.Type.IsDynamicsEntity() is false) {
+            if (node.Expression?.Type.HasODataEndpoint() is true) { throw new InvalidOperationException($"ODataClient.Select requires that {node.Expression.Type.Name} must be marked with [DynamicsEntity] attribute"); }
+            return node; 
+        }
         MemberInfo memberInfo = node.Member;
         (var fieldsStack, var jsonParameterExpression) = GetMemberPathStack(node, applyAnnotation);
        
