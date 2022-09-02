@@ -108,7 +108,7 @@ public class ODataTests
 
         item!.FormattedValue.Should().Be("x");
 
-        db.Provider.LastUrl.Should().Be("some_tables?$select=value@OData.Community.Display.V1.FormattedValue&$top=1");
+        db.Provider.LastUrl.Should().Be("some_tables?$select=value&$top=1");
     }
 
     [Fact]

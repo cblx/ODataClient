@@ -116,6 +116,33 @@ public class Tests
         item.Condition.Should().BeTrue();
     }
 
+    [DynamicsEntity("x")]
+    public class TbMemberOfTbMemberInSelectionMustWork
+    {
+        public DateTime? At { get; set; }
+    }
+    [Fact]
+    public async Task MemberOfTbMemberInSelectionMustWork()
+    {
+        var data = new
+        {
+            value = new[]
+           {
+                new TbMemberOfTbMemberInSelectionMustWork{ At = null }
+           }
+        };
+        var json = JsonSerializer.Serialize(data, _jsonMockDataOptions);
+        var messageHandler = new MockHttpMessageHandler(json);
+        var httpClient = new HttpClient(messageHandler) { BaseAddress = new Uri("http://localhost") };
+        var oDataClient = new ODataClient(httpClient);
+        var set = new ODataSet<TbMemberOfTbMemberInSelectionMustWork>(oDataClient, "x");
+        var selection = set.Select(e => new { Val = e.At.HasValue });
+        var item = await selection.FirstOrDefaultAsync();
+        var odata = selection.ToString();
+        odata.Should().Be("x?$select=At");
+        item.Val.Should().BeFalse();
+    }
+
     static class StaticClass
     {
         public static Guid Id = Guid.NewGuid();
