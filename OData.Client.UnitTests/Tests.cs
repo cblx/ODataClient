@@ -91,6 +91,31 @@ public class Tests
         item.Formatted.Should().Be("formatted");
     }
 
+
+    [Fact]
+    public async Task CompareInstanceMemberInProjection()
+    {
+        var id = Guid.NewGuid();
+        var data = new
+        {
+            value = new[]
+           {
+                new some_entity{ id = id }
+           }
+        };
+        var instance = new { Id = id };
+        var json = JsonSerializer.Serialize(data, _jsonMockDataOptions);
+        var messageHandler = new MockHttpMessageHandler(json);
+        var httpClient = new HttpClient(messageHandler) { BaseAddress = new Uri("http://localhost") };
+        var oDataClient = new ODataClient(httpClient);
+        var set = new ODataSet<some_entity>(oDataClient, "some_entities");
+        var selection = set.Select(e => new { Condition = e.id == instance.Id });
+        var item = await selection.FirstOrDefaultAsync();
+        var odata = selection.ToString();
+        odata.Should().Be("some_entities?$select=id");
+        item.Condition.Should().BeTrue();
+    }
+
     [Fact]
     public async Task ResultWithMoreThan1ItemTest()
     {
@@ -219,6 +244,31 @@ public class Tests
         var odata = selection.ToString();
         odata.Should().Be("some_entities?$select=name");
         item.Should().Be(SomeMethod(data.value[0].name));
+    }
+
+    [Fact]
+    public async Task SelectMemberMethodDirectlyMustWork()
+    {
+        var data = new
+        {
+            value = new[]
+            {
+                new some_entity{
+                    age = 1
+                },
+            }
+        };
+        var json = JsonSerializer.Serialize(data, _jsonMockDataOptions);
+        var messageHandler = new MockHttpMessageHandler(json);
+        var httpClient = new HttpClient(messageHandler) { BaseAddress = new Uri("http://localhost") };
+        var oDataClient = new ODataClient(httpClient);
+        var set = new ODataSet<some_entity>(oDataClient, "some_entities");
+
+        var selection = set.Select(e => e.age.ToString("#"));
+        var item = await selection.FirstOrDefaultAsync();
+        var odata = selection.ToString();
+        odata.Should().Be("some_entities?$select=age");
+        item.Should().Be(data.value[0].age.ToString("#"));
     }
 
     [Fact]
