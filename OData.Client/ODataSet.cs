@@ -38,7 +38,7 @@ public class ODataSet<TSource> : IODataSet<TSource>
 
     public IODataSet<TSource> ConfigureRequestMessage(Action<HttpRequestMessage> requestMessageConfiguration)
     {
-        return new ODataSet<TSource>(this, options) {requestMessageConfiguration = requestMessageConfiguration};
+        return new ODataSet<TSource>(this, options) { requestMessageConfiguration = requestMessageConfiguration };
     }
 
     public IODataSet<TSource> AddOptionValue(string option, string value)
@@ -93,7 +93,7 @@ public class ODataSet<TSource> : IODataSet<TSource>
         requestMessageConfiguration = requestMessage =>
                     requestMessage
                     .Headers.Add(
-                        "Prefer", 
+                        "Prefer",
                         "odata.include-annotations=OData.Community.Display.V1.FormattedValue"
                     );
 
@@ -104,22 +104,14 @@ public class ODataSet<TSource> : IODataSet<TSource>
         int? count = result!["@odata.count"]?.GetValue<int?>();
         var value = result!["value"]!.AsArray();
 
-        try
+        var projected = new ODataResult<TProjection>
         {
-            var projected = new ODataResult<TProjection>
-            {
-                Count = count,
-                Value = value.Select(
-                    e => del!(e!.AsObject())
-                ).ToArray()
-            };
-
-            return projected;
-        }
-        catch (Exception ex)
-        {
-            throw new InvalidOperationException("Could no project query. Check for null references in the projection expression.", ex);
-        }
+            Count = count,
+            Value = value.Select(
+                e => del!(e!.AsObject())
+            ).ToArray()
+        };
+        return projected;
     }
 
     public async Task<ODataResult<TProjection>> SelectResultAsync<TProjection>(
@@ -229,7 +221,7 @@ public class ODataSet<TSource> : IODataSet<TSource>
     {
         return Get<TEntity>(CreateFindString<TEntity>(id));
     }
-       
+
     private async Task<ODataResult<TSource>> Get(string url)
     {
         return (await Get<ODataResultInternal<TSource>>(url))!;
@@ -238,12 +230,12 @@ public class ODataSet<TSource> : IODataSet<TSource>
     public async Task<PicklistOption[]> GetPicklistOptionsAsync(Expression<Func<TSource, object?>> propertyExpression)
     {
         string? entityLogicalName = typeof(TSource).GetCustomAttribute<DynamicsEntityAttribute>()?.Name;
-        if(entityLogicalName is null)
+        if (entityLogicalName is null)
         {
             throw new InvalidOperationException("You must annotate source class with [DynamicsEntity] to use this method");
         }
         Expression memberExpression = propertyExpression.Body;
-        if(memberExpression is UnaryExpression unaryExpression)
+        if (memberExpression is UnaryExpression unaryExpression)
         {
             memberExpression = unaryExpression.Operand;
         }
@@ -252,7 +244,7 @@ public class ODataSet<TSource> : IODataSet<TSource>
             .GetCustomAttribute<JsonPropertyNameAttribute>()!
             .Name;
 
-        string uri = 
+        string uri =
             attributeLogicalName == "statuscode" ?
             $"EntityDefinitions(LogicalName='{entityLogicalName}')/Attributes/Microsoft.Dynamics.CRM.StatusAttributeMetadata?$select=LogicalName&$expand=OptionSet($select=Options)" :
             $"EntityDefinitions(LogicalName='{entityLogicalName}')/Attributes(LogicalName='{attributeLogicalName}')/Microsoft.Dynamics.CRM.PicklistAttributeMetadata?$select=LogicalName&$expand=OptionSet($select=Options)";
@@ -267,7 +259,7 @@ public class ODataSet<TSource> : IODataSet<TSource>
         }
         var jsonArray = jsonObject!["OptionSet"]!["Options"] as JsonArray;
         var picklistOptions = new List<PicklistOption>();
-        foreach(var item in jsonArray!)
+        foreach (var item in jsonArray!)
         {
             picklistOptions.Add(new PicklistOption
             {

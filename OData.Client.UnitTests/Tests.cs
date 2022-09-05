@@ -91,6 +91,35 @@ public class Tests
         item.Formatted.Should().Be("formatted");
     }
 
+    public static class StaticMethodCallMustWorkClass
+    {
+        public static string StaticMethod(string str) => $"{str}static";
+    }
+
+    /// <summary>
+    /// The real exception was obfuscated with a "Projection exception, check for nulll references..."
+    /// </summary>
+    /// <returns></returns>
+    [Fact]
+    public async Task ShouldThrowExpectedException()
+    {
+        var data = new
+        {
+            value = new[]
+           {
+                new some_entity{ name = "Josh??" }
+           }
+        };
+        var json = JsonSerializer.Serialize(data, _jsonMockDataOptions);
+        var messageHandler = new MockHttpMessageHandler(json);
+        var httpClient = new HttpClient(messageHandler) { BaseAddress = new Uri("http://localhost") };
+        var oDataClient = new ODataClient(httpClient);
+        var set = new ODataSet<some_entity>(oDataClient, "some_entities");
+        var selection = set.Select(e => new { Content = Convert.FromBase64String(e.name), });
+        var exec = selection.FirstOrDefaultAsync;
+        await exec.Should().ThrowAsync<FormatException>();
+    }
+
 
     [Fact]
     public async Task CompareInstanceMemberInProjection()
