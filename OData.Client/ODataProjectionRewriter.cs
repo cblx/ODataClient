@@ -28,6 +28,7 @@ public class ODataProjectionRewriter : ExpressionVisitor
                     var jsonParameterExpression = GetJsonParameterExpression(lambda.Parameters[0]);
                     switch (body)
                     {
+                        case BinaryExpression:
                         case MemberExpression:
                         case MemberInitExpression:
                         case MethodCallExpression:

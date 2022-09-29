@@ -355,6 +355,31 @@ public class Tests
     }
 
     [Fact]
+    public async Task SelectMemberWithCoalescingMustWork()
+    {
+        var data = new
+        {
+            value = new[]
+            {
+                new some_entity{
+                    name = null
+                },
+            }
+        };
+        var json = JsonSerializer.Serialize(data, _jsonMockDataOptions);
+        var messageHandler = new MockHttpMessageHandler(json);
+        var httpClient = new HttpClient(messageHandler) { BaseAddress = new Uri("http://localhost") };
+        var oDataClient = new ODataClient(httpClient);
+        var set = new ODataSet<some_entity>(oDataClient, "some_entities");
+
+        var selection = set.Select(e => e.name ?? "yep");
+        var item = await selection.FirstOrDefaultAsync();
+        var odata = selection.ToString();
+        odata.Should().Be("some_entities?$select=name");
+        item.Should().Be("yep");
+    }
+
+    [Fact]
     public async Task SelectWithSubSelectWithWhereMustWork()
     {
         var data = new

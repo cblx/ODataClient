@@ -70,6 +70,29 @@ public class ODataTests
         db.Provider.LastUrl.Should().Be("some_tables?$select=some_tableid");
     }
 
+
+    [Fact]
+    public async Task SelectPropCoalesceTest()
+    {
+        var db = GetSimpleMockDb(new JsonArray
+            {
+                new JsonObject
+                {
+                    {"name",  null }
+                }
+            });
+
+        var ids = await (from s in db.SomeTables
+                         select s.Name ?? "yep").ToListAsync();
+
+        ids
+            .Should()
+            .ContainSingle(name => name == "yep");
+
+        db.Provider.LastUrl.Should().Be("some_tables?$select=some_name");
+    }
+
+
     [Fact]
     public async Task SelectFirstOrDefaulAsyncStringPropTest()
     {
