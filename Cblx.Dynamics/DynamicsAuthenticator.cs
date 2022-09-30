@@ -1,11 +1,10 @@
 ﻿using System.Collections.Concurrent;
-using System.Net.Http.Headers;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
 
 namespace Cblx.Dynamics;
 
-public class DynamicsAuthenticator
+public class DynamicsAuthenticator : IDynamicsAuthenticator
 {
     private int _current = 0;
     private readonly object _toSync = new();
@@ -34,13 +33,8 @@ public class DynamicsAuthenticator
     //    httpClient.BaseAddress = new Uri($"{config.ResourceUrl}api/data/v9.0/");
     //}
 
-    public async Task<AuthenticationHeaderValue> GetAuthenticationHeaderValue(DynamicsConfig config)
-    {
-        string accessToken = await GetAccessToken(config);
-        return AuthenticationHeaderValue.Parse($"Bearer {accessToken}");
-    }
-
-    private async Task<string> GetAccessToken(DynamicsConfig config)
+  
+    public async Task<string> GetAccessToken(DynamicsConfig config)
     {
         
         await Authenticate(config);

@@ -14,14 +14,18 @@ public static class ServicesExtensions
         DynamicsOptions? options = new();
         setup?.DynamicInvoke(options);
         services.AddSingleton<ODataClientOptions>(options);
-        
-        services.AddSingleton<DynamicsAuthenticator>();
+        services.AddSingleton<IDynamicsAuthenticator, DynamicsAuthenticator>();
         services
             .AddOptions<DynamicsConfig>()
             .Configure(o => configuration.GetSection("Dynamics").Bind(o));
 
         services
-            .AddHttpClient(nameof(IODataClient))
+            .AddHttpClient(
+                nameof(IODataClient),
+                // Sets a fake baseaddress to deceive HttpClient initial validation.
+                // The baseAddress will be modified by the DynamicsAuthorizationMessageHandler.
+                httpClient => httpClient.BaseAddress = new UriBuilder("https", "d").Uri
+            )
             .AddHttpMessageHandler<DynamicsAuthorizationMessageHandler>();
 
         //services.AddHttpClient(nameof(IODataClient), (sp, client) =>
