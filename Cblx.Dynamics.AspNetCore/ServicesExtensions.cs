@@ -20,13 +20,17 @@ public static class ServicesExtensions
             .AddOptions<DynamicsConfig>()
             .Configure(o => configuration.GetSection("Dynamics").Bind(o));
 
-        services.AddHttpClient(nameof(IODataClient), (sp, client) =>
-        {
-            var dynamicsAuthenticator = sp.GetService<DynamicsAuthenticator>()!;
-            var onCreateClientContext = new OnCreateClientContext();
-            options.OnCreateClient?.DynamicInvoke(sp, onCreateClientContext);
-            dynamicsAuthenticator.AuthenticateHttpClient(client, onCreateClientContext.OverrideResourceUrl).GetAwaiter().GetResult();
-        });
+        services
+            .AddHttpClient(nameof(IODataClient))
+            .AddHttpMessageHandler<DynamicsAuthorizationMessageHandler>();
+
+        //services.AddHttpClient(nameof(IODataClient), (sp, client) =>
+        //{
+        //    var dynamicsAuthenticator = sp.GetService<DynamicsAuthenticator>()!;
+        //     var onCreateClientContext = new OnCreateClientContext();
+        //    options.OnCreateClient?.DynamicInvoke(sp, onCreateClientContext);
+        //    dynamicsAuthenticator.AuthenticateHttpClient(client, onCreateClientContext.OverrideResourceUrl).GetAwaiter().GetResult();
+        //});
         services.AddScoped<IODataClient, ODataClient>(sp =>
         {
             var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient(nameof(IODataClient));

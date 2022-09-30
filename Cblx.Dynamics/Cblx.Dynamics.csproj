@@ -1,10 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-    </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net6.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
 	<PropertyGroup>
 		<!-- Optional: Publish the repository URL in the built .nupkg (in the NuSpec <Repository> element) -->
 		<PublishRepositoryUrl>true</PublishRepositoryUrl>
@@ -26,15 +26,17 @@
 	<ItemGroup>
 		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All"/>
 	</ItemGroup>
-    <ItemGroup>
-      <ProjectReference Include="..\Cblx.Dynamics.FetchXml\Cblx.Dynamics.FetchXml.csproj" />
-      <ProjectReference Include="..\Cblx.Dynamics.Linq\Cblx.Dynamics.Linq.csproj" />
-      <ProjectReference Include="..\Cblx.Dynamics.OData\Cblx.Dynamics.OData.csproj" />
-      <ProjectReference Include="..\Cblx.OData.Client.Repositories.Abstractions\Cblx.OData.Client.Repositories.Abstractions.csproj" />
-      <ProjectReference Include="..\Cblx.OData.Client.Repositories\Cblx.OData.Client.Repositories.csproj" />
-      <ProjectReference Include="..\Cblx.OData.Client.SourceGenerators\Cblx.OData.Client.SourceGenerators.csproj" />
-      <ProjectReference Include="..\OData.Client.Abstractions\Cblx.OData.Client.Abstractions.csproj" />
-      <ProjectReference Include="..\OData.Client\Cblx.OData.Client.csproj" />
-    </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Cblx.Dynamics.FetchXml\Cblx.Dynamics.FetchXml.csproj" />
+		<ProjectReference Include="..\Cblx.Dynamics.Linq\Cblx.Dynamics.Linq.csproj" />
+		<ProjectReference Include="..\Cblx.Dynamics.OData\Cblx.Dynamics.OData.csproj" />
+		<ProjectReference Include="..\Cblx.OData.Client.Repositories.Abstractions\Cblx.OData.Client.Repositories.Abstractions.csproj" />
+		<ProjectReference Include="..\Cblx.OData.Client.Repositories\Cblx.OData.Client.Repositories.csproj" />
+		<ProjectReference Include="..\Cblx.OData.Client.SourceGenerators\Cblx.OData.Client.SourceGenerators.csproj" />
+		<ProjectReference Include="..\OData.Client.Abstractions\Cblx.OData.Client.Abstractions.csproj" />
+		<ProjectReference Include="..\OData.Client\Cblx.OData.Client.csproj" />
+		<PackageReference Include="Microsoft.IdentityModel.Clients.ActiveDirectory" Version="5.2.9" />
+		<PackageReference Include="Microsoft.Extensions.Options" Version="6.0.0" />
+	</ItemGroup>
 
 </Project>

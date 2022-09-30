@@ -1,4 +1,4 @@
-﻿namespace Cblx.Dynamics.AspNetCore;
+﻿namespace Cblx.Dynamics;
 
 public class DynamicsConfig
 {
