@@ -19,6 +19,7 @@ public static class ServicesExtensions
             .AddOptions<DynamicsConfig>()
             .Configure(o => configuration.GetSection("Dynamics").Bind(o));
 
+        services.AddScoped<DynamicsAuthorizationMessageHandler>();
         services
             .AddHttpClient(
                 nameof(IODataClient),
