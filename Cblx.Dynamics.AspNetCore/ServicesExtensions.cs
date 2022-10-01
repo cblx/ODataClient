@@ -33,7 +33,7 @@ public static class ServicesExtensions
             .ConfigureHttpClient((sp, httpClient) =>
             {
                 var dynamicsConfig = sp.GetRequiredService<IOptions<DynamicsConfig>>().Value;
-                httpClient.BaseAddress = new Uri(new Uri(dynamicsConfig.ResourceUrl), "api/data/v9.0");
+                httpClient.BaseAddress = DynamicsBaseAddress.FromResourceUrl(dynamicsConfig.ResourceUrl);
             });
         services.AddScoped<DynamicsAuthorizationMessageHandler>();
 

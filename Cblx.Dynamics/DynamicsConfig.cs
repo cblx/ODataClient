@@ -1,6 +1,6 @@
 ﻿namespace Cblx.Dynamics;
 
-public class DynamicsConfig
+public record DynamicsConfig
 {
     public string Authority { get; set; } = "";
     public string ResourceUrl { get; set; } = "";

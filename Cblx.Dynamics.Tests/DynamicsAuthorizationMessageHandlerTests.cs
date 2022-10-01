@@ -10,17 +10,17 @@ public class DynamicsAuthorizationMessageHandlerTests
     [Fact]
     public async Task MustPrefixUriWithDynamicsConfigResourceUrl()
     {
-
+        var dynamicsConfig = new DynamicsConfig
+        {
+            ResourceUrl = "https://resourceurl.com/"
+        };
         var handler = new DynamicsAuthorizationMessageHandler(
             Mock.Of<IDynamicsAuthenticator>(),
-            Mock.Of<IOptionsSnapshot<DynamicsConfig>>(snap => snap.Value == new DynamicsConfig
-            {
-                ResourceUrl = "https://resourceurl.com/"
-            })
+            dynamicsConfig
         );
         var spyHandler = new SpyHandler();
         var httpClient = HttpClientFactory.Create(spyHandler, handler);
-        httpClient.BaseAddress = new UriBuilder("https", "d").Uri;
+        httpClient.BaseAddress = DynamicsBaseAddress.FromResourceUrl(dynamicsConfig.ResourceUrl);
         await httpClient.GetAsync("entities?$select=id");
         spyHandler.FinalUrl.Should().Be("https://resourceurl.com/api/data/v9.0/entities?$select=id");
     }
