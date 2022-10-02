@@ -9,9 +9,8 @@ namespace Cblx.Dynamics.AspNetCore;
 
 public static class ServicesExtensions
 {
-    public static void AddDynamics(this IServiceCollection services, Action<IServiceProvider, DynamicsOptionsBuilder>? setup = null) => AddDynamics(services, (Delegate?) setup);
     public static void AddDynamics(this IServiceCollection services, Action<DynamicsOptionsBuilder>? setup = null) => AddDynamics(services, (Delegate?)setup);
-
+    public static void AddDynamics(this IServiceCollection services, Action<IServiceProvider, DynamicsOptionsBuilder>? setup) => AddDynamics(services, (Delegate?) setup);
     private static void AddDynamics(this IServiceCollection services, Delegate? setup = null)
     {
         // Options configuration
