@@ -46,12 +46,6 @@ public class ODataSet<TSource> : IODataSet<TSource>
         return new ODataSet<TSource>(this, options.Clone().Add(option, value));
     }
 
-
-    public IODataSetSelected<TSource> PrepareSelect(Expression<Func<TSource, object>> selectExpression)
-    {
-        return new ODataSetSelected(this, selectExpression);
-    }
-
     public async Task<List<TProjection>> SelectListAsync<TProjection>(
         Expression<Func<TSource, TProjection>> selectExpression)
     {
@@ -386,44 +380,6 @@ public class ODataSet<TSource> : IODataSet<TSource>
         public override string ToString()
         {
             return _dataSet.ToString(_selectExpression);
-        }
-    }
-
-    private sealed class ODataSetSelected : IODataSetSelected<TSource>
-    {
-        private readonly ODataSet<TSource> _dataSet;
-        private readonly Expression<Func<TSource, object>>? _selectExpression;
-
-        public ODataSetSelected(ODataSet<TSource> dataSet, Expression<Func<TSource, object>> selectExpression)
-        {
-            _dataSet = dataSet;
-            _selectExpression = selectExpression;
-        }
-
-        public async Task<TProjection?> MapFirstOrDefaultAsync<TProjection>(Func<TSource, TProjection> transform)
-        {
-            var url = _dataSet.ToString(_selectExpression);
-            var result = await _dataSet.Get(url);
-            return result.Value.Select(transform).FirstOrDefault();
-        }
-
-
-        public async Task<List<TProjection>> MapToListAsync<TProjection>(Func<TSource, TProjection> transform)
-        {
-            var url = _dataSet.ToString(_selectExpression);
-            var result = await _dataSet.Get(url);
-            return result.Value.Select(transform).ToList();
-        }
-
-        public async Task<ODataResult<TProjection>> MapToResultAsync<TProjection>(Func<TSource, TProjection> transform)
-        {
-            var url = _dataSet.ToString(_selectExpression);
-            var result = await _dataSet.Get(url);
-            return new ODataResult<TProjection>
-            {
-                Count = result.Count,
-                Value = result.Value.Select(transform).ToArray()
-            };
         }
     }
 }
