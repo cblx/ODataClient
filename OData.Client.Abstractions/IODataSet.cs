@@ -27,8 +27,10 @@ public interface IODataSet<TSource>
 
     Task<TEntity?> FindAsync<TEntity>(Guid id) where TEntity: class;
 
+    [Obsolete("Use .Select(...).ToListAsync()")]
     Task<List<TProjection>> SelectListAsync<TProjection>(Expression<Func<TSource, TProjection>> transform);
 
+    [Obsolete("Use .Select(...).ToArrayAsync()")]
     Task<TProjection[]> SelectArrayAsync<TProjection>(Expression<Func<TSource, TProjection>> transform);
 
     Task<List<TSource>> ToListAsync();
@@ -39,8 +41,10 @@ public interface IODataSet<TSource>
 
     IODataSetSelection<TProjection> Select<TProjection>(Expression<Func<TSource, TProjection>> selectExpression);
 
+    [Obsolete("Use .Select(...).ToResultAsync()")]
     Task<ODataResult<TProjection>> SelectResultAsync<TProjection>(Expression<Func<TSource, TProjection>> selectExpression);
 
+    [Obsolete("Use .Select(...).FirstOrDefaultAsync()")]
     Task<TProjection?> SelectFirstOrDefaultAsync<TProjection>(Expression<Func<TSource, TProjection>> selectExpression);
 
 
