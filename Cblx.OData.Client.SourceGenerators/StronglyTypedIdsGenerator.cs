@@ -18,8 +18,10 @@ namespace Cblx.OData.Client.SourceGenerators
                 string source = $@"#nullable enable
 using Cblx.OData.Client.Abstractions.Ids;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 namespace {symbol.ContainingNamespace};
+[ExcludeFromCodeCoverage]
 [TypeConverter(typeof(IdTypeConverter<{name}>))]
 [JsonConverter(typeof(IdConverterFactory))]
 public partial record {name}(Guid Guid) : Id(Guid)
