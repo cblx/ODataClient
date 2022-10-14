@@ -720,6 +720,7 @@ public class Tests
         Assert.Equal("some_entities?$select=stronglyId", str);
     }
 
+    
     [Fact]
     public void ExpandOtherTypeChildTest()
     {
@@ -915,16 +916,57 @@ public class Tests
     }
 
     [Fact]
+    public void DynamicsContainValuesFilterMustBeSupported()
+    {
+        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        var values = new string[] { "a", "b" };
+        string str = set
+            .Filter(e => DynFunctions.ContainValues(e.Name, values))
+            .ToString(e => e.Id);
+        Assert.Equal("some_entities?$select=id&$filter=Microsoft.Dynamics.CRM.ContainValues(PropertyName='name',PropertyValues=%5B'a','b'%5D)", str);
+    }
+
+
+    [Fact]
+    public void DynamicsContainValuesFilterInlineMustBeSupported()
+    {
+        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        string str = set
+            .Filter(e => DynFunctions.ContainValues(e.Name, new string[] { "a", "b" }))
+            .ToString(e => e.Id);
+        Assert.Equal("some_entities?$select=id&$filter=Microsoft.Dynamics.CRM.ContainValues(PropertyName='name',PropertyValues=%5B'a','b'%5D)", str);
+    }
+
+    [Fact]
+    public void DynamicsDoesNotContainValuesFilterMustBeSupported()
+    {
+        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        var values = new string[] { "a", "b" };
+        string str = set
+            .Filter(e => DynFunctions.DoesNotContainValues(e.Name, values))
+            .ToString(e => e.Id);
+        Assert.Equal("some_entities?$select=id&$filter=Microsoft.Dynamics.CRM.DoesNotContainValues(PropertyName='name',PropertyValues=%5B'a','b'%5D)", str);
+    }
+
+
+    [Fact]
+    public void DynamicsDoesNotContainValuesFilterInlineMustBeSupported()
+    {
+        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        string str = set
+            .Filter(e => DynFunctions.DoesNotContainValues(e.Name, new string[] { "a", "b" }))
+            .ToString(e => e.Id);
+        Assert.Equal("some_entities?$select=id&$filter=Microsoft.Dynamics.CRM.DoesNotContainValues(PropertyName='name',PropertyValues=%5B'a','b'%5D)", str);
+    }
+
+    [Fact]
     public void TblTestFilterWithMethodCall()
     {
         var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
         int i = 123;
         string str = set
             .Filter(e => e.Name == i.ToString())
-            .ToString(e => new SomeEntity
-            {
-                Id = e.Id,
-            });
+            .ToString(e => e.Id);
         Assert.Equal("some_entities?$select=id&$filter=name eq '123'", str);
     }
 

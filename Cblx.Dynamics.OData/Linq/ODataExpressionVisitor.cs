@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+﻿using OData.Client;
+using System.Linq.Expressions;
 
 namespace Cblx.Dynamics.OData.Linq;
 

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<TargetFramework>net6.0</TargetFramework>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -20,6 +20,9 @@
 		<RepositoryType>git</RepositoryType>
 		<PackageTags>Dynamics;OData,FetchXml</PackageTags>
 	</PropertyGroup>
+	<ItemGroup>
+		<InternalsVisibleTo Include="Cblx.Dynamics.OData" />
+	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All"/>
 	</ItemGroup>

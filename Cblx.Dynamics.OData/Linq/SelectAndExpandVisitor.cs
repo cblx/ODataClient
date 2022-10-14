@@ -1,6 +1,7 @@
 ﻿using System.Linq.Expressions;
 using System.Reflection;
 using Cblx.OData.Client.Abstractions.Ids;
+using OData.Client;
 
 namespace Cblx.Dynamics.OData.Linq;
 

@@ -1,9 +1,14 @@
-﻿using Cblx.OData.Client.Abstractions.Ids;
+﻿using Cblx.Dynamics;
+using Cblx.OData.Client;
+using Cblx.OData.Client.Abstractions.Ids;
+using System.Collections;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using System.Text.Json;
+
 namespace OData.Client;
-class FilterVisitor : ExpressionVisitor
+internal class FilterVisitor : ExpressionVisitor
 {
     public string Query { get; set; } = "";
     public HashSet<string> VisitedFields { get; } = new HashSet<string>();
@@ -34,33 +39,45 @@ class FilterVisitor : ExpressionVisitor
                 '/', 
                 memberExpression.CreateMemberFullStack().Select(m => m.GetFieldName())
             );
-            switch (node.Method.Name)
+            switch (node.Method)
             {
-                case "Contains":
+              
+                case { Name: "Contains" }:
                     Query += $"contains({field},";
                     Visit(node.Arguments[0]);
                     Query += ")";
                     break;
-                case "Any":
-                    var subVisitor = new FilterVisitor(keepParamName: true);
+                case { Name: "Any" }:
                     if (node.Arguments.Count == 1)
                     {
                         Query += $"{field}/any()";
                     }
                     else {
+                        var subVisitor = new FilterVisitor(keepParamName: true);
                         var subQuery = node.Arguments[1] as LambdaExpression;
                         subVisitor.Visit(subQuery);
                         Query += $"{field}/any({subQuery.Parameters[0].Name}%3A{subVisitor.Query})";
                     }
                     break;
                 default:
-                    throw new Exception($"Método {node.Method.Name} não suportado");
+                    throw new InvalidOperationException($"Unsupported method {node.Method.Name}");
             }
             return node;
         }
 
-        WriteValue(Expression.Lambda(node).Compile().DynamicInvoke());
-
+        switch (node.Method)
+        {
+            case { Name: nameof(DynFunctions.ContainValues) or nameof(DynFunctions.DoesNotContainValues) } m when m.DeclaringType == typeof(DynFunctions):
+                Query += $"Microsoft.Dynamics.CRM.{m.Name}(PropertyName='";
+                Visit(node.Arguments[0]);
+                Query += "',PropertyValues=";
+                Visit(node.Arguments[1]);
+                Query += ")";
+                break;
+            default: 
+                WriteValue(Expression.Lambda(node).Compile().DynamicInvoke());
+                break;
+        }
         return node;
     }
 
@@ -70,6 +87,13 @@ class FilterVisitor : ExpressionVisitor
         return node;
     }
 
+    protected override Expression VisitNewArray(NewArrayExpression node)
+    {
+        WriteValue(Expression.Lambda(node).Compile().DynamicInvoke());
+        return node;
+    }
+
+
     protected override Expression VisitConstant(ConstantExpression node)
     {
         WriteValue(node.Value);
@@ -78,59 +102,10 @@ class FilterVisitor : ExpressionVisitor
 
     bool WriteValue(object? o)
     {
-        if (o == null)
+        if(ODataHelpers.TryParseValue(o, out string? stringValue))
         {
-            Query += "null";
+            Query += stringValue;
             return true;
-        }
-
-        if (o.GetType().IsGenericType && o.GetType().GetGenericTypeDefinition() == typeof(Nullable<>))
-        {
-            o = o.GetType().GetProperty("Value").GetValue(o, null);
-        }
-        switch (o)
-        {
-            case object v when v.GetType().IsEnum:
-                Query += Convert.ToInt32(v).ToString();
-                return true;
-            case object v when v.GetType() == typeof(string):
-                string str = (string)v;
-                str = str.Replace("'", "''")
-                    .Replace("%", "%25")
-                    .Replace("#", "%23")
-                    .Replace("+", "%2B")
-                    .Replace("/", "%2F")
-                    .Replace("?", "%3F")
-                    .Replace("&", "%26")
-                    ;
-                Query += $"'{str}'";
-                return true;
-            case object v when v.GetType() == typeof(bool):
-                Query += v.ToString().ToLower();
-                return true;
-            case object v when v is DateTimeOffset dtoff:
-                string strDateTimeOffset = $"{dtoff:O}";
-                strDateTimeOffset = strDateTimeOffset
-                    .Replace(":", "%3A")
-                    .Replace("+", "%2B");
-                Query += strDateTimeOffset;
-                return true;
-            case object v when v is DateTime dtoff:
-                string strDateTime = $"{dtoff:O}";
-                strDateTime = strDateTime
-                    .Replace(":", "%3A")
-                    .Replace("+", "%2B");
-                Query += strDateTime;
-                return true;
-            case object v when v.GetType() == typeof(Guid):
-                Query += $"{v}";
-                return true;
-            case object v when v.GetType() == typeof(int):
-                Query += $"{v}";
-                return true;
-            case Id id:
-                Query += $"{id.Guid}";
-                return true;
         }
         return false;
     }
@@ -182,6 +157,7 @@ class FilterVisitor : ExpressionVisitor
         }
         return node;
     }
+
     protected override Expression VisitUnary(UnaryExpression node)
     {
         switch (node.NodeType)
