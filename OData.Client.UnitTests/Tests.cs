@@ -6,6 +6,7 @@ using OData.Client.Abstractions;
 using OData.Client.Abstractions.Write;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -21,6 +22,41 @@ public class Tests
     public Tests()
     {
         _jsonMockDataOptions.Converters.Add(new DateOnlyJsonConverter());
+    }
+
+    [Fact]
+    public async Task SelectTbProjectingToEntityWithChildrenTest()
+    {
+        var options = new JsonSerializerOptions();
+        options.Converters.Add(new DateOnlyJsonConverter());
+        var parentId = StronglyTipedId.NewId();
+        var childId = StronglyTipedId.NewId();
+        var data = new
+        {
+            value = new[] {
+                  new Dictionary<string, object>
+                  {
+                      { "id", parentId },
+                      { 
+                          "children", 
+                          new[] { 
+                              new Dictionary<string, object>{ 
+                                  { "id", childId } 
+                              } 
+                          } 
+                      }
+                  }
+            }
+        };
+        var set = new ODataSet<some_entity>(new(new HttpClient(
+            new MockHttpMessageHandler(JsonSerializer.Serialize(data, options)))
+        {
+            BaseAddress = new Uri("http://localhost")
+        }),
+            "some_entities");
+        var items = await set.ToListAsync<TblEntity>();
+        items.First().Id.Should().Be(parentId);
+        items.First().Children.First().Id.Should().Be(childId);
     }
 
     [Fact]
@@ -1786,6 +1822,8 @@ static class StringExtensions
     }
 }
 
+[TypeConverter(typeof(IdTypeConverter<StronglyTipedId>))]
+[JsonConverter(typeof(IdConverterFactory))]
 public record StronglyTipedId(Guid guid) : Id(guid)
 {
     public StronglyTipedId(string guidString) : this(new Guid(guidString)) { { } }
@@ -1796,5 +1834,3 @@ public record StronglyTipedId(Guid guid) : Id(guid)
     public static StronglyTipedId NewId() => new StronglyTipedId(Guid.NewGuid());
     public override string ToString() => Guid.ToString();
 }
-
-public record CleanStronglyTypedId(Guid guid) : Id(guid);

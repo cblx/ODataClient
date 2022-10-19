@@ -47,7 +47,7 @@ public class SelectAndExpandParser<TSource, TTarget>
                 Type sourceItemType = GetElementType(p.pSource.PropertyType);
                 Type targetItemType = GetElementType(p.pTarget.PropertyType);
 
-                List<string> subSelectAndExpand = new List<string>();
+                List<string> subSelectAndExpand = new ();
                 AddSelectPart(sourceItemType, targetItemType, subSelectAndExpand);
                 AddExpandPart(sourceItemType, targetItemType, subSelectAndExpand, level);
 
@@ -64,13 +64,13 @@ public class SelectAndExpandParser<TSource, TTarget>
 
     static Type GetElementType(Type type)
     {
-        if (typeof(IEnumerable).IsAssignableFrom(type))
-        {
-            return type.GetGenericArguments()[0];
-        }
-        else if (type.IsArray)
+        if (type.IsArray)
         {
             type = type.GetElementType();
+        }
+        else if(typeof(IEnumerable).IsAssignableFrom(type))
+        {
+            return type.GetGenericArguments()[0];
         }
         return type;
     }

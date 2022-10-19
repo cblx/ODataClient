@@ -23,9 +23,9 @@ public interface IODataSet<TSource>
 
     IODataSet<TSource> IncludeCount();
   
-    Task<TSource?> FindAsync(Guid id);
+    Task<TSource> FindAsync(Guid id);
 
-    Task<TEntity?> FindAsync<TEntity>(Guid id) where TEntity: class;
+    Task<TEntity> FindAsync<TEntity>(Guid id) where TEntity: class;
 
     [Obsolete("Use .Select(...).ToListAsync()")]
     Task<List<TProjection>> SelectListAsync<TProjection>(Expression<Func<TSource, TProjection>> transform);

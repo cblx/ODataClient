@@ -206,14 +206,14 @@ public class ODataSet<TSource> : IODataSet<TSource>
     }
 
 
-    public Task<TSource?> FindAsync(Guid id)
+    public Task<TSource> FindAsync(Guid id)
     {
         return FindAsync<TSource>(id);
     }
 
-    public Task<TEntity?> FindAsync<TEntity>(Guid id) where TEntity : class
+    public Task<TEntity> FindAsync<TEntity>(Guid id) where TEntity : class
     {
-        return Get<TEntity>(CreateFindString<TEntity>(id));
+        return Get<TEntity>(CreateFindString<TEntity>(id))!;
     }
 
     private async Task<ODataResult<TSource>> Get(string url)
