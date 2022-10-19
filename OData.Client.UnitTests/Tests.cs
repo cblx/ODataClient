@@ -57,6 +57,7 @@ public class Tests
         var items = await set.ToListAsync<TblEntity>();
         items.First().Id.Should().Be(parentId);
         items.First().Children.First().Id.Should().Be(childId);
+        set.LastQuery.Should().Be("some_entities?$select=id,name,active,age,nullableInt,at,partyDay&$expand=child($select=id,name,active,age,nullableInt,at,partyDay),otherChild($select=name),children($select=id,name,active,age,nullableInt,at,partyDay)");
     }
 
     [Fact]

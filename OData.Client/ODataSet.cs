@@ -18,7 +18,6 @@ public class ODataSet<TSource> : IODataSet<TSource>
     private readonly ODataOptions options = new();
     private Action<HttpRequestMessage>? requestMessageConfiguration;
 
-
     public ODataSet(ODataClient client, string endpoint)
     {
         this.client = client;
@@ -35,6 +34,8 @@ public class ODataSet<TSource> : IODataSet<TSource>
         requestMessageConfiguration = originalODataSet.requestMessageConfiguration;
         this.options = options;
     }
+
+    public string LastQuery { get; private set; }
 
     public IODataSet<TSource> ConfigureRequestMessage(Action<HttpRequestMessage> requestMessageConfiguration)
     {
@@ -216,11 +217,7 @@ public class ODataSet<TSource> : IODataSet<TSource>
         return Get<TEntity>(CreateFindString<TEntity>(id))!;
     }
 
-    private async Task<ODataResult<TSource>> Get(string url)
-    {
-        return (await Get<ODataResultInternal<TSource>>(url))!;
-    }
-
+  
     public async Task<PicklistOption[]> GetPicklistOptionsAsync(Expression<Func<TSource, object?>> propertyExpression)
     {
         string? entityLogicalName = typeof(TSource).GetCustomAttribute<DynamicsEntityAttribute>()?.Name;
@@ -264,8 +261,14 @@ public class ODataSet<TSource> : IODataSet<TSource>
         return picklistOptions.ToArray();
     }
 
+    private async Task<ODataResult<TSource>> Get(string url)
+    {
+        return (await Get<ODataResultInternal<TSource>>(url))!;
+    }
+
     private Task<TResult?> Get<TResult>(string url)
     {
+        LastQuery = url;
         return HttpHelpers.Get<TResult>(new RequestParameters(client, requestMessageConfiguration, url));
     }
 
@@ -297,19 +300,12 @@ public class ODataSet<TSource> : IODataSet<TSource>
         foreach (var option in options.Items)
         {
             var part = $"{option.Key}=";
-            switch (option.Key)
+            part += option.Key switch
             {
-                case "$filter":
-                    part += string.Join(" and ", option.Value);
-                    break;
-                case "$orderby":
-                    part += string.Join(", ", option.Value);
-                    break;
-                default:
-                    part += option.Value.Last();
-                    break;
-            }
-
+                "$filter" => string.Join(" and ", option.Value),
+                "$orderby" => string.Join(", ", option.Value),
+                _ => option.Value.Last(),
+            };
             parts.Add(part);
         }
 
