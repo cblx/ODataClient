@@ -47,8 +47,7 @@ public class ODataSet<TSource> : IODataSet<TSource>
         return new ODataSet<TSource>(this, options.Clone().Add(option, value));
     }
 
-    public async Task<List<TProjection>> SelectListAsync<TProjection>(
-        Expression<Func<TSource, TProjection>> selectExpression)
+    public async Task<List<TProjection>> SelectListAsync<TProjection>(Expression<Func<TSource, TProjection>> selectExpression)
     {
         var result = await SelectResultAsync(selectExpression);
         return result.Value.ToList();

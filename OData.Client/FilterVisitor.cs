@@ -67,7 +67,20 @@ internal class FilterVisitor : ExpressionVisitor
 
         switch (node.Method)
         {
-            case { Name: nameof(DynFunctions.ContainValues) or nameof(DynFunctions.DoesNotContainValues) } m when m.DeclaringType == typeof(DynFunctions):
+            case
+            {
+                Name: nameof(DynFunctions.LastMonth)
+                      or nameof(DynFunctions.NextMonth) 
+                      or nameof(DynFunctions.ThisMonth)
+            } m when m.DeclaringType == typeof(DynFunctions):
+                Query += $"Microsoft.Dynamics.CRM.{m.Name}(PropertyName='";
+                Visit(node.Arguments[0]);
+                Query += "')";
+                break;
+            case 
+            { 
+                Name: nameof(DynFunctions.ContainValues) or nameof(DynFunctions.DoesNotContainValues) 
+            } m when m.DeclaringType == typeof(DynFunctions):
                 Query += $"Microsoft.Dynamics.CRM.{m.Name}(PropertyName='";
                 Visit(node.Arguments[0]);
                 Query += "',PropertyValues=";

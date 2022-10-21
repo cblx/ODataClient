@@ -963,6 +963,14 @@ public class Tests
         Assert.Equal("some_entities?$select=id&$filter=Microsoft.Dynamics.CRM.ContainValues(PropertyName='name',PropertyValues=%5B'a','b'%5D)", str);
     }
 
+    [Fact]
+    public void DynamicsThisMonthFunctionMustBeSupported()
+    {
+        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        string str = set.Filter(e => DynFunctions.ThisMonth(e.At)).ToString(e => e.Id);
+        str.Should().Be("some_entities?$select=id&$filter=Microsoft.Dynamics.CRM.ThisMonth(PropertyName='at')");
+    }
+
 
     [Fact]
     public void DynamicsContainValuesFilterInlineMustBeSupported()
