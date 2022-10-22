@@ -159,7 +159,7 @@ public class ODataProjectionRewriter : ExpressionVisitor
                         }
                         if (argument is MemberExpression memberExpression)
                         {
-                            return VisitMember(memberExpression, "@OData.Community.Display.V1.FormattedValue", methodCallExpression.Method.ReturnType);
+                            return VisitMember(memberExpression, $"@{DynAnnotations.FormattedValue}", methodCallExpression.Method.ReturnType);
                         }
                         else
                         {
