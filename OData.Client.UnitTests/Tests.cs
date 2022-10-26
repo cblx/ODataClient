@@ -157,6 +157,48 @@ public class Tests
         await exec.Should().ThrowAsync<FormatException>();
     }
 
+    /// <summary>
+    /// Found error in 0.10.0-dev.13 where sub-collection are only projected in the first item
+    /// </summary>
+    /// <returns></returns>
+    [Fact]
+    public async Task SubCollectionsShouldBeProjectedInAllItems()
+    {
+        var data = new
+        {
+           value = new[]
+           {
+                new some_entity{ 
+                    id = Guid.NewGuid(),
+                    children = new some_entity[]{ 
+                        new some_entity{
+                            id = Guid.NewGuid()
+                        }
+                    } 
+                },
+                new some_entity{
+                    id = Guid.NewGuid(),
+                    children = new some_entity[]{
+                        new some_entity{
+                            id = Guid.NewGuid()
+                        }
+                    }
+                }
+           }
+        };
+        var json = JsonSerializer.Serialize(data, _jsonMockDataOptions);
+        var messageHandler = new MockHttpMessageHandler(json);
+        var httpClient = new HttpClient(messageHandler) { BaseAddress = new Uri("http://localhost") };
+        var oDataClient = new ODataClient(httpClient);
+        var set = new ODataSet<TblEntity>(oDataClient, "some_entities");
+        var items = await set.Select(e => new
+        {
+            Children = e.Children.Select(e => e.Id)
+        }).ToArrayAsync();
+        items.Should().HaveCount(2);
+        items.Should().AllSatisfy(item => item.Children.Should().HaveCount(1));
+    }
+
 
     [Fact]
     public async Task CompareInstanceMemberInProjection()

@@ -35,6 +35,7 @@ public static class RewriterHelpers
 
     public static JsonObject[] GetAsArray(JsonObject jsonObject, Stack<string> fieldsStack)
     {
+        fieldsStack = CloneStack(fieldsStack);
         JsonNode? jsonNode = jsonObject;
         while (fieldsStack.TryPop(out var p))
         {
