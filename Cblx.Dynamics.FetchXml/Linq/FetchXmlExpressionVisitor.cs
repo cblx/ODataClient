@@ -2,6 +2,7 @@
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Xml.Linq;
+using Cblx.Dynamics.FetchXml.Linq.Extensions;
 using OData.Client.Abstractions;
 
 namespace Cblx.Dynamics.FetchXml.Linq;
@@ -14,13 +15,14 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
     public LambdaExpression? GroupByExpression { get; private set; }
     public Dictionary<string, XElement> EntityParametersElements { get; } = new();
     public XElement FetchElement { get; }
+    public bool HasFormattedValue { get; private set; }
 
     public FetchXmlExpressionVisitor()
     {
         FetchElement = new XElement(
             "fetch",
             new XAttribute("mapping", "logical") //,
-            //_entityElement
+                                                 //_entityElement
         );
     }
 
@@ -36,7 +38,7 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
         string fetchXml = ToFetchXml();
         if (string.IsNullOrWhiteSpace(Endpoint))
         {
-            throw new Exception("No Dynamics endpoint found for this expression");
+            throw new InvalidOperationException("No Dynamics endpoint found for this expression");
         }
         return $"{Endpoint}?fetchXml={fetchXml}";
     }
@@ -64,11 +66,11 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
                 case "Select":
                 case "Join":
                 case "SelectMany":
-                {
-                    var projectionExpression = (methodCallExpression.Arguments.Last().UnBox() as LambdaExpression)!;
-                    ReadAttributesFromProjection(projectionExpression, fetchXml);
-                    break;
-                }
+                    {
+                        var projectionExpression = (methodCallExpression.Arguments.Last().UnBox() as LambdaExpression)!;
+                        ReadAttributesFromProjection(projectionExpression, fetchXml);
+                        break;
+                    }
             }
         }
         else if (expression is ConstantExpression constantExpression &&
@@ -98,23 +100,31 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
 
     protected override Expression VisitMethodCall(MethodCallExpression node)
     {
-        return node.Method.Name switch
+        switch (node.Method)
         {
-            "Distinct" => VisitDistinct(node),
-            "Take" => VisitTake(node),
-            "FirstOrDefault" => VisitFirstOrDefault(node),
-            "Select" => VisitSelect(node),
-            // Join/from form
-            "SelectMany" => VisitSelectMany(node),
-            "Where" => VisitWhere(node),
-            "Join" => VisitJoin(node),
-            "OrderBy" => VisitOrderBy(node),
-            "OrderByDescending" => VisitOrderBy(node, true),
-            "GroupBy" => VisitGroupBy(node),
-            _ => base.VisitMethodCall(node),
-        };
+            case var m when m.DeclaringType == typeof(Queryable):
+                return m.Name switch
+                {
+                    nameof(Queryable.Distinct) => VisitDistinct(node),
+                    nameof(Queryable.Take) => VisitTake(node),
+                    nameof(Queryable.FirstOrDefault) => VisitFirstOrDefault(node),
+                    nameof(Queryable.Select) => VisitSelect(node),
+                    // Join/from form
+                    nameof(Queryable.SelectMany) => VisitSelectMany(node),
+                    nameof(Queryable.Where) => VisitWhere(node),
+                    nameof(Queryable.Join) => VisitJoin(node),
+                    nameof(Queryable.OrderBy) => VisitOrderBy(node),
+                    nameof(Queryable.OrderByDescending) => VisitOrderBy(node, true),
+                    nameof(Queryable.GroupBy) => VisitGroupBy(node),
+                    _ => base.VisitMethodCall(node),
+                };
+            case { Name: nameof(DynFunctions.FormattedValue) } m when m.DeclaringType == typeof(DynFunctions):
+                HasFormattedValue = true;
+                return base.VisitMethodCall(node);
+            default: return base.VisitMethodCall(node);
+        }
     }
-    
+
     Expression VisitFirstOrDefault(MethodCallExpression node)
     {
         if (node.Arguments[0] is MethodCallExpression methodCallExpression)
@@ -123,7 +133,7 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
         }
         else
         {
-           CreateRootEntityFromSource(node);
+            CreateRootEntityFromSource(node);
         }
 
         FetchElement.SetAttributeValue("top", 1);
@@ -137,7 +147,7 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
                 FetchElement.Descendants().First().Add(whereVisitor.FilterElement);
             }
         }
-        
+
         return node;
     }
 
@@ -178,8 +188,8 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
         {
             CreateRootEntityFromSource(node);
         }
-        
-        
+
+
         //Expression fromExpression = node.Arguments[0];
         // if (fromExpression is MethodCallExpression methodCallExpression)
         // {

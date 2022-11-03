@@ -11,9 +11,6 @@ public class TbSomeTable
     [JsonPropertyName("some_tableid")]
     public Guid Id { get; set; }
     
-    // [JsonPropertyName("accent")]
-    // public string? Áccent { get; set; } 
-
     [JsonPropertyName("_other_table_value")]
     public Guid OtherTableId { get; set; }
 

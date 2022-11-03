@@ -84,14 +84,17 @@ public class ODataSet<TSource> : IODataSet<TSource>
     {
         var url = ToString(selectExpression);
         var rewriter = new ODataProjectionRewriter();
-        requestMessageConfiguration = requestMessage =>
-                    requestMessage
-                    .Headers.Add(
-                        "Prefer",
-                        "odata.include-annotations=OData.Community.Display.V1.FormattedValue"
-                    );
-
         var projectionExpression = rewriter.Rewrite(selectExpression);
+        if (rewriter.HasFormattedValues)
+        {
+            requestMessageConfiguration = requestMessage =>
+                        requestMessage
+                        .Headers.Add(
+                            "Prefer",
+                            $"odata.include-annotations={DynAnnotations.FormattedValue}"
+                        );
+        }
+
         var del = projectionExpression.Compile() as Func<JsonObject, TProjection>;
         var result = await Get<JsonObject>(url);
 

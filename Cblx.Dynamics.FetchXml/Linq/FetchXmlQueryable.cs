@@ -12,10 +12,6 @@ public class FetchXmlQueryable<T> : QueryableBase<T>
 
     }
 
-    //public FetchXmlQueryable(IQueryParser queryParser, IQueryExecutor executor) : base(queryParser, executor)
-    //{
-    //}
-
     public FetchXmlQueryable(IQueryProvider provider, Expression expression) : base(provider, expression)
     {
     }

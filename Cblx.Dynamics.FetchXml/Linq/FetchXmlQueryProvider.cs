@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Linq.Expressions;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -48,13 +49,18 @@ public class FetchXmlQueryProvider : IAsyncQueryProvider
     {
         if (_httpClient == null)
         {
-            throw new Exception("Query cannot be execute without a HttpClient");
+            throw new InvalidOperationException("Query cannot be execute without a HttpClient");
         }
 
         var visitor = new FetchXmlExpressionVisitor();
         visitor.Visit(expression);
         string url = visitor.ToRelativeUrl();
-        HttpResponseMessage responseMessage = await _httpClient.GetAsync(url, cancellationToken);
+        var requestMessage = new HttpRequestMessage(HttpMethod.Get, url);
+        if (visitor.HasFormattedValue)
+        {
+            requestMessage.Headers.Add("Prefer", $"odata.include-annotations={DynAnnotations.FormattedValue}");
+        }
+        var responseMessage = await _httpClient.SendAsync(requestMessage,cancellationToken);
         LastUrl = url;
         if (responseMessage.StatusCode is not HttpStatusCode.OK)
         {
@@ -84,7 +90,7 @@ public class FetchXmlQueryProvider : IAsyncQueryProvider
                 cancellationToken);
         if (jsonObject == null)
         {
-            throw new Exception("Unexpected behavior: Desserialization result is null");
+            throw new InvalidOperationException("Unexpected behavior: Desserialization result is null");
         }
 
         LambdaExpression projectionExpression =
@@ -94,35 +100,29 @@ public class FetchXmlQueryProvider : IAsyncQueryProvider
                     visitor.GroupByExpression
                 ).Rewrite(expression)
                 : new FetchXmlProjectionRewriter().Rewrite(expression);
+
         Delegate del = projectionExpression.Compile();
         JsonArray jsonArray = jsonObject["Value"]!.AsArray();
         if (typeof(TResult).IsGenericType && typeof(TResult).IsAssignableTo(typeof(IEnumerable)))
         {
             Type itemType = typeof(TResult).GenericTypeArguments[0];
             return (TResult) GetType()
-                .GetMethod(nameof(ToEnumerable), BindingFlags.NonPublic | BindingFlags.Instance)!
+                .GetMethod(nameof(ToEnumerable), BindingFlags.NonPublic | BindingFlags.Static)!
                 .MakeGenericMethod(itemType)
                 .Invoke(this, new object[] {jsonArray, del})!;
         }
         else
         {
             return (TResult) GetType()
-                .GetMethod(nameof(ToItem), BindingFlags.NonPublic | BindingFlags.Instance)!
+                .GetMethod(nameof(ToItem), BindingFlags.NonPublic | BindingFlags.Static)!
                 .MakeGenericMethod(typeof(TResult))
                 .Invoke(this, new object[] {jsonArray, del})!;
         }
     }
 
-    TItem? ToItem<TItem>(JsonArray jsonArray, Delegate del)
-    {
-        TItem? item = ToEnumerable<TItem>(jsonArray, del).FirstOrDefault();
-        return item;
-    }
+    static TItem? ToItem<TItem>(JsonArray jsonArray, Delegate del) => ToEnumerable<TItem>(jsonArray, del).FirstOrDefault();
 
-    IEnumerable<TItem> ToEnumerable<TItem>(JsonArray jsonArray, Delegate del)
-    {
-        return jsonArray.Select(item => (TItem) del.DynamicInvoke(item)!)!;
-    }
+    static IEnumerable<TItem> ToEnumerable<TItem>(JsonArray jsonArray, Delegate del) => jsonArray.Select(item => (TItem) del.DynamicInvoke(item)!)!;
 
     static void ThrowODataErrorIfItFits(string json)
     {

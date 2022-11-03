@@ -54,13 +54,41 @@ public class FetchXmlQueryableExecuteTests
             .ContainSingle(s => s.Id == _exampleId);
 
         db.Provider.LastUrl.Should().Be(
-"""
-some_tables?fetchXml=<fetch mapping="logical">
-  <entity name="some_table" alias="s">
-    <attribute name="some_tableid" alias="s.Id" />
-  </entity>
-</fetch>
-""");
+            """
+            some_tables?fetchXml=<fetch mapping="logical">
+              <entity name="some_table" alias="s">
+                <attribute name="some_tableid" alias="s.Id" />
+              </entity>
+            </fetch>
+            """);
+    }
+
+    [Fact]
+    public async Task SelectFormattedValueTest()
+    {
+        var db = GetSimpleMockDb(new JsonArray
+        {
+            new JsonObject
+            {
+                {"s.Id", _exampleId},
+                {$"s.Id@{DynAnnotations.FormattedValue}", "BlaBlaBla" }
+            }
+        });
+
+        var items = await (from s in db.SomeTables
+                           select new { FormattedId = DynFunctions.FormattedValue(s.Id) }).ToListAsync();
+
+        items
+            .Should()
+            .ContainSingle(s => s.FormattedId == "BlaBlaBla");
+        db.Provider.LastUrl.Should().Be(
+            """
+            some_tables?fetchXml=<fetch mapping="logical">
+              <entity name="some_table" alias="s">
+                <attribute name="some_tableid" alias="s.Id" />
+              </entity>
+            </fetch>
+            """);
     }
 
     [Fact]
@@ -82,13 +110,13 @@ some_tables?fetchXml=<fetch mapping="logical">
             .ContainSingle(id => id == _exampleId);
 
         db.Provider.LastUrl.Should().Be(
-"""
-some_tables?fetchXml=<fetch mapping="logical">
-  <entity name="some_table" alias="s">
-    <attribute name="some_tableid" alias="s.Id" />
-  </entity>
-</fetch>
-""");
+            """
+            some_tables?fetchXml=<fetch mapping="logical">
+              <entity name="some_table" alias="s">
+                <attribute name="some_tableid" alias="s.Id" />
+              </entity>
+            </fetch>
+            """);
     }
 
     [Fact]
@@ -520,6 +548,17 @@ some_tables?fetchXml=<fetch mapping="logical" top="1">
 
         var items = await (from s in db.SomeTables
             select new {s.OtherTable!.Id}).ToListAsync();
+
+        db.Provider.LastUrl.Should().Be(
+            """
+            some_tables?fetchXml=<fetch mapping="logical">
+              <entity name="some_table" alias="s">
+                <link-entity name="other_table" to="other_table" alias="s.OtherTable">
+                  <attribute name="other_tableid" alias="s.OtherTable.Id" />
+                </link-entity>
+              </entity>
+            </fetch>
+            """);
 
         items
             .Should()

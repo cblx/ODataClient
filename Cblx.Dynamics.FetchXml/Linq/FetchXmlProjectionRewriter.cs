@@ -8,7 +8,6 @@ public class FetchXmlProjectionRewriter : ExpressionVisitor
 {
     private readonly ParameterExpression _jsonParameterExpression =
         Expression.Parameter(typeof(JsonObject), "jsonObject");
-
     public LambdaExpression Rewrite(Expression expression)
     {
         switch (expression)
@@ -80,13 +79,39 @@ public class FetchXmlProjectionRewriter : ExpressionVisitor
                     return Expression.Lambda(callCreateEntityExpression, _jsonParameterExpression);
                 }
         }
-        throw new Exception("Invalid expression during projection rewrite");
+        throw new InvalidOperationException("Invalid expression during projection rewrite");
+    }
+    protected override Expression VisitMethodCall(MethodCallExpression node)
+    {
+        switch (node.Method)
+        {
+            case
+            {
+                Name: nameof(DynFunctions.FormattedValue)
+            } m when m.DeclaringType == typeof(DynFunctions):
+                var argument = node.Arguments[0];
+                if (argument is UnaryExpression unaryExpression)
+                {
+                    argument = unaryExpression.Operand;
+                }
+                if (argument is MemberExpression memberExpression)
+                {
+                    return VisitMember(memberExpression, $"@{DynAnnotations.FormattedValue}", node.Method.ReturnType);
+                }
+                else
+                {
+                    throw new InvalidOperationException("The argument in FormattedValue must be a Dynamics field");
+                }
+        }
+        return base.VisitMethodCall(node);
     }
 
-    protected override Expression VisitMember(MemberExpression node)
+    protected override Expression VisitMember(MemberExpression node) => VisitMember(node, null, null);
+
+    Expression VisitMember(MemberExpression node, string? applyAnnotation, Type? overrideType)
     {
         MemberInfo memberInfo = node.Member;
-        string propAlias = node.ToProjectionAttributeAlias();
+        string propAlias = $"{node.ToProjectionAttributeAlias()}{applyAnnotation}";
 
         MethodInfo auxGetValueMethod =
             typeof(RewriterHelpers)
@@ -98,7 +123,7 @@ public class FetchXmlProjectionRewriter : ExpressionVisitor
             throw new ArgumentException("Member must be a property");
         }
 
-        Type propertyType = propertyInfo.PropertyType;
+        Type propertyType = overrideType ?? propertyInfo.PropertyType;
         bool isNullable = propertyType.IsGenericType && propertyType.GetGenericTypeDefinition() == typeof(Nullable<>);
         Type? innerType = isNullable ? propertyType.GetGenericArguments()[0] : propertyType;
 
