@@ -15,7 +15,7 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
     public LambdaExpression? GroupByExpression { get; private set; }
     public Dictionary<string, XElement> EntityParametersElements { get; } = new();
     public XElement FetchElement { get; }
-    public bool HasFormattedValue { get; private set; }
+    public bool HasFormattedValues { get; private set; }
 
     public FetchXmlExpressionVisitor()
     {
@@ -118,9 +118,9 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
                     nameof(Queryable.GroupBy) => VisitGroupBy(node),
                     _ => base.VisitMethodCall(node),
                 };
-            case { Name: nameof(DynFunctions.FormattedValue) } m when m.DeclaringType == typeof(DynFunctions):
-                HasFormattedValue = true;
-                return base.VisitMethodCall(node);
+            //case { Name: nameof(DynFunctions.FormattedValue) } m when m.DeclaringType == typeof(DynFunctions):
+            //    HasFormattedValue = true;
+            //    return base.VisitMethodCall(node);
             default: return base.VisitMethodCall(node);
         }
     }
@@ -470,6 +470,10 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
         {
             var visitor = new FetchXmlSelectProjectionVisitor(fetchXmlElement, groupBy);
             visitor.Visit(projectionExpression);
+            if (visitor.HasFormattedValues)
+            {
+                HasFormattedValues = true;
+            }
         }
     }
 

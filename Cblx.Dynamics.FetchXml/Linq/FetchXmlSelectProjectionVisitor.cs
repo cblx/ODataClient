@@ -7,7 +7,7 @@ public class FetchXmlSelectProjectionVisitor : ExpressionVisitor
 {
     private readonly bool _isGroupBy;
     private readonly XElement _fetchXmlElement;
-
+    public bool HasFormattedValues { get; private set; }
     public FetchXmlSelectProjectionVisitor(XElement fetchXml, bool isGroupBy = false)
     {
         _fetchXmlElement = fetchXml;
@@ -33,7 +33,7 @@ public class FetchXmlSelectProjectionVisitor : ExpressionVisitor
         return node;
     }
 
-    protected override Expression VisitMember(MemberExpression memberExpression)
+    protected override Expression VisitMember(MemberExpression? memberExpression)
     {
         XElement? linkedNavigationEntityElement = _fetchXmlElement.FindOrCreateElementForMemberExpression(memberExpression);
         if (linkedNavigationEntityElement == null) { throw new Exception("Could not find entity element reference in projection. (Check if [DynamicsEntity] attribute is missing in the entity class)"); }
@@ -43,11 +43,20 @@ public class FetchXmlSelectProjectionVisitor : ExpressionVisitor
                 new XAttribute("name", memberExpression.GetColName()),
                 new XAttribute("alias", attributeAlias)
         );
-        linkedNavigationEntityElement.Add(attributeElement);
         if (_isGroupBy)
         {
             attributeElement.SetAttributeValue("groupby", "true");
         }
+        if (linkedNavigationEntityElement.Elements().Any(el => el.ToString() == attributeElement.ToString()) is false)
+        {
+            linkedNavigationEntityElement.Add(attributeElement);
+        }
         return memberExpression;
+    }
+
+    protected override Expression VisitMethodCall(MethodCallExpression node)
+    {
+        HasFormattedValues = node.Method is { Name: nameof(DynFunctions.FormattedValue) } && node.Method.DeclaringType == typeof(DynFunctions);
+        return base.VisitMethodCall(node);
     }
 }

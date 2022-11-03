@@ -76,7 +76,10 @@ public class FetchXmlQueryableExecuteTests
         });
 
         var items = await (from s in db.SomeTables
-                           select new { FormattedId = DynFunctions.FormattedValue(s.Id) }).ToListAsync();
+                           select new { 
+                               s.Id,
+                               FormattedId = DynFunctions.FormattedValue(s.Id) 
+                           }).ToListAsync();
 
         items
             .Should()

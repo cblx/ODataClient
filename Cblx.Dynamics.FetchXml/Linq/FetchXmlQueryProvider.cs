@@ -56,7 +56,7 @@ public class FetchXmlQueryProvider : IAsyncQueryProvider
         visitor.Visit(expression);
         string url = visitor.ToRelativeUrl();
         var requestMessage = new HttpRequestMessage(HttpMethod.Get, url);
-        if (visitor.HasFormattedValue)
+        if (visitor.HasFormattedValues)
         {
             requestMessage.Headers.Add("Prefer", $"odata.include-annotations={DynAnnotations.FormattedValue}");
         }

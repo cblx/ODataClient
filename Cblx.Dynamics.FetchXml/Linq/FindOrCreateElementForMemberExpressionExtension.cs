@@ -56,7 +56,7 @@ static class FindOrCreateElementForMemberExpressionExtension
                     var referentialConstraintAttribute = linkEntityMemberExpression.Member.GetCustomAttribute<ReferentialConstraintAttribute>();
                     if (referentialConstraintAttribute == null)
                     {
-                        throw new Exception($"You must annotate the Navigation Property ({linkEntityMemberExpression.Member.Name}) with [ReferentialConstraint] to enable using of navigation members.");
+                        throw new InvalidOperationException($"You must annotate the Navigation Property ({linkEntityMemberExpression.Member.Name}) with [ReferentialConstraint] to enable using of navigation members.");
                     }
                     linkEntityElement.SetAttributeValue("to", referentialConstraintAttribute.RawPropertyName);
                     linkEntityElement.SetAttributeValue("alias", alias);

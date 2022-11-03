@@ -1,11 +1,8 @@
 ﻿using Cblx.Dynamics;
 using Cblx.OData.Client;
-using Cblx.OData.Client.Abstractions.Ids;
-using System.Collections;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
-using System.Text.Json;
 
 namespace OData.Client;
 internal class FilterVisitor : ExpressionVisitor
