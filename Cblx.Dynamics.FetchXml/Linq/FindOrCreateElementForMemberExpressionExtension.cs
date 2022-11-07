@@ -43,7 +43,9 @@ static class FindOrCreateElementForMemberExpressionExtension
             while (entityExpressions.Any())
             {
                 Expression linkedEntityExpression = entityExpressions.Pop();
-                string alias = linkedEntityExpression.ToString();
+                var linkEntityMemberExpression = (linkedEntityExpression as MemberExpression)!;
+
+                string alias = linkEntityMemberExpression.ToProjectionAttributeAlias();
                 if (fetchXml.FindEntityElementByAlias(alias) is { } existingElement)
                 {
                     currentEntityElement = existingElement;
@@ -51,7 +53,6 @@ static class FindOrCreateElementForMemberExpressionExtension
                 else
                 {
                     var linkEntityElement = new XElement("link-entity");
-                    var linkEntityMemberExpression = (linkedEntityExpression as MemberExpression)!;
                     linkEntityElement.SetAttributeValue("name", (linkEntityMemberExpression.Member as PropertyInfo)!.PropertyType.GetTableName());
                     var referentialConstraintAttribute = linkEntityMemberExpression.Member.GetCustomAttribute<ReferentialConstraintAttribute>();
                     if (referentialConstraintAttribute == null)

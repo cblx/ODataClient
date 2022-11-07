@@ -33,14 +33,14 @@ public class FetchXmlSelectProjectionVisitor : ExpressionVisitor
         return node;
     }
 
-    protected override Expression VisitMember(MemberExpression? memberExpression)
+    protected override Expression VisitMember(MemberExpression? node)
     {
-        XElement? linkedNavigationEntityElement = _fetchXmlElement.FindOrCreateElementForMemberExpression(memberExpression);
-        if (linkedNavigationEntityElement == null) { throw new Exception("Could not find entity element reference in projection. (Check if [DynamicsEntity] attribute is missing in the entity class)"); }
-        string attributeAlias = memberExpression.ToProjectionAttributeAlias();
+        XElement? linkedNavigationEntityElement = _fetchXmlElement.FindOrCreateElementForMemberExpression(node);
+        if (linkedNavigationEntityElement == null) { throw new InvalidOperationException("Could not find entity element reference in projection. (Check if [DynamicsEntity] attribute is missing in the entity class)"); }
+        string attributeAlias = node.ToProjectionAttributeAlias();
         var attributeElement = new XElement(
                 "attribute",
-                new XAttribute("name", memberExpression.GetColName()),
+                new XAttribute("name", node.GetColName()),
                 new XAttribute("alias", attributeAlias)
         );
         if (_isGroupBy)
@@ -51,7 +51,7 @@ public class FetchXmlSelectProjectionVisitor : ExpressionVisitor
         {
             linkedNavigationEntityElement.Add(attributeElement);
         }
-        return memberExpression;
+        return node;
     }
 
     protected override Expression VisitMethodCall(MethodCallExpression node)

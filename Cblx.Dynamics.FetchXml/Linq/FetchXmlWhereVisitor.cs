@@ -7,7 +7,6 @@ namespace Cblx.Dynamics.FetchXml.Linq;
 public class FetchXmlWhereVisitor : ExpressionVisitor
 {
     string? _type = null;
-    //string _rootEntityAlias;
     public XElement FilterElement { get; } = new XElement("filter");
     public bool IsEmpty => !FilterElement.HasElements;
     private readonly FetchXmlExpressionVisitor _mainVisitor;
@@ -110,7 +109,7 @@ public class FetchXmlWhereVisitor : ExpressionVisitor
 
         if (left is not MemberExpression memberExpression)
         {
-            throw new Exception("Left side of where caluses must be a member accessor");
+            throw new InvalidOperationException("Left side of where caluses must be a member accessor");
         }
 
         _mainVisitor.FindOrCreateElementForMemberExpression(memberExpression);
@@ -170,7 +169,7 @@ public class FetchXmlWhereVisitor : ExpressionVisitor
         }
         if(_type != type)
         {
-            throw new Exception("Can't mix 'OR' and 'AND' clauses in the same Where filter");
+            throw new InvalidOperationException("Can't mix 'OR' and 'AND' clauses in the same Where filter");
         }
     }
 
@@ -189,8 +188,7 @@ public class FetchXmlWhereVisitor : ExpressionVisitor
         {
             case object v when v.GetType().IsEnum:
                 return Convert.ToInt32(v).ToString();
-            case object v when v.GetType() == typeof(string):
-                string str = (string)v;
+            case object v when v is string str:
                 str = str.Replace("'", "''")
                     .Replace("%", "%25")
                     .Replace("#", "%23")
@@ -200,8 +198,8 @@ public class FetchXmlWhereVisitor : ExpressionVisitor
                     .Replace("&", "%26")
                     ;
                 return str;
-            case object v when v.GetType() == typeof(bool):
-                return v.ToString()!.ToLower();
+            case object v when v is bool bl:
+                return bl.ToString()!.ToLower();
             case object v when v is DateTimeOffset dtoff:
                 string strDateTimeOffset = $"{dtoff:O}";
                 strDateTimeOffset = strDateTimeOffset
@@ -214,13 +212,13 @@ public class FetchXmlWhereVisitor : ExpressionVisitor
                     .Replace(":", "%3A")
                     .Replace("+", "%2B");
                 return strDateTime;
-            case object v when v.GetType() == typeof(Guid):
-                return $"{v}";
-            case object v when v.GetType() == typeof(int):
-                return $"{v}";
+            case object v when v is Guid gd:
+                return $"{gd}";
+            case object v when v is int i:
+                return $"{i}";
             case Id id:
                 return $"{id.Guid}";
         }
-        throw new Exception($"{o} is not a supported value for comparison in Where clause");
+        throw new InvalidOperationException($"{o} is not a supported value for comparison in Where clause");
     }
 }

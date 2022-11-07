@@ -14,7 +14,7 @@ namespace Cblx.Dynamics.FetchXml.Tests;
 
 public class FetchXmlQueryableExecuteTests
 {
-    readonly Guid _exampleId = new Guid("3fa47b9b-d4c1-45df-9e96-4aecefcf85a8");
+    readonly Guid _exampleId = new("3fa47b9b-d4c1-45df-9e96-4aecefcf85a8");
 
     static FetchXmlContext GetSimpleMockDb(JsonArray value)
     {
@@ -512,7 +512,7 @@ some_tables?fetchXml=<fetch mapping="logical" top="1">
 
 
     [Fact]
-    public async void ThreeLeftJoinsWithWhereTest()
+    public async Task ThreeLeftJoinsWithWhereTest()
     {
         var db = GetSimpleMockDb(new JsonArray
         {
@@ -567,6 +567,73 @@ some_tables?fetchXml=<fetch mapping="logical" top="1">
             .Should()
             .ContainSingle(a => a.Id == _exampleId);
     }
+
+    [Fact]
+    public async Task SelectDeepProjectionNavigationTest()
+    {
+        var db = GetSimpleMockDb(new JsonArray
+        {
+            new JsonObject
+            {
+                {"s.OtherTable.AnotherTable.Id", _exampleId}
+            }
+        });
+
+        var items = await (from s in db.SomeTables
+                           select new { s.OtherTable!.AnotherTable!.Id }).ToListAsync();
+
+        db.Provider.LastUrl.Should().Be(
+            """
+            some_tables?fetchXml=<fetch mapping="logical">
+              <entity name="some_table" alias="s">
+                <link-entity name="other_table" to="other_table" alias="s.OtherTable">
+                  <link-entity name="another_table" to="another_table" alias="s.OtherTable.AnotherTable">
+                    <attribute name="another_tableid" alias="s.OtherTable.AnotherTable.Id" />
+                  </link-entity>
+                </link-entity>
+              </entity>
+            </fetch>
+            """);
+
+        items
+            .Should()
+            .ContainSingle(a => a.Id == _exampleId);
+    }
+
+    [Fact]
+    public async Task SelectProjectionNavigationAfterComplexQueryTest()
+    {
+        var db = GetSimpleMockDb(new JsonArray
+        {
+            new JsonObject
+            {
+                {"s.OtherTable.Id", _exampleId}
+            }
+        });
+
+        var items = await (from s in db.SomeTables
+                           join o in db.OtherTables on s.OtherTableId equals o.Id
+                           join an in db.AnotherTables on s.AnotherTableId equals an.Id
+                           select new { s.OtherTable!.Id }).ToListAsync();
+
+        db.Provider.LastUrl.Should().Be(
+            """
+            some_tables?fetchXml=<fetch mapping="logical">
+              <entity name="some_table">
+                <link-entity name="other_table" alias="o" to="other_table" from="other_tableid" />
+                <link-entity name="another_table" alias="an" to="another_table" from="another_tableid" />
+                <link-entity name="other_table" to="other_table" alias="s.OtherTable">
+                  <attribute name="other_tableid" alias="s.OtherTable.Id" />
+                </link-entity>
+              </entity>
+            </fetch>
+            """);
+
+        items
+            .Should()
+            .ContainSingle(a => a.Id == _exampleId);
+    }
+
 
     [Fact]
     public async Task DistinctTest()

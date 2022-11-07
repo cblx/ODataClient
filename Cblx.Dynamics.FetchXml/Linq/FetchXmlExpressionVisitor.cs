@@ -118,9 +118,6 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
                     nameof(Queryable.GroupBy) => VisitGroupBy(node),
                     _ => base.VisitMethodCall(node),
                 };
-            //case { Name: nameof(DynFunctions.FormattedValue) } m when m.DeclaringType == typeof(DynFunctions):
-            //    HasFormattedValue = true;
-            //    return base.VisitMethodCall(node);
             default: return base.VisitMethodCall(node);
         }
     }
@@ -189,16 +186,6 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
             CreateRootEntityFromSource(node);
         }
 
-
-        //Expression fromExpression = node.Arguments[0];
-        // if (fromExpression is MethodCallExpression methodCallExpression)
-        // {
-        //     Visit(methodCallExpression);
-        // }
-
-        //var findOrCreateXElementVisitor = new FindOrCreateXElementWithAliasVisitor(this, FetchElement);
-        //XElement entityElement = findOrCreateXElementVisitor.FindOrCreate(node.Arguments[1]);
-        //XElement entityElement = FetchElement.FindEntityElementByAlias()
         LambdaExpression orderByLambdaExpression = (node.Arguments[1].UnBox() as LambdaExpression)!;
         MemberExpression memberExpression = (orderByLambdaExpression.Body as MemberExpression)!;
 
@@ -254,7 +241,6 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
 
     Expression VisitSelectMany(MethodCallExpression selectManyExpression)
     {
-        bool isFirstJoin = joinCount == 0;
         joinCount++;
 
         //Ex:
@@ -365,29 +351,6 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
         );
         FetchElement.Add(entityElement);
         Endpoint = entityType.GetCustomAttribute<ODataEndpointAttribute>()?.Endpoint ?? throw new Exception($@"ODataEndointAttribute not found for {entityType.Name}");
-        // var predicateExpression = (node.Arguments[1].UnBox() as LambdaExpression)!;
-        // ParameterExpression parameterExpression = predicateExpression.Parameters[0];
-        // string entityAlias = parameterExpression.Name!;
-        // var entityElement = new XElement(
-        //     "entity",
-        //     new XAttribute(
-        //         "name",
-        //         parameterExpression.Type.GetCustomAttribute<DynamicsEntityAttribute>()?.Name ??
-        //         parameterExpression.Type.Name
-        //     ),
-        //     new XAttribute(
-        //         "alias",
-        //         entityAlias
-        //     )
-        // );
-        // FetchElement.Add(entityElement);
-        // if (EntityParametersElements.Count == 0)
-        // {
-        //     Endpoint = parameterExpression.Type.GetCustomAttribute<ODataEndpointAttribute>()?.Endpoint ??
-        //                "endpoint-missing";
-        // }
-        //
-        // EntityParametersElements[entityAlias] = entityElement;
     }
 
     Expression VisitJoin(MethodCallExpression node)
@@ -562,115 +525,12 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
         return entityElement;
     }
 
-    /// <summary>
-    /// Possibities:
-    /// Lambda: a => a.Member
-    /// Lambda: Anonymous => Anonymous.a.Member
-    /// </summary>
-    class FindOrCreateXElementWithAliasVisitor : ExpressionVisitor
-    {
-        private readonly FetchXmlExpressionVisitor _mainVisitor;
-        private XElement? _createdElement = null;
-        private XElement _parentElement;
-
-        public FindOrCreateXElementWithAliasVisitor(
-            FetchXmlExpressionVisitor mainVisitor,
-            XElement parentElement
-        )
-        {
-            _mainVisitor = mainVisitor;
-            _parentElement = parentElement;
-        }
-
-        public XElement FindOrCreate(Expression expression)
-        {
-            Visit(expression);
-            if (_createdElement == null)
-            {
-                throw new ArgumentException("Could not find entity for queryable");
-            }
-
-            return _createdElement;
-        }
-
-        // IQueryable inside expressions
-        protected override Expression VisitMember(MemberExpression node)
-        {
-            //Type propertyType = (node.Member as PropertyInfo)!.PropertyType;
-            //if (propertyType.IsAssignableTo(typeof(IQueryable)))
-            //{
-            //    Type entityType = propertyType.GetGenericArguments()[0];
-            //    CreateForType(
-            //        "", entityType);
-            //    return node;
-            //}
-            if (node.Type.IsDynamicsEntity())
-            {
-                CreateForType(node.Member.Name, node.Type);
-            }
-
-            return base.VisitMember(node);
-        }
-
-        // From parameter
-        protected override Expression VisitParameter(ParameterExpression node)
-        {
-            if (node.Type.Name.Contains("AnonymousType"))
-            {
-                return base.VisitParameter(node);
-            }
-
-            CreateForType(node.Name!, node.Type);
-            return base.VisitParameter(node);
-        }
-
-
-        //// Directly from an IQueryable<> instance
-        //protected override Expression VisitConstant(ConstantExpression node)
-        //{
-        //    Type entityType = node.Value!.GetType().GetGenericArguments()[0];
-        //    CreateForType("", entityType);
-        //    return node;
-        //}
-
-        void CreateForType(string alias, Type entityType)
-        {
-            if (_mainVisitor.EntityParametersElements.ContainsKey(alias))
-            {
-                _createdElement = _mainVisitor.EntityParametersElements[alias];
-                return;
-            }
-
-            bool isRoot = _parentElement.Name == "fetch";
-            if (isRoot)
-            {
-                _mainVisitor.Endpoint = entityType.GetCustomAttribute<ODataEndpointAttribute>()?.Endpoint;
-            }
-
-            var entityElement = new XElement(
-                isRoot ? "entity" : "link-entity",
-                new XAttribute(
-                    "name",
-                    entityType.GetCustomAttribute<DynamicsEntityAttribute>()?.Name ?? entityType.Name
-                ),
-                new XAttribute(
-                    "alias",
-                    alias
-                )
-            );
-            _parentElement.Add(entityElement);
-            _mainVisitor.EntityParametersElements[alias] = entityElement;
-            _createdElement = entityElement;
-        }
-    }
-
-
     class FindOrCreateXElementVisitor : ExpressionVisitor
     {
         private readonly FetchXmlExpressionVisitor _mainVisitor;
         private XElement? _createdElement = null;
-        private XElement _parentElement;
-        private string _alias;
+        private readonly XElement _parentElement;
+        private readonly string _alias;
 
         public FindOrCreateXElementVisitor(
             FetchXmlExpressionVisitor mainVisitor,

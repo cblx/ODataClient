@@ -16,4 +16,8 @@ public class TbOtherTable
 
     [JsonPropertyName("value")]
     public int Value { get; set; }
+
+    [ReferentialConstraint("_another_table_value")]
+    [JsonPropertyName("another_table")]
+    public TbAnotherTable? AnotherTable { get; set; }
 }
