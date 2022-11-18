@@ -1,6 +1,7 @@
 ﻿using Cblx.Dynamics;
 using Cblx.OData.Client.Abstractions;
 using Cblx.OData.Client.Abstractions.Ids;
+using Cblx.OData.Client.Abstractions.Json;
 using FluentAssertions;
 using OData.Client.Abstractions;
 using OData.Client.Abstractions.Write;
@@ -59,6 +60,38 @@ public class Tests
         items.First().Children.First().Id.Should().Be(childId);
         set.LastQuery.Should().Be("some_entities?$select=id,name,active,age,nullableInt,at,partyDay&$expand=child($select=id,name,active,age,nullableInt,at,partyDay),otherChild($select=name),children($select=id,name,active,age,nullableInt,at,partyDay)");
     }
+
+
+    private ODataClient CreateODataClientWithResultValue(object value) {
+        var data = new { value };
+        var json = JsonSerializer.Serialize(data, _jsonMockDataOptions);
+        var messageHandler = new MockHttpMessageHandler(json);
+        var httpClient = new HttpClient(messageHandler) { BaseAddress = new Uri("http://localhost") };
+        var oDataClient = new ODataClient(httpClient);
+        return oDataClient;
+    }
+
+    private ODataSet<some_entity> CreateODataSetWithResultValue(object value)
+    {
+        var oDataClient = CreateODataClientWithResultValue(value);
+        var set = new ODataSet<some_entity>(oDataClient, "some_entities");
+        return set;
+    }
+
+
+    [Fact]
+    public async Task GetEntityWithPrivateSetterAndPrivateConstructor()
+    {
+        var value = new[]
+        {
+            new some_entity{ id = Guid.NewGuid() }
+        };
+        var set = CreateODataSetWithResultValue(value);
+        var items = await set.ToArrayAsync<TblEntityWithPrivateSetter>();
+        items.Should().HaveCount(1);
+        items.ElementAt(0).Id.Guid.Should().Be(value[0].id);
+    }
+
 
     [Fact]
     public void TestFilters()
@@ -277,6 +310,8 @@ public class Tests
         odata.Should().Be("some_entities?$select=id");
         item.Condition.Should().BeTrue();
     }
+
+  
 
     [Fact]
     public async Task ResultWithMoreThan1ItemTest()
@@ -1786,6 +1821,18 @@ public class SomeEntity
 
 [ODataEndpoint("some_entities")]
 [DynamicsEntity("some_entity")]
+public class TblEntityWithPrivateSetter
+{
+    private TblEntityWithPrivateSetter()
+    {
+    }
+
+    [JsonPropertyName("id")]
+    public StronglyTipedId Id { get; private set; }
+}
+
+[ODataEndpoint("some_entities")]
+[DynamicsEntity("some_entity")]
 public class TblEntity
 {
     [JsonPropertyName("id")]
@@ -1860,7 +1907,9 @@ public class some_entity
     public string root__annotation { get; set; }
 }
 
+#pragma warning disable S101 // Types should be named in PascalCase
 public class other_entity
+#pragma warning restore S101 // Types should be named in PascalCase
 {
     public string name { get; set; }
 }

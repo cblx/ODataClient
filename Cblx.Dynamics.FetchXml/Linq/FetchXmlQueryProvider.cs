@@ -83,11 +83,16 @@ public class FetchXmlQueryProvider : IAsyncQueryProvider
         CancellationToken cancellationToken = default)
     {
         var (responseMessage, visitor) = await ExecuteRequestAsync(expression, cancellationToken);
-        var jsonSerializerOptions = new JsonSerializerOptions {PropertyNameCaseInsensitive = true};
+
+        // Review: Makes sense using Options to desserialize to a JsonObject?
+        //var jsonSerializerOptions = new JsonSerializerOptions {
+        //    PropertyNameCaseInsensitive = true
+        //};
         Stream responseContent = await responseMessage.Content.ReadAsStreamAsync(cancellationToken);
         JsonObject? jsonObject =
-            await JsonSerializer.DeserializeAsync<JsonObject>(responseContent, jsonSerializerOptions,
-                cancellationToken);
+            await JsonSerializer.DeserializeAsync<JsonObject>(responseContent, 
+                /*jsonSerializerOptions,*/
+                cancellationToken: cancellationToken);
         if (jsonObject == null)
         {
             throw new InvalidOperationException("Unexpected behavior: Desserialization result is null");
@@ -102,7 +107,7 @@ public class FetchXmlQueryProvider : IAsyncQueryProvider
                 : new FetchXmlProjectionRewriter().Rewrite(expression);
 
         Delegate del = projectionExpression.Compile();
-        JsonArray jsonArray = jsonObject["Value"]!.AsArray();
+        JsonArray jsonArray = jsonObject["value"]!.AsArray();
         if (typeof(TResult).IsGenericType && typeof(TResult).IsAssignableTo(typeof(IEnumerable)))
         {
             Type itemType = typeof(TResult).GenericTypeArguments[0];
@@ -131,10 +136,13 @@ public class FetchXmlQueryProvider : IAsyncQueryProvider
         try
         {
             error = JsonSerializer.Deserialize<ODataError>(json,
-                new JsonSerializerOptions {PropertyNameCaseInsensitive = true});
+                new JsonSerializerOptions {
+                    PropertyNameCaseInsensitive = true
+                });
         }
         catch
         {
+            // Does not throw, if can't deserialize to ODataError
         }
 
         if (error?.Error is not null)

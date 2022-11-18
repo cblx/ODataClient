@@ -1,4 +1,5 @@
 ﻿using Cblx.OData.Client.Abstractions.Ids;
+using Cblx.OData.Client.Abstractions.Json;
 using OData.Client;
 using System;
 using System.Collections.Generic;
@@ -15,12 +16,13 @@ namespace Cblx.OData.Client
             type => type.BaseType == typeof(Id)
         };
 
-        readonly Dictionary<Guid, string> states = new Dictionary<Guid, string>();
-        readonly Dictionary<Guid, object> entities = new Dictionary<Guid, object>();
-        readonly HashSet<Guid> markedForRemove = new HashSet<Guid>();
-        readonly JsonSerializerOptions options = new JsonSerializerOptions();
+        readonly Dictionary<Guid, string> states = new ();
+        readonly Dictionary<Guid, object> entities = new ();
+        readonly HashSet<Guid> markedForRemove = new ();
+        readonly JsonSerializerOptions options = new ();
 
         public ChangeTracker(){
+            options.TypeInfoResolver = JsonContractBuilder.CreateContract();
             options.Converters.Add(new DateOnlyJsonConverter());
         }
 
@@ -40,7 +42,7 @@ namespace Cblx.OData.Client
             Guid? id = GetId(o);
             if (id is null)
             {
-                throw new Exception("Could not find Id for entity in remove");
+                throw new InvalidOperationException("Could not find Id for entity in remove");
             }
             markedForRemove.Add(id.Value);
         }
@@ -51,7 +53,7 @@ namespace Cblx.OData.Client
             Guid? id = GetId(o);
             if (id is null)
             {
-                throw new Exception("Could not find Id for attached entity");
+                throw new InvalidOperationException("Could not find Id for attached entity");
             }
             states.Add(id.Value, JsonSerializer.Serialize(o, o.GetType(), options));
             entities.Add(id.Value, o);
@@ -68,7 +70,7 @@ namespace Cblx.OData.Client
         internal PropertyInfo GetIdProp(object entity)
         {
             PropertyInfo? idProp = entity.GetType().GetProperty("Id");
-            if(idProp is null) { throw new Exception("Entity class must have an 'Id' property"); }
+            if(idProp is null) { throw new InvalidOperationException("Entity class must have an 'Id' property"); }
             return idProp;
         }
 

@@ -16,12 +16,28 @@ public class ChangeTrackerTests
     }
 
     [Fact]
-    public void AddingAndChanginEntity()
+    public void AddingAndChangingEntity()
     {
         var changeTracker = new ChangeTracker();
         var trackedClass = new TrackedClass();
         changeTracker.Add(trackedClass);
         trackedClass.Name = "João";
+        Change change = changeTracker.GetChange(trackedClass.Id);
+        Assert.NotNull(change);
+        Assert.Equal(ChangeType.Add, change.ChangeType);
+        Assert.Collection(change.ChangedProperties,
+            cp => Assert.Equal("Id", cp.PropertyInfo.Name),
+            cp => Assert.Equal("Name", cp.PropertyInfo.Name)
+        );
+    }
+
+    [Fact]
+    public void AddingAndChangingEntityWithPrivateSetterAndPrivateConstructor()
+    {
+        var changeTracker = new ChangeTracker();
+        var trackedClass = (TrackedClassPrivates)Activator.CreateInstance(typeof(TrackedClassPrivates), true);
+        changeTracker.Add(trackedClass);
+        trackedClass.ChangeName("João");
         Change change = changeTracker.GetChange(trackedClass.Id);
         Assert.NotNull(change);
         Assert.Equal(ChangeType.Add, change.ChangeType);
@@ -53,6 +69,18 @@ public class ChangeTrackerTests
         Assert.Equal(ChangeType.Update, change.ChangeType);
         Assert.Collection(change.ChangedProperties, cp => Assert.Equal("Name", cp.PropertyInfo.Name));
     }
+
+    [Fact]
+    public void ChangeExistingEntityWithPrivateSetterAndPrivateConstructor()
+    {
+        var changeTracker = new ChangeTracker();
+        var trackedClass = (TrackedClassPrivates)Activator.CreateInstance(typeof(TrackedClassPrivates), true);
+        changeTracker.Attach(trackedClass);
+        trackedClass.ChangeName("João");
+        Change change = changeTracker.GetChange(trackedClass.Id);
+        Assert.Equal(ChangeType.Update, change.ChangeType);
+        Assert.Collection(change.ChangedProperties, cp => Assert.Equal("Name", cp.PropertyInfo.Name));
+    }
 }
 
 public class TrackedClass
@@ -62,4 +90,27 @@ public class TrackedClass
     public string Name { get; set; }
 
     public string Description { get; set; }
+}
+
+#pragma warning disable S3453 // Classes should not have only "private" constructors
+public partial class TrackedClassPrivates
+#pragma warning restore S3453 // Classes should not have only "private" constructors
+{
+
+}
+
+public partial class TrackedClassPrivates
+{
+    private TrackedClassPrivates()
+    {
+
+    }
+
+    public Guid Id { get; private set; } = Guid.NewGuid();
+
+    public string Name { get; private set; }
+
+    public string Description { get; private set; }
+
+    public void ChangeName(string name) => Name = name;
 }

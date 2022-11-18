@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace OData.Client;
+namespace Cblx.OData.Client.Abstractions.Json;
 
 public sealed class DateOnlyJsonConverter : JsonConverter<DateOnly>
 {

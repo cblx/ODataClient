@@ -77,18 +77,20 @@ public class ODataQueryProvider : IAsyncQueryProvider
         CancellationToken cancellationToken = default)
     {
         var (responseMessage, visitor) = await ExecuteRequestAsync(expression, cancellationToken);
-        var jsonSerializerOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        // Review: makes sense using options to desserialize to JsonObject?
+        //var jsonSerializerOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
         Stream responseContent = await responseMessage.Content.ReadAsStreamAsync(cancellationToken);
         JsonObject? jsonObject =
-            await JsonSerializer.DeserializeAsync<JsonObject>(responseContent, jsonSerializerOptions,
-                cancellationToken);
+            await JsonSerializer.DeserializeAsync<JsonObject>(responseContent, 
+                //jsonSerializerOptions,
+                cancellationToken: cancellationToken);
         if (jsonObject == null)
         {
             throw new InvalidOperationException("Unexpected behavior: Desserialization result is null");
         }
         LambdaExpression projectionExpression = new ODataProjectionRewriter().Rewrite(expression);
         Delegate del = projectionExpression.Compile();
-        JsonArray jsonArray = jsonObject["Value"]!.AsArray();
+        JsonArray jsonArray = jsonObject["value"]!.AsArray();
         if (typeof(TResult).IsGenericType && typeof(TResult).IsAssignableTo(typeof(IEnumerable)))
         {
             Type itemType = typeof(TResult).GenericTypeArguments[0];
@@ -128,6 +130,7 @@ public class ODataQueryProvider : IAsyncQueryProvider
         }
         catch
         {
+            // Don't throw if don't fit
         }
 
         if (error?.Error is not null)

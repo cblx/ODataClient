@@ -1,4 +1,5 @@
 ﻿using Cblx.OData.Client.Abstractions;
+using Cblx.OData.Client.Abstractions.Json;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -120,7 +121,10 @@ static class HttpHelpers
         HttpResponseMessage responseMessage = await parameters.Invoker.SendAsync(requestMessage, default);
         await ThrowErrorIfNotOk(responseMessage);
 
-        var jsonSerializerOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var jsonSerializerOptions = new JsonSerializerOptions { 
+            PropertyNameCaseInsensitive = true,
+            TypeInfoResolver = JsonContractBuilder.CreateContract()
+        };
         jsonSerializerOptions.Converters.Add(DateOnlyJsonConverter);
         string json = "*JSON FROM STREAM*";
         try
