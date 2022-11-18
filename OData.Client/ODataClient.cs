@@ -58,5 +58,8 @@ public class ODataClient : IODataClient
 
     public Task Unbind<T, TBind>(object id, Expression<Func<T, TBind>> navExpression, Action<HttpRequestMessage>? requestMessageConfiguration = null)
         where TBind : class
-        => Unbind<T>(id, (navExpression.Body as MemberExpression)!.Member.Name, requestMessageConfiguration);
+    {
+        var member = navExpression.Body as MemberExpression;
+        return Unbind<T>(id, member!.GetFieldName(), requestMessageConfiguration);
+    }
 }
