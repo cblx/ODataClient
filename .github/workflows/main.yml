@@ -12,7 +12,7 @@ jobs:
       - name: Setup .NET Core SDK
         uses: actions/setup-dotnet@v1.8.1
         with:
-          dotnet-version: 6.0.x
+          dotnet-version: 7.0.x
       - id: get-version
         uses: actions/github-script@0.9.0
         with:
