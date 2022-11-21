@@ -238,9 +238,12 @@ public class ODataSet<TSource> : IODataSet<TSource>
             .Name;
 
         string uri =
-            attributeLogicalName == "statuscode" ?
-            $"EntityDefinitions(LogicalName='{entityLogicalName}')/Attributes/Microsoft.Dynamics.CRM.StatusAttributeMetadata?$select=LogicalName&$expand=OptionSet($select=Options)" :
-            $"EntityDefinitions(LogicalName='{entityLogicalName}')/Attributes(LogicalName='{attributeLogicalName}')/Microsoft.Dynamics.CRM.PicklistAttributeMetadata?$select=LogicalName&$expand=OptionSet($select=Options)";
+            attributeLogicalName switch
+            {
+                "statecode" => $"EntityDefinitions(LogicalName='{entityLogicalName}')/Attributes/Microsoft.Dynamics.CRM.StateAttributeMetadata?$select=LogicalName&$expand=OptionSet($select=Options)",
+                "statuscode " => $"EntityDefinitions(LogicalName='{entityLogicalName}')/Attributes/Microsoft.Dynamics.CRM.StatusAttributeMetadata?$select=LogicalName&$expand=OptionSet($select=Options)",
+                _ => $"EntityDefinitions(LogicalName='{entityLogicalName}')/Attributes(LogicalName='{attributeLogicalName}')/Microsoft.Dynamics.CRM.PicklistAttributeMetadata?$select=LogicalName&$expand=OptionSet($select=Options)"
+            };
 
         var requestMessage = new HttpRequestMessage(HttpMethod.Get, uri);
         HttpResponseMessage responseMessage = await client.Invoker.SendAsync(requestMessage, default);
