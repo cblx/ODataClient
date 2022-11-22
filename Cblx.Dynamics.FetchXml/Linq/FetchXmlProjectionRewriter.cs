@@ -15,6 +15,11 @@ public class FetchXmlProjectionRewriter : ExpressionVisitor
         {
             case MethodCallExpression
             {
+                Method.Name: nameof(DynamicsQueryable.LateMaterialize)
+            } m when m.Method.DeclaringType == typeof(DynamicsQueryable):
+                return Rewrite(m.Arguments[0]);
+            case MethodCallExpression
+            {
                 Method.Name:
                         "Distinct"
                         or "Take"
@@ -62,8 +67,8 @@ public class FetchXmlProjectionRewriter : ExpressionVisitor
                 break;
             case MethodCallExpression
             {
-                Method.Name: nameof(DynamicsQueryableExpressionExtensions.ProjectTo)
-            } methodCallExpression when methodCallExpression.Method.DeclaringType == typeof(DynamicsQueryableExpressionExtensions):
+                Method.Name: nameof(DynamicsQueryable.ProjectTo)
+            } methodCallExpression when methodCallExpression.Method.DeclaringType == typeof(DynamicsQueryable):
                 {
                     Type entityType = methodCallExpression.Method.GetGenericArguments().First();
                     MethodInfo createEntityMethod =

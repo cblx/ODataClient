@@ -28,7 +28,7 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
 
     public string ToFetchXml()
     {
-        XElement fetchXmlElement = new XElement(FetchElement);
+        var fetchXmlElement = new XElement(FetchElement);
         ReadProjection(_rootExpression!, fetchXmlElement);
         return fetchXmlElement.ToString();
     }
@@ -57,6 +57,9 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
         {
             switch (methodCallExpression.Method)
             {
+                case { Name: nameof(DynamicsQueryable.LateMaterialize) } m when m.DeclaringType == typeof(DynamicsQueryable):
+                    ReadProjection(methodCallExpression.Arguments[0], fetchXml);
+                    break;
                 case
                 {
                     Name: nameof(Queryable.Distinct) 
@@ -75,10 +78,13 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
                     var projectionExpression = (methodCallExpression.Arguments.Last().UnBox() as LambdaExpression)!;
                     ReadAttributesFromProjection(projectionExpression, fetchXml);
                     break;
+                //    fetchXml.SetAttributeValue("latematerialize", "true");
+                //    ReadProjection(methodCallExpression.Arguments[0], fetchXml);
+                //    break;
                 case
                 {
-                    Name: nameof(DynamicsQueryableExpressionExtensions.ProjectTo)
-                } m when m.DeclaringType == typeof(DynamicsQueryableExpressionExtensions):
+                    Name: nameof(DynamicsQueryable.ProjectTo)
+                } m when m.DeclaringType == typeof(DynamicsQueryable):
                     // The entity that was used for the query
                     // Allowed cases:
                     // from ConstantExpression
@@ -155,6 +161,11 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
                     nameof(Queryable.GroupBy) => VisitGroupBy(node),
                     _ => base.VisitMethodCall(node),
                 };
+            case { Name: nameof(DynamicsQueryable.LateMaterialize) } m when m.DeclaringType == typeof(DynamicsQueryable):
+                FetchElement.SetAttributeValue("latematerialize", "true");
+                //return node.Arguments[0];
+                return Visit(node.Arguments[0]!);
+            //    //return base.VisitMethodCall(node);
             default: return base.VisitMethodCall(node);
         }
     }

@@ -96,6 +96,38 @@ public class FetchXmlQueryableExecuteTests
     }
 
     [Fact]
+    public async Task TableLateMaterializeToListAsyncTest()
+    {
+        var db = GetSimpleMockDb(new JsonArray
+        {
+            new JsonObject
+            {
+                {"Id", _exampleId},
+            }
+        });
+
+        var items = await db.SomeTables.LateMaterialize().ToListAsync();
+
+        items
+            .Should()
+            .ContainSingle(s => s.Id == _exampleId);
+
+        db.Provider.LastUrl.Should().Be(
+            """
+            some_tables?fetchXml=<fetch mapping="logical" latematerialize="true">
+              <entity name="some_table">
+                <attribute name="some_tableid" alias="Id" />
+                <attribute name="other_table" alias="OtherTableId" />
+                <attribute name="another_table" alias="AnotherTableId" />
+                <attribute name="value" alias="Value" />
+                <attribute name="some_name" alias="Name" />
+                <attribute name="status" alias="Status" />
+              </entity>
+            </fetch>
+            """);
+    }
+
+    [Fact]
     public async Task ComplexProjectToListAsyncTest()
     {
         var db = GetSimpleMockDb(new JsonArray
@@ -123,6 +155,51 @@ public class FetchXmlQueryableExecuteTests
         db.Provider.LastUrl.Should().Be(
             """
             some_tables?fetchXml=<fetch mapping="logical">
+              <entity name="some_table" alias="tbl">
+                <link-entity name="other_table" alias="oth" from="other_tableid" to="other_table" />
+                <filter>
+                  <condition entityname="oth" attribute="value" operator="eq" value="1" />
+                </filter>
+                <filter type="or">
+                  <condition attribute="value" operator="eq" value="2" />
+                  <condition attribute="some_name" operator="eq" value="Maria" />
+                </filter>
+                <attribute name="some_tableid" alias="tbl.Id" />
+                <attribute name="value" alias="tbl.Value" />
+                <attribute name="some_name" alias="tbl.Name" />
+              </entity>
+            </fetch>
+            """);
+    }
+
+    [Fact]
+    public async Task ComplexProjectLateMaterializeToListAsyncTest()
+    {
+        var db = GetSimpleMockDb(new JsonArray
+        {
+            new JsonObject
+            {
+                {"tbl.Id", _exampleId},
+                {"tbl.Value", 1 },
+                {"tbl.Name", "John" }
+            }
+        });
+
+        var query = (from tbl in db.SomeTables
+                    from oth in db.OtherTables.Where(o => o.Id == tbl.OtherTableId)
+                    where oth.Value == 1
+                    where tbl.Value == 2 || tbl.Name == "Maria"
+                    select tbl).LateMaterialize();
+
+        var items = await query.ProjectTo<SomeEntity>().ToListAsync();
+
+        items
+            .Should()
+            .ContainSingle(s => s.Id == _exampleId && s.Value == 1 && s.Name == "John");
+
+        db.Provider.LastUrl.Should().Be(
+            """
+            some_tables?fetchXml=<fetch mapping="logical" latematerialize="true">
               <entity name="some_table" alias="tbl">
                 <link-entity name="other_table" alias="oth" from="other_tableid" to="other_table" />
                 <filter>
