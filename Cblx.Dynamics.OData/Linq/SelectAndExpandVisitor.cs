@@ -108,11 +108,10 @@ internal class SelectAndExpandVisitor : ExpressionVisitor
                 target = callExpression.Arguments[0];
             }
 
-            //string field = target.ToString().Substring(paramPrefix.Length).Replace(".", "/");
             switch (node.Method.Name)
             {
-                case "FormattedValue":
-                    AddFieldFromMember((node.Arguments[0] as MemberExpression)!, "@OData.Community.Display.V1.FormattedValue");
+                case nameof(DynAnnotations.FormattedValue):
+                    AddFieldFromMember((node.Arguments[0] as MemberExpression)!, $"@{DynAnnotations.FormattedValue}");
                     return node;
                 case "Select":
                     {

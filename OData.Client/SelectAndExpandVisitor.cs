@@ -1,5 +1,4 @@
-﻿using System.Formats.Asn1;
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Reflection;
 using Cblx.OData.Client.Abstractions.Ids;
 
@@ -8,7 +7,7 @@ namespace OData.Client;
 internal class SelectAndExpandVisitor : ExpressionVisitor
 {
     private readonly SelectExpandPair _selectExpand;
-    private ParameterExpression _parameter;
+    private ParameterExpression? _parameter;
 
     /// <summary>
     /// </summary>

@@ -1,4 +1,5 @@
-﻿using Cblx.OData.Client.Abstractions.Ids;
+﻿using Cblx.Dynamics;
+using Cblx.OData.Client.Abstractions.Ids;
 using System.Collections;
 using System.Reflection;
 using System.Text.Json.Serialization;
@@ -6,19 +7,22 @@ namespace OData.Client;
 public class SelectAndExpandParser<TSource, TTarget>
     where TTarget : class
 {
-    public override string ToString()
+    private string _selectAndExpandString;
+    public SelectAndExpandParser()
     {
-        List<string> selectAndExpand = new List<string>();
+        var selectAndExpand = new List<string>();
         AddSelectPart(typeof(TSource), typeof(TTarget), selectAndExpand);
         AddExpandPart(typeof(TSource), typeof(TTarget), selectAndExpand, 1);
-        var result = string.Join("&", selectAndExpand);
-        return result;
+        _selectAndExpandString = string.Join("&", selectAndExpand);
     }
+    public bool HasFormattedValues { get; private set; }
 
-    void AddExpandPart(Type tSource, Type tTarget, List<string> selectAndExpand, int level)
+    public override string ToString() => _selectAndExpandString;
+
+    private void AddExpandPart(Type tSource, Type tTarget, List<string> selectAndExpand, int level)
     {
         if(level > 1) { return; }
-        level = level + 1;
+        level++;
         IEnumerable<PropertyInfo> expandableSourceProps = tSource
             .GetProperties()
             .Where(p => !p.PropertyType.IsAssignableTo(typeof(Id)))
@@ -41,13 +45,13 @@ public class SelectAndExpandParser<TSource, TTarget>
 
         if (props.Any())
         {
-            List<string> expands = new List<string>();
+            var expands = new List<string>();
             foreach (var p in props)
             {
                 Type sourceItemType = GetElementType(p.pSource.PropertyType);
                 Type targetItemType = GetElementType(p.pTarget.PropertyType);
 
-                List<string> subSelectAndExpand = new ();
+                var subSelectAndExpand = new List<string>();
                 AddSelectPart(sourceItemType, targetItemType, subSelectAndExpand);
                 AddExpandPart(sourceItemType, targetItemType, subSelectAndExpand, level);
 
@@ -62,7 +66,7 @@ public class SelectAndExpandParser<TSource, TTarget>
         }
     }
 
-    static Type GetElementType(Type type)
+    private static Type GetElementType(Type type)
     {
         if (type.IsArray)
         {
@@ -75,7 +79,7 @@ public class SelectAndExpandParser<TSource, TTarget>
         return type;
     }
 
-    static void AddSelectPart(Type tSource, Type tTarget, List<string> selectAndExpand)
+    private void AddSelectPart(Type tSource, Type tTarget, List<string> selectAndExpand)
     {
         var sourceProps = tSource.GetProperties().Where(p =>
                 (!p.PropertyType.IsClass && !p.PropertyType.IsInterface)
@@ -84,13 +88,17 @@ public class SelectAndExpandParser<TSource, TTarget>
                 .Select(p => p.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name ?? p.Name);
 
         var targetProps = tTarget.GetProperties().Select(p => p.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name ?? p.Name);
-            
+
         var selectFieldNames = sourceProps.Intersect(targetProps);
-      
+        HasFormattedValues = HasFormattedValues || selectFieldNames.Any(name => name.Contains(DynAnnotations.FormattedValue));
+        selectFieldNames = RemoveAnnotations(selectFieldNames);
         if (selectFieldNames.Any())
         {
-            string select = $"$select={string.Join(",", selectFieldNames)}";
+            var select = $"$select={string.Join(",", selectFieldNames)}";
+            
             selectAndExpand.Add(select);
         }
+
+        static IEnumerable<string> RemoveAnnotations(IEnumerable<string> names) => names.Select(n => n.Split('@').First()).Distinct();
     }
 }

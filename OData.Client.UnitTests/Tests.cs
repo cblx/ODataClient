@@ -16,6 +16,8 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
+using static System.Runtime.InteropServices.JavaScript.JSType;
+
 namespace OData.Client.UnitTests;
 public class Tests
 {
@@ -23,6 +25,44 @@ public class Tests
     public Tests()
     {
         _jsonMockDataOptions.Converters.Add(new DateOnlyJsonConverter());
+    }
+
+    [ODataEndpoint("some_entities")]
+    [DynamicsEntity("some_entity")]
+    class EntityWithFormattedValue
+    {
+        [JsonPropertyName("id")]
+        public Guid Id { get; set; }
+
+        [JsonPropertyName($"field@{DynAnnotations.FormattedValue}")]
+        public string FormattedField { get; set; }
+    }
+    [Fact]
+    public async Task EntityWithFormattedValueTest()
+    {
+        var data = new
+        {
+            value = new[] {
+                  new Dictionary<string, object>
+                  {
+                      { "id", Guid.NewGuid() },
+                      { $"field@{DynAnnotations.FormattedValue}", "xx" },
+                  }
+            }
+        };
+        var httpMessageHandler = new MockHttpMessageHandler(JsonSerializer.Serialize(data));
+        var httpClient = new HttpClient(httpMessageHandler)
+        {
+            BaseAddress = new Uri("http://localhost")
+        };
+        var set = new ODataSet<EntityWithFormattedValue>(new ODataClient(httpClient), "some_entities");
+        var entities = await set.ToListAsync();
+        entities.Should().ContainSingle(e => e.FormattedField == "xx");
+        set.LastQuery.Should().Be("some_entities?$select=id,field");
+        httpMessageHandler.LastRequestMessage
+            .Headers
+            .Should()
+            .Contain(h => h.Key == "Prefer" && h.Value.First() == $"odata.include-annotations={DynAnnotations.FormattedValue}");
     }
 
     [Fact]
@@ -1783,22 +1823,25 @@ public class Tests
 
     public class MockHttpMessageHandler : HttpMessageHandler
     {
-        readonly string content;
-        readonly HttpStatusCode statusCode;
+        readonly string _content;
+        readonly HttpStatusCode _statusCode;
         public MockHttpMessageHandler(string content, HttpStatusCode statusCode = HttpStatusCode.OK)
         {
-            this.content = content;
-            this.statusCode = statusCode;
+            this._content = content;
+            this._statusCode = statusCode;
         }
+
+        public HttpRequestMessage? LastRequestMessage { get; private set; }
 
         protected override async Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request,
             CancellationToken cancellationToken)
         {
+            LastRequestMessage = request;
             var responseMessage = new HttpResponseMessage(HttpStatusCode.OK)
             {
-                Content = new StringContent(content),
-                StatusCode = statusCode
+                Content = new StringContent(_content),
+                StatusCode = _statusCode
             };
 
             return await Task.FromResult(responseMessage);

@@ -16,7 +16,7 @@ public class ODataSet<TSource> : IODataSet<TSource>
     private readonly string _endpoint;
     private readonly ODataClient client;
     private readonly ODataOptions options = new();
-    private Action<HttpRequestMessage>? requestMessageConfiguration;
+    private Action<HttpRequestMessage>? _requestMessageConfiguration;
 
     public ODataSet(ODataClient client, string endpoint)
     {
@@ -31,7 +31,7 @@ public class ODataSet<TSource> : IODataSet<TSource>
     {
         client = originalODataSet.client;
         _endpoint = originalODataSet._endpoint;
-        requestMessageConfiguration = originalODataSet.requestMessageConfiguration;
+        _requestMessageConfiguration = originalODataSet._requestMessageConfiguration;
         this.options = options;
     }
 
@@ -39,7 +39,7 @@ public class ODataSet<TSource> : IODataSet<TSource>
 
     public IODataSet<TSource> ConfigureRequestMessage(Action<HttpRequestMessage> requestMessageConfiguration)
     {
-        return new ODataSet<TSource>(this, options) { requestMessageConfiguration = requestMessageConfiguration };
+        return new ODataSet<TSource>(this, options) { _requestMessageConfiguration = requestMessageConfiguration };
     }
 
     public IODataSet<TSource> AddOptionValue(string option, string value)
@@ -65,16 +65,21 @@ public class ODataSet<TSource> : IODataSet<TSource>
         return result.Value.ToList();
     }
 
-    public Task<ODataResult<TSource>> ToResultAsync()
-    {
-        var url = ToString();
-        return Get(url);
-    }
-
+    public Task<ODataResult<TSource>> ToResultAsync() => ToResultAsync<TSource>();
+    
     public async Task<ODataResult<TEntity>> ToResultAsync<TEntity>() where TEntity : class
     {
         var selectAndExpandParser = new SelectAndExpandParser<TSource, TEntity>();
         var url = AppendOptions(_endpoint, selectAndExpandParser.ToString());
+        if (selectAndExpandParser.HasFormattedValues)
+        {
+            _requestMessageConfiguration = requestMessage =>
+                        requestMessage
+                        .Headers.Add(
+                            "Prefer",
+                            $"odata.include-annotations={DynAnnotations.FormattedValue}"
+                        );
+        }
         return (await Get<ODataResultInternal<TEntity>>(url))!;
     }
 
@@ -87,7 +92,7 @@ public class ODataSet<TSource> : IODataSet<TSource>
         var projectionExpression = rewriter.Rewrite(selectExpression);
         if (rewriter.HasFormattedValues)
         {
-            requestMessageConfiguration = requestMessage =>
+            _requestMessageConfiguration = requestMessage =>
                         requestMessage
                         .Headers.Add(
                             "Prefer",
@@ -274,12 +279,32 @@ public class ODataSet<TSource> : IODataSet<TSource>
     private Task<TResult?> Get<TResult>(string url)
     {
         LastQuery = url;
-        return HttpHelpers.Get<TResult>(new RequestParameters(client, requestMessageConfiguration, url));
+        //if(typeof(TResult) is { IsClass: true } resultType 
+        //    && resultType.GetProperties()
+        //            .Any(prop => prop.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name.Contains(DynAnnotations.FormattedValue) is true))
+        //{
+        //    _requestMessageConfiguration = requestMessage =>
+        //              requestMessage
+        //              .Headers.Add(
+        //                  "Prefer",
+        //                  $"odata.include-annotations={DynAnnotations.FormattedValue}"
+        //              );
+        //}
+        return HttpHelpers.Get<TResult>(new RequestParameters(client, _requestMessageConfiguration, url));
     }
 
     public string CreateFindString<TEntity>(Guid id) where TEntity : class
     {
         var selectAndExpandParser = new SelectAndExpandParser<TSource, TEntity>();
+        if (selectAndExpandParser.HasFormattedValues)
+        {
+            _requestMessageConfiguration = requestMessage =>
+                        requestMessage
+                        .Headers.Add(
+                            "Prefer",
+                            $"odata.include-annotations={DynAnnotations.FormattedValue}"
+                        );
+        }
         return $"{_endpoint}({id})?{selectAndExpandParser}";
     }
 
