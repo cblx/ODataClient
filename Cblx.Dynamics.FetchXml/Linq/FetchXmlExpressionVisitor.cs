@@ -1,8 +1,8 @@
-﻿using System.Linq.Expressions;
+﻿using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
-using System.Reflection.Metadata;
 using System.Xml.Linq;
-using Cblx.Dynamics.FetchXml.Linq.Extensions;
+using Cblx.Dynamics.Linq;
 using OData.Client.Abstractions;
 
 namespace Cblx.Dynamics.FetchXml.Linq;
@@ -55,48 +55,85 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
     {
         if (expression is MethodCallExpression methodCallExpression)
         {
-            switch (methodCallExpression?.Method.Name)
+            switch (methodCallExpression.Method)
             {
-                case "Distinct":
-                case "Take":
-                case "Where":
-                case "FirstOrDefault":
+                case
+                {
+                    Name: nameof(Queryable.Distinct) 
+                          or nameof(Queryable.Take)
+                          or nameof(Queryable.Where)
+                          or nameof(Queryable.FirstOrDefault)
+                } m when m.DeclaringType == typeof(Queryable):
                     ReadProjection(methodCallExpression.Arguments[0], fetchXml);
                     break;
-                case "Select":
-                case "Join":
-                case "SelectMany":
-                    {
-                        var projectionExpression = (methodCallExpression.Arguments.Last().UnBox() as LambdaExpression)!;
-                        ReadAttributesFromProjection(projectionExpression, fetchXml);
-                        break;
-                    }
+                case
+                {
+                    Name: nameof(Queryable.Select)
+                          or nameof(Queryable.Join)
+                          or nameof(Queryable.SelectMany)
+                } m when m.DeclaringType == typeof(Queryable):
+                    var projectionExpression = (methodCallExpression.Arguments.Last().UnBox() as LambdaExpression)!;
+                    ReadAttributesFromProjection(projectionExpression, fetchXml);
+                    break;
+                case
+                {
+                    Name: nameof(DynamicsQueryableExpressionExtensions.ProjectTo)
+                } m when m.DeclaringType == typeof(DynamicsQueryableExpressionExtensions):
+                    // The entity that was used for the query
+                    // Allowed cases:
+                    // from ConstantExpression
+                    // .OriginalEntity.ProjectoTo<OtherEntity>()   
+                    // from MethodCallExpression
+                    // ex: .OriginalEntity.Where(e => e.Value == 1).ProjectTo<Other>()
+                    // or
+                    // from o in db.Originals
+                    // join etc...
+                    // ...select o).ProjectTo<Other>()
+                    Type originalEntityType = 
+                        methodCallExpression.Arguments[0] is ConstantExpression constantExpression ?
+                                                // The constant, directly from IQueryable<TblOriginal>
+                                                (constantExpression.Value as IQueryable)!.GetType().GetGenericArguments().First()
+                                                // The methodCall,ex: the return type IQueryable<TblOriginal> of a .Select or .Where
+                                                : (methodCallExpression.Arguments[0] as MethodCallExpression)!.Method.ReturnType.GetGenericArguments().First();
+
+                    var entityElement = GetOrCreateRootEntityElement(fetchXml, originalEntityType);
+
+                    // The entity used in ProjectTo<Here>()
+                    Type entityType = m.GetGenericArguments().First();
+                    entityElement.AddEntityAttributesForType(entityType);
+                    break;
             }
         }
         else if (expression is ConstantExpression constantExpression &&
                  constantExpression.Value is IQueryable queryable)
         {
-            XElement? entityElement = fetchXml.Descendants().FirstOrDefault(el => el.Name == "entity");
             Type entityType = queryable.GetType().GetGenericArguments().First();
-            if (entityElement is null)
-            {
-                entityElement = new XElement(
-                    "entity",
-                    new XAttribute(
-                        "name",
-                        entityType.GetCustomAttribute<DynamicsEntityAttribute>()?.Name ??
-                        entityType.Name
-                    )
-                );
-                Endpoint = entityType.GetCustomAttribute<ODataEndpointAttribute>()?.Endpoint ??
-                           throw new Exception($"No endpoint found for Entity {entityType.Name}");
-                fetchXml.Add(entityElement);
-            }
+            var entityElement = GetOrCreateRootEntityElement(fetchXml, entityType);
             entityElement.AddEntityAttributesForType(entityType);
         }
     }
 
-    int joinCount = 0;
+    XElement GetOrCreateRootEntityElement(XElement fetchXml, Type entityType)
+    {
+        XElement? entityElement = fetchXml.Descendants().FirstOrDefault(el => el.Name == "entity");
+        if (entityElement is null)
+        {
+            entityElement = new XElement(
+                "entity",
+                new XAttribute(
+                    "name",
+                    entityType.GetCustomAttribute<DynamicsEntityAttribute>()?.Name ??
+                    entityType.Name
+                )
+            );
+            Endpoint = entityType.GetCustomAttribute<ODataEndpointAttribute>()?.Endpoint ??
+                       throw new Exception($"No endpoint found for Entity {entityType.Name}");
+            fetchXml.Add(entityElement);
+        }
+        return entityElement;
+    }
+
+    int _joinCount = 0;
 
     protected override Expression VisitMethodCall(MethodCallExpression node)
     {
@@ -241,7 +278,7 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
 
     Expression VisitSelectMany(MethodCallExpression selectManyExpression)
     {
-        joinCount++;
+        _joinCount++;
 
         //Ex:
         //  from p in db.PreviousTable
@@ -363,7 +400,7 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
         // 3    -   The right key accessor
         // 4    -   Select/Projection
 
-        joinCount++;
+        _joinCount++;
         Expression leftQueryableOrPreviousJoinCall = node.Arguments[0];
         Expression leftKeyAccessor = node.Arguments[2];
         Expression rightKeyAccessor = node.Arguments[3];

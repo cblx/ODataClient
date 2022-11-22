@@ -12,9 +12,11 @@ public static class RewriterHelpers
     public static MethodInfo AuxGetValueMethod { get; } = typeof(RewriterHelpers)
         .GetMethod(nameof(AuxGetValue), BindingFlags.Public | BindingFlags.Static)!;
     
-    public static T? CreateEntity<T>(JsonObject jsonObject, string? entityAlias)
+    public static T? CreateEntity<T>(JsonObject jsonObject/*, string? entityAlias*/)
     {
-        T entity = Activator.CreateInstance<T>();
+        T entity = (T)Activator.CreateInstance(typeof(T), true)!;
+        string firstKey = jsonObject.First().Key;
+        string entityAlias = firstKey.Contains('.') ? firstKey.Split('.').First() : "";
         foreach (PropertyInfo prop in typeof(T).GetProperties())
         {
             if(!prop.IsCol()){ continue; }
@@ -25,7 +27,7 @@ public static class RewriterHelpers
                     .Invoke(null, new object[]
                     {
                         jsonObject,
-                        string.IsNullOrWhiteSpace(entityAlias) ? prop.Name : $"{entityAlias}.{prop.Name}"
+                        string.IsNullOrEmpty(entityAlias) ? prop.Name : $"{entityAlias}.{prop.Name}"
                     })
             );            
         }

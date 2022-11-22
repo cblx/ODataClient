@@ -5,8 +5,8 @@ using System.Net.Http;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
-using Cblx.Dynamics.FetchXml.Linq;
 using Cblx.Dynamics.FetchXml.Linq.Extensions;
+using Cblx.Dynamics.Linq;
 using FluentAssertions;
 using Xunit;
 
@@ -58,6 +58,116 @@ public class FetchXmlQueryableExecuteTests
             some_tables?fetchXml=<fetch mapping="logical">
               <entity name="some_table" alias="s">
                 <attribute name="some_tableid" alias="s.Id" />
+              </entity>
+            </fetch>
+            """);
+    }
+
+    [Fact]
+    public async Task TableToListAsyncTest()
+    {
+        var db = GetSimpleMockDb(new JsonArray
+        {
+            new JsonObject
+            {
+                {"Id", _exampleId},
+            }
+        });
+
+        var items = await db.SomeTables.ToListAsync();
+
+        items
+            .Should()
+            .ContainSingle(s => s.Id == _exampleId);
+
+        db.Provider.LastUrl.Should().Be(
+            """
+            some_tables?fetchXml=<fetch mapping="logical">
+              <entity name="some_table">
+                <attribute name="some_tableid" alias="Id" />
+                <attribute name="other_table" alias="OtherTableId" />
+                <attribute name="another_table" alias="AnotherTableId" />
+                <attribute name="value" alias="Value" />
+                <attribute name="some_name" alias="Name" />
+                <attribute name="status" alias="Status" />
+              </entity>
+            </fetch>
+            """);
+    }
+
+    [Fact]
+    public async Task ComplexProjectToListAsyncTest()
+    {
+        var db = GetSimpleMockDb(new JsonArray
+        {
+            new JsonObject
+            {
+                {"tbl.Id", _exampleId},
+                {"tbl.Value", 1 },
+                {"tbl.Name", "John" }
+            }
+        });
+
+        var query = from tbl in db.SomeTables
+                    from oth in db.OtherTables.Where(o => o.Id == tbl.OtherTableId)
+                    where oth.Value == 1
+                    where tbl.Value == 2 || tbl.Name == "Maria"
+                    select tbl;
+
+        var items = await query.ProjectTo<SomeEntity>().ToListAsync();
+
+        items
+            .Should()
+            .ContainSingle(s => s.Id == _exampleId && s.Value == 1 && s.Name == "John");
+
+        db.Provider.LastUrl.Should().Be(
+            """
+            some_tables?fetchXml=<fetch mapping="logical">
+              <entity name="some_table" alias="tbl">
+                <link-entity name="other_table" alias="oth" from="other_tableid" to="other_table" />
+                <filter>
+                  <condition entityname="oth" attribute="value" operator="eq" value="1" />
+                </filter>
+                <filter type="or">
+                  <condition attribute="value" operator="eq" value="2" />
+                  <condition attribute="some_name" operator="eq" value="Maria" />
+                </filter>
+                <attribute name="some_tableid" alias="tbl.Id" />
+                <attribute name="value" alias="tbl.Value" />
+                <attribute name="some_name" alias="tbl.Name" />
+              </entity>
+            </fetch>
+            """);
+    }
+
+    [Fact]
+    public async Task ProjectToListAsyncTest()
+    {
+        var db = GetSimpleMockDb(new JsonArray
+        {
+            new JsonObject
+            {
+                {"Id", _exampleId},
+                {"Value", 1 },
+                {"Name", "John" }
+            }
+        });
+
+        var items = await db.SomeTables
+                          .ProjectTo<SomeEntity>()
+                          .ToListAsync();
+
+        items
+            .Should()
+            .ContainSingle(s => s.Id == _exampleId && s.Value == 1 && s.Name == "John");
+
+        db.Provider.LastUrl.Should().Be(
+            """
+            some_tables?fetchXml=<fetch mapping="logical">
+              <entity name="some_table">
+                <attribute name="some_tableid" alias="Id" />
+                <attribute name="value" alias="Value" />
+                <attribute name="some_name" alias="Name" />
               </entity>
             </fetch>
             """);
@@ -173,6 +283,20 @@ some_tables?fetchXml=<fetch mapping="logical" top="1">
                 && s.Status == SomeStatusEnum.Active
                 //&& s.Áccent == "wôrd"
             );
+
+        db.Provider.LastUrl.Should().Be(
+            """
+            some_tables?fetchXml=<fetch mapping="logical">
+              <entity name="some_table" alias="s">
+                <attribute name="some_tableid" alias="s.Id" />
+                <attribute name="other_table" alias="s.OtherTableId" />
+                <attribute name="another_table" alias="s.AnotherTableId" />
+                <attribute name="value" alias="s.Value" />
+                <attribute name="some_name" alias="s.Name" />
+                <attribute name="status" alias="s.Status" />
+              </entity>
+            </fetch>
+            """);
     }
 
     [Fact]

@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+﻿using Cblx.Dynamics.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.Json.Nodes;
 
@@ -14,25 +15,19 @@ public class FetchXmlProjectionRewriter : ExpressionVisitor
         {
             case MethodCallExpression
             {
-                Method:
-                {
-                    Name:
+                Method.Name:
                         "Distinct"
                         or "Take"
                         or "Where"
                         or "FirstOrDefault"
-                }
             } methodCallExpression:
                 return Rewrite(methodCallExpression.Arguments[0]);
             case MethodCallExpression
             {
-                Method:
-                {
-                    Name:
+                Method.Name:
                         "Select"
                         or "Join"
                         or "SelectMany"
-                }
             } methodCallExpression:
                 var projectionExpression = (methodCallExpression.Arguments.Last().UnBox() as LambdaExpression)!;
                 Expression body = projectionExpression.Body;
@@ -56,8 +51,8 @@ public class FetchXmlProjectionRewriter : ExpressionVisitor
                             MethodCallExpression callCreateEntityExpression = Expression.Call(
                                 null,
                                 createEntityMethod,
-                                _jsonParameterExpression,
-                                Expression.Constant(parameterExpression.Name)
+                                _jsonParameterExpression//,
+                                //Expression.Constant(parameterExpression.Name)
                             );
                             return Expression.Lambda(callCreateEntityExpression, _jsonParameterExpression);
                         }
@@ -65,6 +60,22 @@ public class FetchXmlProjectionRewriter : ExpressionVisitor
                         return Expression.Lambda(body, _jsonParameterExpression);
                 }
                 break;
+            case MethodCallExpression
+            {
+                Method.Name: nameof(DynamicsQueryableExpressionExtensions.ProjectTo)
+            } methodCallExpression when methodCallExpression.Method.DeclaringType == typeof(DynamicsQueryableExpressionExtensions):
+                {
+                    Type entityType = methodCallExpression.Method.GetGenericArguments().First();
+                    MethodInfo createEntityMethod =
+                        RewriterHelpers.CreateEntityMethod.MakeGenericMethod(entityType);
+                    MethodCallExpression callCreateEntityExpression = Expression.Call(
+                        null,
+                        createEntityMethod,
+                        _jsonParameterExpression//,
+                        //Expression.Default(typeof(string))
+                    );
+                    return Expression.Lambda(callCreateEntityExpression, _jsonParameterExpression);
+                }
             case ConstantExpression { Value: IQueryable } constantExpression:
                 {
                     Type entityType = constantExpression.Value.GetType().GetGenericArguments().First();
@@ -73,8 +84,8 @@ public class FetchXmlProjectionRewriter : ExpressionVisitor
                     MethodCallExpression callCreateEntityExpression = Expression.Call(
                         null,
                         createEntityMethod,
-                        _jsonParameterExpression,
-                        Expression.Default(typeof(string))
+                        _jsonParameterExpression//,
+                        //Expression.Default(typeof(string))
                     );
                     return Expression.Lambda(callCreateEntityExpression, _jsonParameterExpression);
                 }

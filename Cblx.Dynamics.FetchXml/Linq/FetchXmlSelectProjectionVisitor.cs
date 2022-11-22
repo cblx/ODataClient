@@ -28,7 +28,7 @@ public class FetchXmlSelectProjectionVisitor : ExpressionVisitor
                 .First(element =>
                     element.Name.LocalName is "entity" or "link-entity" &&
                     element.Attribute("alias")?.Value == node.Name);
-            element.AddEntityAttributesForType(node.Type, node.Name);
+            element.AddEntityAttributesForType(node.Type/*, node.Name*/);
         }
         return node;
     }

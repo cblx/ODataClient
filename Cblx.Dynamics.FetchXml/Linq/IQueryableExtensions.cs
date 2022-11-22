@@ -14,10 +14,14 @@ public static class IQueryableExtensions{
         return fetchXmlQueryable.ToFetchXml();
     }
 
+    //public static IQueryable<TOther> ProjectTo<TOther>(this IQueryable queryable)
+    //{
+        
+    //}
+
     public static string ToRelativeUrl<T>(this IQueryable<T> queryable)
     {
-        var fetchXmlQueryable = queryable as FetchXmlQueryable<T>;
-        if (fetchXmlQueryable == null)
+        if (queryable is not FetchXmlQueryable<T> fetchXmlQueryable)
         {
             throw new ArgumentException("Queryable must be a FetchXmlQueryable", nameof(queryable));
         }

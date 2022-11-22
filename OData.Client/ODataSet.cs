@@ -35,7 +35,7 @@ public class ODataSet<TSource> : IODataSet<TSource>
         this.options = options;
     }
 
-    public string LastQuery { get; private set; }
+    public string? LastQuery { get; private set; }
 
     public IODataSet<TSource> ConfigureRequestMessage(Action<HttpRequestMessage> requestMessageConfiguration)
     {
