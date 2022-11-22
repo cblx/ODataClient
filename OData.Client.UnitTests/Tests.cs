@@ -34,7 +34,7 @@ public class Tests
         [JsonPropertyName("id")]
         public Guid Id { get; set; }
 
-        [JsonPropertyName($"field@{DynAnnotations.FormattedValue}")]
+        [JsonPropertyName($"{nameof(some_entity.age)}@{DynAnnotations.FormattedValue}")]
         public string FormattedField { get; set; }
     }
     [Fact]
@@ -46,7 +46,7 @@ public class Tests
                   new Dictionary<string, object>
                   {
                       { "id", Guid.NewGuid() },
-                      { $"field@{DynAnnotations.FormattedValue}", "xx" },
+                      { $"age@{DynAnnotations.FormattedValue}", "xx" },
                   }
             }
         };
@@ -58,7 +58,35 @@ public class Tests
         var set = new ODataSet<EntityWithFormattedValue>(new ODataClient(httpClient), "some_entities");
         var entities = await set.ToListAsync();
         entities.Should().ContainSingle(e => e.FormattedField == "xx");
-        set.LastQuery.Should().Be("some_entities?$select=id,field");
+        set.LastQuery.Should().Be("some_entities?$select=id,age");
+        httpMessageHandler.LastRequestMessage
+            .Headers
+            .Should()
+            .Contain(h => h.Key == "Prefer" && h.Value.First() == $"odata.include-annotations={DynAnnotations.FormattedValue}");
+    }
+
+    [Fact]
+    public async Task EntityWithFormattedValueFromSourceTblTest()
+    {
+        var data = new
+        {
+            value = new[] {
+                  new Dictionary<string, object>
+                  {
+                      { "id", Guid.NewGuid() },
+                      { $"age@{DynAnnotations.FormattedValue}", "xx" },
+                  }
+            }
+        };
+        var httpMessageHandler = new MockHttpMessageHandler(JsonSerializer.Serialize(data));
+        var httpClient = new HttpClient(httpMessageHandler)
+        {
+            BaseAddress = new Uri("http://localhost")
+        };
+        var set = new ODataSet<TblEntity>(new ODataClient(httpClient), "some_entities");
+        var entities = await set.ToListAsync<EntityWithFormattedValue>();
+        entities.Should().ContainSingle(e => e.FormattedField == "xx");
+        set.LastQuery.Should().Be("some_entities?$select=id,age");
         httpMessageHandler.LastRequestMessage
             .Headers
             .Should()

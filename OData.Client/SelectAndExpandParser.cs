@@ -86,12 +86,12 @@ public class SelectAndExpandParser<TSource, TTarget>
                 || p.PropertyType.IsAssignableTo(typeof(Id))
                 || p.PropertyType == typeof(string))
                 .Select(p => p.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name ?? p.Name);
-
+        sourceProps = RemoveAnnotations(sourceProps);
         var targetProps = tTarget.GetProperties().Select(p => p.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name ?? p.Name);
+        HasFormattedValues = HasFormattedValues || targetProps.Any(name => name.Contains(DynAnnotations.FormattedValue));
+        targetProps = RemoveAnnotations(targetProps);
 
         var selectFieldNames = sourceProps.Intersect(targetProps);
-        HasFormattedValues = HasFormattedValues || selectFieldNames.Any(name => name.Contains(DynAnnotations.FormattedValue));
-        selectFieldNames = RemoveAnnotations(selectFieldNames);
         if (selectFieldNames.Any())
         {
             var select = $"$select={string.Join(",", selectFieldNames)}";
