@@ -17,6 +17,9 @@ public class TbSomeTable
     [JsonPropertyName("_another_table_value")]
     public Guid AnotherTableId { get; set; }
 
+    [JsonPropertyName("_yet_other_table_value")]
+    public Guid? YetOtherTableId { get; set; }
+
     [JsonPropertyName("value")]
     public int Value { get; set; }
 
@@ -29,5 +32,8 @@ public class TbSomeTable
     [ReferentialConstraint("_other_table_value")]
     [JsonPropertyName("other_table")]
     public TbOtherTable? OtherTable { get; set; }
-    
+
+    [ReferentialConstraint("_yet_other_table_value")]
+    [JsonPropertyName("yet_other_table")]
+    public TbOtherTable? YetOtherTable { get; set; }
 }

@@ -15,18 +15,19 @@ public class FetchXmlQueryableToFetchXmlTests
             select s;
 
         string? str = query.ToRelativeUrl();
-        Assert.Equal(
-            $@"some_tables?fetchXml=<fetch mapping=""logical"">
-  <entity name=""some_table"" alias=""s"">
-    <attribute name=""some_tableid"" alias=""s.Id"" />
-    <attribute name=""other_table"" alias=""s.OtherTableId"" />
-    <attribute name=""another_table"" alias=""s.AnotherTableId"" />
-    <attribute name=""value"" alias=""s.Value"" />
-    <attribute name=""some_name"" alias=""s.Name"" />
-    <attribute name=""status"" alias=""s.Status"" />
-  </entity>
-</fetch>",
-            str);
+        Assert.Equal("""
+            some_tables?fetchXml=<fetch mapping="logical">
+              <entity name="some_table" alias="s">
+                <attribute name="some_tableid" alias="s.Id" />
+                <attribute name="other_table" alias="s.OtherTableId" />
+                <attribute name="another_table" alias="s.AnotherTableId" />
+                <attribute name="yet_other_table" alias="s.YetOtherTableId" />
+                <attribute name="value" alias="s.Value" />
+                <attribute name="some_name" alias="s.Name" />
+                <attribute name="status" alias="s.Status" />
+              </entity>
+            </fetch>
+            """, str);
     }
 
     [Fact]
@@ -37,18 +38,19 @@ public class FetchXmlQueryableToFetchXmlTests
         var query = db.SomeTables;
 
         string? str = query.ToRelativeUrl();
-        Assert.Equal(
-            $@"some_tables?fetchXml=<fetch mapping=""logical"">
-  <entity name=""some_table"">
-    <attribute name=""some_tableid"" alias=""Id"" />
-    <attribute name=""other_table"" alias=""OtherTableId"" />
-    <attribute name=""another_table"" alias=""AnotherTableId"" />
-    <attribute name=""value"" alias=""Value"" />
-    <attribute name=""some_name"" alias=""Name"" />
-    <attribute name=""status"" alias=""Status"" />
-  </entity>
-</fetch>",
-            str);
+        Assert.Equal("""
+            some_tables?fetchXml=<fetch mapping="logical">
+              <entity name="some_table">
+                <attribute name="some_tableid" alias="Id" />
+                <attribute name="other_table" alias="OtherTableId" />
+                <attribute name="another_table" alias="AnotherTableId" />
+                <attribute name="yet_other_table" alias="YetOtherTableId" />
+                <attribute name="value" alias="Value" />
+                <attribute name="some_name" alias="Name" />
+                <attribute name="status" alias="Status" />
+              </entity>
+            </fetch>
+            """, str);
     }
     
     [Fact]
@@ -60,21 +62,22 @@ public class FetchXmlQueryableToFetchXmlTests
         
         string? str = query.ToRelativeUrl();
 
-        Assert.Equal(
-            $@"some_tables?fetchXml=<fetch mapping=""logical"">
-  <entity name=""some_table"">
-    <filter>
-      <condition attribute=""value"" operator=""gt"" value=""0"" />
-    </filter>
-    <attribute name=""some_tableid"" alias=""Id"" />
-    <attribute name=""other_table"" alias=""OtherTableId"" />
-    <attribute name=""another_table"" alias=""AnotherTableId"" />
-    <attribute name=""value"" alias=""Value"" />
-    <attribute name=""some_name"" alias=""Name"" />
-    <attribute name=""status"" alias=""Status"" />
-  </entity>
-</fetch>",
-            str);
+        Assert.Equal("""
+            some_tables?fetchXml=<fetch mapping="logical">
+              <entity name="some_table">
+                <filter>
+                  <condition attribute="value" operator="gt" value="0" />
+                </filter>
+                <attribute name="some_tableid" alias="Id" />
+                <attribute name="other_table" alias="OtherTableId" />
+                <attribute name="another_table" alias="AnotherTableId" />
+                <attribute name="yet_other_table" alias="YetOtherTableId" />
+                <attribute name="value" alias="Value" />
+                <attribute name="some_name" alias="Name" />
+                <attribute name="status" alias="Status" />
+              </entity>
+            </fetch>
+            """, str);
     }
 
     [Fact]
@@ -106,14 +109,37 @@ public class FetchXmlQueryableToFetchXmlTests
 
         string? str = query.ToRelativeUrl();
 
-        Assert.Equal(
-            $@"some_tables?fetchXml=<fetch mapping=""logical"">
-  <entity name=""some_table"" alias=""s"">
-    <link-entity name=""other_table"" to=""other_table"" alias=""s.OtherTable"">
-      <attribute name=""other_tableid"" alias=""s.OtherTable.Id"" />
-    </link-entity>
-  </entity>
-</fetch>",
+        Assert.Equal("""
+            some_tables?fetchXml=<fetch mapping="logical">
+              <entity name="some_table" alias="s">
+                <link-entity name="other_table" to="other_table" alias="s.OtherTable">
+                  <attribute name="other_tableid" alias="s.OtherTable.Id" />
+                </link-entity>
+              </entity>
+            </fetch>
+            """,
+            str);
+    }
+
+    [Fact]
+    public void SelectProjectionNavigationOuterTest()
+    {
+        var db = new FetchXmlContext();
+
+        var query = from s in db.SomeTables
+                    select new { s.YetOtherTable!.Value };
+
+        string? str = query.ToRelativeUrl();
+
+        Assert.Equal("""
+            some_tables?fetchXml=<fetch mapping="logical">
+              <entity name="some_table" alias="s">
+                <link-entity name="other_table" to="yet_other_table" alias="s.YetOtherTable" link-type="outer">
+                  <attribute name="value" alias="s.YetOtherTable.Value" />
+                </link-entity>
+              </entity>
+            </fetch>
+            """,
             str);
     }
 

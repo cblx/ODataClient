@@ -1,5 +1,6 @@
 ﻿using System.Linq.Expressions;
 using System.Reflection;
+using System.Text.Json.Serialization;
 using System.Xml.Linq;
 
 namespace Cblx.Dynamics.FetchXml.Linq;
@@ -53,7 +54,8 @@ static class FindOrCreateElementForMemberExpressionExtension
                 else
                 {
                     var linkEntityElement = new XElement("link-entity");
-                    linkEntityElement.SetAttributeValue("name", (linkEntityMemberExpression.Member as PropertyInfo)!.PropertyType.GetTableName());
+                    var entityType = (linkEntityMemberExpression.Member as PropertyInfo)!.PropertyType;
+                    linkEntityElement.SetAttributeValue("name", entityType.GetTableName());
                     var referentialConstraintAttribute = linkEntityMemberExpression.Member.GetCustomAttribute<ReferentialConstraintAttribute>();
                     if (referentialConstraintAttribute == null)
                     {
@@ -61,6 +63,13 @@ static class FindOrCreateElementForMemberExpressionExtension
                     }
                     linkEntityElement.SetAttributeValue("to", referentialConstraintAttribute.RawPropertyName);
                     linkEntityElement.SetAttributeValue("alias", alias);
+                    var fkProp = linkEntityMemberExpression.Expression?.Type
+                        .GetProperties()
+                        .FirstOrDefault(prop => prop.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name == referentialConstraintAttribute.Property);
+                    if(fkProp != null && IsMarkedAsNullable(fkProp))
+                    {
+                        linkEntityElement.SetAttributeValue("link-type", "outer");
+                    }
                     currentEntityElement.Add(linkEntityElement);
                     currentEntityElement = linkEntityElement;
                 }
@@ -68,7 +77,9 @@ static class FindOrCreateElementForMemberExpressionExtension
         }
         return currentEntityElement;
     }
-    
+
+    private static bool IsMarkedAsNullable(PropertyInfo p) => new NullabilityInfoContext().Create(p).WriteState is NullabilityState.Nullable;
+
     public static XElement? FindOrCreateElementForMemberExpression(this FetchXmlExpressionVisitor mainVisitor, MemberExpression memberExpression)
     {
         XElement? currentEntityElement = null;
@@ -110,10 +121,17 @@ static class FindOrCreateElementForMemberExpressionExtension
                     var referentialConstraintAttribute = linkEntityMemberExpression.Member.GetCustomAttribute<ReferentialConstraintAttribute>();
                     if (referentialConstraintAttribute == null)
                     {
-                        throw new Exception($"You must annotate the Navigation Property ({linkEntityMemberExpression.Member.Name}) with [ReferentialConstraint] to enable using of navigation members.");
+                        throw new InvalidOperationException($"You must annotate the Navigation Property ({linkEntityMemberExpression.Member.Name}) with [ReferentialConstraint] to enable using of navigation members.");
                     }
                     linkEntityElement.SetAttributeValue("to", referentialConstraintAttribute.RawPropertyName);
                     linkEntityElement.SetAttributeValue("alias", alias);
+                    var fkProp = linkEntityMemberExpression.Expression?.Type
+                      .GetProperties()
+                      .FirstOrDefault(prop => prop.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name == referentialConstraintAttribute.Property);
+                    if (fkProp != null && IsMarkedAsNullable(fkProp))
+                    {
+                        linkEntityElement.SetAttributeValue("link-type", "outer");
+                    }
                     currentEntityElement.Add(linkEntityElement);
                     mainVisitor.EntityParametersElements[alias] = linkEntityElement;
                     currentEntityElement = linkEntityElement;

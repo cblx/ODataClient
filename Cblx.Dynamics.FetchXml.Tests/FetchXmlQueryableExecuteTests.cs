@@ -87,6 +87,7 @@ public class FetchXmlQueryableExecuteTests
                 <attribute name="some_tableid" alias="Id" />
                 <attribute name="other_table" alias="OtherTableId" />
                 <attribute name="another_table" alias="AnotherTableId" />
+                <attribute name="yet_other_table" alias="YetOtherTableId" />
                 <attribute name="value" alias="Value" />
                 <attribute name="some_name" alias="Name" />
                 <attribute name="status" alias="Status" />
@@ -119,6 +120,7 @@ public class FetchXmlQueryableExecuteTests
                 <attribute name="some_tableid" alias="Id" />
                 <attribute name="other_table" alias="OtherTableId" />
                 <attribute name="another_table" alias="AnotherTableId" />
+                <attribute name="yet_other_table" alias="YetOtherTableId" />
                 <attribute name="value" alias="Value" />
                 <attribute name="some_name" alias="Name" />
                 <attribute name="status" alias="Status" />
@@ -368,6 +370,7 @@ some_tables?fetchXml=<fetch mapping="logical" top="1">
                 <attribute name="some_tableid" alias="s.Id" />
                 <attribute name="other_table" alias="s.OtherTableId" />
                 <attribute name="another_table" alias="s.AnotherTableId" />
+                <attribute name="yet_other_table" alias="s.YetOtherTableId" />
                 <attribute name="value" alias="s.Value" />
                 <attribute name="some_name" alias="s.Name" />
                 <attribute name="status" alias="s.Status" />
@@ -440,17 +443,19 @@ some_tables?fetchXml=<fetch mapping="logical" top="1">
         db.Provider
             .LastUrl
             .Should()
-            .Be(
-                $@"some_tables?fetchXml=<fetch mapping=""logical"" top=""1"">
-  <entity name=""some_table"">
-    <attribute name=""some_tableid"" alias=""Id"" />
-    <attribute name=""other_table"" alias=""OtherTableId"" />
-    <attribute name=""another_table"" alias=""AnotherTableId"" />
-    <attribute name=""value"" alias=""Value"" />
-    <attribute name=""some_name"" alias=""Name"" />
-    <attribute name=""status"" alias=""Status"" />
-  </entity>
-</fetch>");
+            .Be("""
+            some_tables?fetchXml=<fetch mapping="logical" top="1">
+              <entity name="some_table">
+                <attribute name="some_tableid" alias="Id" />
+                <attribute name="other_table" alias="OtherTableId" />
+                <attribute name="another_table" alias="AnotherTableId" />
+                <attribute name="yet_other_table" alias="YetOtherTableId" />
+                <attribute name="value" alias="Value" />
+                <attribute name="some_name" alias="Name" />
+                <attribute name="status" alias="Status" />
+              </entity>
+            </fetch>
+            """);
     }
 
     [Fact]
@@ -475,20 +480,22 @@ some_tables?fetchXml=<fetch mapping="logical" top="1">
         db.Provider
             .LastUrl
             .Should()
-            .Be(
-                $@"some_tables?fetchXml=<fetch mapping=""logical"" top=""1"">
-  <entity name=""some_table"">
-    <filter>
-      <condition attribute=""value"" operator=""gt"" value=""0"" />
-    </filter>
-    <attribute name=""some_tableid"" alias=""Id"" />
-    <attribute name=""other_table"" alias=""OtherTableId"" />
-    <attribute name=""another_table"" alias=""AnotherTableId"" />
-    <attribute name=""value"" alias=""Value"" />
-    <attribute name=""some_name"" alias=""Name"" />
-    <attribute name=""status"" alias=""Status"" />
-  </entity>
-</fetch>");
+            .Be("""
+            some_tables?fetchXml=<fetch mapping="logical" top="1">
+              <entity name="some_table">
+                <filter>
+                  <condition attribute="value" operator="gt" value="0" />
+                </filter>
+                <attribute name="some_tableid" alias="Id" />
+                <attribute name="other_table" alias="OtherTableId" />
+                <attribute name="another_table" alias="AnotherTableId" />
+                <attribute name="yet_other_table" alias="YetOtherTableId" />
+                <attribute name="value" alias="Value" />
+                <attribute name="some_name" alias="Name" />
+                <attribute name="status" alias="Status" />
+              </entity>
+            </fetch>
+            """);
     }
 
 
@@ -568,29 +575,31 @@ some_tables?fetchXml=<fetch mapping="logical" top="1">
         db.Provider
             .LastUrl
             .Should()
-            .Be(
-                $@"some_tables?fetchXml=<fetch mapping=""logical"">
-  <entity name=""some_table"">
-    <filter>
-      <condition attribute=""value"" operator=""gt"" value=""0"" />
-    </filter>
-    <filter>
-      <condition attribute=""value"" operator=""lt"" value=""0"" />
-    </filter>
-    <filter>
-      <condition attribute=""some_name"" operator=""eq"" value=""X"" />
-    </filter>
-    <filter>
-      <condition attribute=""status"" operator=""eq"" value=""1"" />
-    </filter>
-    <attribute name=""some_tableid"" alias=""Id"" />
-    <attribute name=""other_table"" alias=""OtherTableId"" />
-    <attribute name=""another_table"" alias=""AnotherTableId"" />
-    <attribute name=""value"" alias=""Value"" />
-    <attribute name=""some_name"" alias=""Name"" />
-    <attribute name=""status"" alias=""Status"" />
-  </entity>
-</fetch>");
+            .Be("""
+            some_tables?fetchXml=<fetch mapping="logical">
+              <entity name="some_table">
+                <filter>
+                  <condition attribute="value" operator="gt" value="0" />
+                </filter>
+                <filter>
+                  <condition attribute="value" operator="lt" value="0" />
+                </filter>
+                <filter>
+                  <condition attribute="some_name" operator="eq" value="X" />
+                </filter>
+                <filter>
+                  <condition attribute="status" operator="eq" value="1" />
+                </filter>
+                <attribute name="some_tableid" alias="Id" />
+                <attribute name="other_table" alias="OtherTableId" />
+                <attribute name="another_table" alias="AnotherTableId" />
+                <attribute name="yet_other_table" alias="YetOtherTableId" />
+                <attribute name="value" alias="Value" />
+                <attribute name="some_name" alias="Name" />
+                <attribute name="status" alias="Status" />
+              </entity>
+            </fetch>
+            """);
     }
 
     [Fact]
@@ -616,29 +625,31 @@ some_tables?fetchXml=<fetch mapping="logical" top="1">
         db.Provider
             .LastUrl
             .Should()
-            .Be(
-                $@"some_tables?fetchXml=<fetch mapping=""logical"" top=""1"">
-  <entity name=""some_table"">
-    <filter>
-      <condition attribute=""value"" operator=""gt"" value=""0"" />
-    </filter>
-    <filter>
-      <condition attribute=""value"" operator=""lt"" value=""0"" />
-    </filter>
-    <filter>
-      <condition attribute=""some_name"" operator=""eq"" value=""X"" />
-    </filter>
-    <filter>
-      <condition attribute=""status"" operator=""eq"" value=""1"" />
-    </filter>
-    <attribute name=""some_tableid"" alias=""Id"" />
-    <attribute name=""other_table"" alias=""OtherTableId"" />
-    <attribute name=""another_table"" alias=""AnotherTableId"" />
-    <attribute name=""value"" alias=""Value"" />
-    <attribute name=""some_name"" alias=""Name"" />
-    <attribute name=""status"" alias=""Status"" />
-  </entity>
-</fetch>");
+            .Be("""
+            some_tables?fetchXml=<fetch mapping="logical" top="1">
+              <entity name="some_table">
+                <filter>
+                  <condition attribute="value" operator="gt" value="0" />
+                </filter>
+                <filter>
+                  <condition attribute="value" operator="lt" value="0" />
+                </filter>
+                <filter>
+                  <condition attribute="some_name" operator="eq" value="X" />
+                </filter>
+                <filter>
+                  <condition attribute="status" operator="eq" value="1" />
+                </filter>
+                <attribute name="some_tableid" alias="Id" />
+                <attribute name="other_table" alias="OtherTableId" />
+                <attribute name="another_table" alias="AnotherTableId" />
+                <attribute name="yet_other_table" alias="YetOtherTableId" />
+                <attribute name="value" alias="Value" />
+                <attribute name="some_name" alias="Name" />
+                <attribute name="status" alias="Status" />
+              </entity>
+            </fetch>
+            """);
     }
     
     [Fact]
@@ -663,29 +674,31 @@ some_tables?fetchXml=<fetch mapping="logical" top="1">
         db.Provider
             .LastUrl
             .Should()
-            .Be(
-                $@"some_tables?fetchXml=<fetch mapping=""logical"" top=""1"">
-  <entity name=""some_table"">
-    <filter>
-      <condition attribute=""value"" operator=""gt"" value=""0"" />
-    </filter>
-    <filter>
-      <condition attribute=""value"" operator=""lt"" value=""0"" />
-    </filter>
-    <filter>
-      <condition attribute=""some_name"" operator=""eq"" value=""X"" />
-    </filter>
-    <filter>
-      <condition attribute=""status"" operator=""eq"" value=""1"" />
-    </filter>
-    <attribute name=""some_tableid"" alias=""Id"" />
-    <attribute name=""other_table"" alias=""OtherTableId"" />
-    <attribute name=""another_table"" alias=""AnotherTableId"" />
-    <attribute name=""value"" alias=""Value"" />
-    <attribute name=""some_name"" alias=""Name"" />
-    <attribute name=""status"" alias=""Status"" />
-  </entity>
-</fetch>");
+            .Be("""
+            some_tables?fetchXml=<fetch mapping="logical" top="1">
+              <entity name="some_table">
+                <filter>
+                  <condition attribute="value" operator="gt" value="0" />
+                </filter>
+                <filter>
+                  <condition attribute="value" operator="lt" value="0" />
+                </filter>
+                <filter>
+                  <condition attribute="some_name" operator="eq" value="X" />
+                </filter>
+                <filter>
+                  <condition attribute="status" operator="eq" value="1" />
+                </filter>
+                <attribute name="some_tableid" alias="Id" />
+                <attribute name="other_table" alias="OtherTableId" />
+                <attribute name="another_table" alias="AnotherTableId" />
+                <attribute name="yet_other_table" alias="YetOtherTableId" />
+                <attribute name="value" alias="Value" />
+                <attribute name="some_name" alias="Name" />
+                <attribute name="status" alias="Status" />
+              </entity>
+            </fetch>
+            """);
     }
 
     [Fact]
