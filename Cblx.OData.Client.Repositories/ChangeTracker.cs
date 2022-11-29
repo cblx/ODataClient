@@ -3,6 +3,7 @@ using Cblx.OData.Client.Abstractions.Json;
 using OData.Client;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json;
@@ -190,7 +191,7 @@ namespace Cblx.OData.Client
             return changes;
         }
 
-        static object GetDefault(Type type)
+        static object? GetDefault(Type type)
         {
             if (type.IsValueType)
             {
@@ -201,8 +202,11 @@ namespace Cblx.OData.Client
 
         static bool IsTrackable(PropertyInfo prop)
         {
-            // If prop has a private setter, it will be included only with the JsonIncludeAttribute
-            if (!prop.CanWrite && prop.GetCustomAttribute<JsonIncludeAttribute>() == null)
+            if(prop.GetCustomAttribute<ReadOnlyAttribute>()?.IsReadOnly is true)
+            {
+                return false;
+            }
+            if (!prop.CanWrite)
             {
                 return false;
             }
