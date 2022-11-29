@@ -1,4 +1,6 @@
-﻿using System;
+﻿using FluentAssertions;
+using System;
+using System.ComponentModel;
 using Xunit;
 namespace Cblx.OData.Client.Tests;
 public class ChangeTrackerTests
@@ -81,6 +83,20 @@ public class ChangeTrackerTests
         Assert.Equal(ChangeType.Update, change.ChangeType);
         Assert.Collection(change.ChangedProperties, cp => Assert.Equal("Name", cp.PropertyInfo.Name));
     }
+
+    [Fact]
+    public void ReadOnlyPropertiesShouldNotBeTracked()
+    {
+        var changeTracker = new ChangeTracker();
+        var trackedClass = (TrackedClassPrivates)Activator.CreateInstance(typeof(TrackedClassPrivates), true);
+        changeTracker.Attach(trackedClass);
+        trackedClass.ChangeName("João");
+        trackedClass.ChangeNotTracked("João");
+        Change change = changeTracker.GetChange(trackedClass.Id);
+        change.ChangeType.Should().Be(ChangeType.Update);
+        change.ChangedProperties.Should().ContainSingle(change => change.PropertyInfo.Name == "Name");
+        change.ChangedProperties.Should().NotContain(change => change.PropertyInfo.Name == "NotTracked");
+    }
 }
 
 public class TrackedClass
@@ -111,6 +127,11 @@ public partial class TrackedClassPrivates
     public string Name { get; private set; }
 
     public string Description { get; private set; }
+
+    [ReadOnly(true)]
+    public string NotTracked { get; private set; }
+
+    public void ChangeNotTracked(string val) => NotTracked = val;
 
     public void ChangeName(string name) => Name = name;
 }
