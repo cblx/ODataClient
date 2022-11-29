@@ -15,7 +15,10 @@ public static class RewriterHelpers
     public static T? CreateEntity<T>(JsonObject jsonObject/*, string? entityAlias*/)
     {
         T entity = (T)Activator.CreateInstance(typeof(T), true)!;
-        string firstKey = jsonObject.First().Key;
+        string firstKey = jsonObject
+            // avoid fields like @odata.etag
+            .Where(field => !field.Key.StartsWith("@"))
+            .First().Key;
         string entityAlias = firstKey.Contains('.') ? firstKey.Split('.').First() : "";
         foreach (PropertyInfo prop in typeof(T).GetProperties())
         {

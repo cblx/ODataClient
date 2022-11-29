@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Linq;
-using System.Net;
 using System.Net.Http;
 using System.Text.Json.Nodes;
-using System.Threading;
 using System.Threading.Tasks;
 using Cblx.Dynamics.FetchXml.Linq.Extensions;
 using Cblx.Dynamics.Linq;
@@ -551,6 +549,62 @@ some_tables?fetchXml=<fetch mapping="logical" top="1">
     }
 
     [Fact]
+    public async Task MultipleWhereOnNavigationsTest()
+    {
+        var db = GetSimpleMockDb(new JsonArray
+        {
+            new JsonObject
+            {
+                {"Id", _exampleId}
+            }
+        });
+
+        var items = await db.SomeTables
+            .Where(s => s.OtherTable!.Value > 0)
+            .Where(x => x.OtherTable!.AnotherTable!.Value < 0)
+            .Where(y => y.YetOtherTableId!.Value == Guid.Empty)
+            .Where(z => z.Status == SomeStatusEnum.Active)
+            .ToListAsync();
+
+        items
+            .Should()
+            .ContainSingle(s => s.Id == _exampleId);
+
+        db.Provider
+            .LastUrl
+            .Should()
+            .Be("""
+            some_tables?fetchXml=<fetch mapping="logical">
+              <entity name="some_table">
+                <link-entity name="other_table" to="other_table" alias="s.OtherTable" />
+                <filter>
+                  <condition entityname="s.OtherTable" attribute="value" operator="gt" value="0" />
+                </filter>
+                <link-entity name="other_table" to="other_table" alias="x.OtherTable">
+                  <link-entity name="another_table" to="another_table" alias="x.OtherTable.AnotherTable" />
+                </link-entity>
+                <filter>
+                  <condition entityname="x.OtherTable.AnotherTable" attribute="value" operator="lt" value="0" />
+                </filter>
+                <filter>
+                  <condition attribute="Value" operator="eq" value="00000000-0000-0000-0000-000000000000" />
+                </filter>
+                <filter>
+                  <condition attribute="status" operator="eq" value="1" />
+                </filter>
+                <attribute name="some_tableid" alias="Id" />
+                <attribute name="other_table" alias="OtherTableId" />
+                <attribute name="another_table" alias="AnotherTableId" />
+                <attribute name="yet_other_table" alias="YetOtherTableId" />
+                <attribute name="value" alias="Value" />
+                <attribute name="some_name" alias="Name" />
+                <attribute name="status" alias="Status" />
+              </entity>
+            </fetch>
+            """);
+    }
+
+    [Fact]
     public async Task MultipleWheresWithParameterNameMismatchTest()
     {
         var db = GetSimpleMockDb(new JsonArray
@@ -918,30 +972,5 @@ some_tables?fetchXml=<fetch mapping="logical" top="1">
         items
             .Should()
             .ContainSingle(a => a.Id == id);
-    }
-}
-
-public class MockHttpMessageHandler : HttpMessageHandler
-{
-    readonly string content;
-    readonly HttpStatusCode statusCode;
-
-    public MockHttpMessageHandler(string content, HttpStatusCode statusCode = HttpStatusCode.OK)
-    {
-        this.content = content;
-        this.statusCode = statusCode;
-    }
-
-    protected override async Task<HttpResponseMessage> SendAsync(
-        HttpRequestMessage request,
-        CancellationToken cancellationToken)
-    {
-        var responseMessage = new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = new StringContent(content),
-            StatusCode = statusCode
-        };
-
-        return await Task.FromResult(responseMessage);
     }
 }
