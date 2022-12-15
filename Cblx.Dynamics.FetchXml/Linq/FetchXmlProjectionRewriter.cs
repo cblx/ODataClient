@@ -126,6 +126,8 @@ public class FetchXmlProjectionRewriter : ExpressionVisitor
 
     Expression VisitMember(MemberExpression node, string? applyAnnotation, Type? overrideType)
     {
+        if (node.Expression?.Type.IsDynamicsEntity() is false) { return node; }
+
         MemberInfo memberInfo = node.Member;
         string propAlias = $"{node.ToProjectionAttributeAlias()}{applyAnnotation}";
 

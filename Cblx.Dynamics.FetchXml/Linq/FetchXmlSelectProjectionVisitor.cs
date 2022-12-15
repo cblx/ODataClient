@@ -36,7 +36,7 @@ public class FetchXmlSelectProjectionVisitor : ExpressionVisitor
     protected override Expression VisitMember(MemberExpression? node)
     {
         XElement? linkedNavigationEntityElement = _fetchXmlElement.FindOrCreateElementForMemberExpression(node);
-        if (linkedNavigationEntityElement == null) { throw new InvalidOperationException("Could not find entity element reference in projection. (Check if [DynamicsEntity] attribute is missing in the entity class)"); }
+        if (linkedNavigationEntityElement == null) { return node; }
         string attributeAlias = node.ToProjectionAttributeAlias();
         var attributeElement = new XElement(
                 "attribute",

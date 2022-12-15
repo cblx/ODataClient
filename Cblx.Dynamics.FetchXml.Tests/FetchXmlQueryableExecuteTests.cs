@@ -336,6 +336,39 @@ some_tables?fetchXml=<fetch mapping="logical" top="1">
     }
 
     [Fact]
+    public async Task SelectWithExternalDataTest()
+    {
+        var db = GetSimpleMockDb(new JsonArray
+        {
+            new JsonObject
+            {
+                {"s.Name", "x"}
+            }
+        });
+
+        var thing = new { Data = "x" };
+
+        var obj = await (from s in db.SomeTables
+                              select new
+                              {
+                                  s.Name,
+                                  thing.Data
+                              }).FirstOrDefaultAsync();
+
+        obj!.Name.Should().Be("x");
+        obj.Data.Should().Be("x");
+
+        db.Provider.LastUrl.Should().Be(
+            """
+            some_tables?fetchXml=<fetch mapping="logical" top="1">
+              <entity name="some_table" alias="s">
+                <attribute name="some_name" alias="s.Name" />
+              </entity>
+            </fetch>
+            """);
+    }
+
+    [Fact]
     public async Task SelectEntityTest()
     {
         var db = GetSimpleMockDb(new JsonArray
