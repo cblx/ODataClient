@@ -1,7 +1,4 @@
-﻿//using Remotion.Linq;
-//using Remotion.Linq.Parsing.Structure;
-
-using System.Collections;
+﻿using System.Collections;
 using System.Linq.Expressions;
 
 namespace Cblx.Dynamics.FetchXml.Linq;

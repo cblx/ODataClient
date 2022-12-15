@@ -16,6 +16,7 @@ public class FetchXmlProjectionRewriter : ExpressionVisitor
             case MethodCallExpression
             {
                 Method.Name: nameof(DynamicsQueryable.LateMaterialize)
+                             or nameof(DynamicsQueryable.WithPagingCookie)
             } m when m.Method.DeclaringType == typeof(DynamicsQueryable):
                 return Rewrite(m.Arguments[0]);
             case MethodCallExpression

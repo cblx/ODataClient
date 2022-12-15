@@ -14,6 +14,29 @@ public static class DynamicsQueryable
         );
     }
 
+    //public static IQueryable<T> Page<T>(this IQueryable<T> queryable, int page)
+    //{
+    //    return queryable.Provider.CreateQuery<T>(
+    //       Expression.Call(
+    //           null,
+    //           typeof(DynamicsQueryable).GetMethod(nameof(Page))!.MakeGenericMethod(typeof(T)),
+    //           queryable.Expression,
+    //           Expression.Constant(page))
+    //   );
+    //}
+
+    public static IQueryable<T> WithPagingCookie<T>(this IQueryable<T> queryable, string? pagingCookie)
+    {
+        return queryable.Provider.CreateQuery<T>(
+           Expression.Call(
+               null,
+               typeof(DynamicsQueryable).GetMethod(nameof(WithPagingCookie))!.MakeGenericMethod(typeof(T)),
+               queryable.Expression,
+               Expression.Constant(pagingCookie, typeof(string)))
+       );
+    }
+
+
     public static IQueryable<TResult> ProjectTo<TResult>(this IQueryable queryable) 
     {
         return queryable.Provider.CreateQuery<TResult>(

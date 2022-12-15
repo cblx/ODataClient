@@ -1,5 +1,6 @@
 ﻿using Cblx.Dynamics.FetchXml.Linq;
 using Cblx.Dynamics.OData.Linq;
+using OData.Client.Abstractions;
 using System;
 using System.Linq.Expressions;
 
@@ -28,6 +29,20 @@ public static class IQueryableExtensions
     {
         ODataQueryable<T> => ODataXt.ToListAsync(queryable),
         FetchXmlQueryable<T> => FetchXmlXt.ToListAsync(queryable),
+        _ => throw _invalid
+    };
+
+    public static Task<List<T>> ToUnlimitedListAsync<T>(this IQueryable<T> queryable) => queryable switch
+    {
+        ODataQueryable<T> => throw new NotImplementedException("ToUnlimitedListAsync is not yet implemented for OData Queryables"),
+        FetchXmlQueryable<T> => FetchXmlXt.ToUnlimitedListAsync(queryable),
+        _ => throw _invalid
+    };
+
+    public static Task<DynamicsResult<T>> ToResultAsync<T>(this IQueryable<T> queryable) => queryable switch
+    {
+        ODataQueryable<T> => throw new NotImplementedException("ToResultAsync is not yet implemented for OData Queryables"),
+        FetchXmlQueryable<T> => FetchXmlXt.ToResultAsync(queryable),
         _ => throw _invalid
     };
 

@@ -16,13 +16,14 @@ public class FetchXmlQueryableExecuteTests
 
     static FetchXmlContext GetSimpleMockDb(JsonArray value)
     {
-        var jsonObject = new JsonObject
+        return GetSimpleMockDb(new JsonObject
         {
-            {
-                "value",
-                value
-            }
-        };
+            { "value", value }
+        });
+    }
+
+    static FetchXmlContext GetSimpleMockDb(JsonObject jsonObject)
+    {
         var httpClient = new HttpClient(
             new MockHttpMessageHandler(jsonObject.ToJsonString())
         )
@@ -62,6 +63,42 @@ public class FetchXmlQueryableExecuteTests
     }
 
     [Fact]
+    public async Task SelectNewToResultTest()
+    {
+        var db = GetSimpleMockDb(new JsonObject
+        {
+            { "@Microsoft.Dynamics.CRM.fetchxmlpagingcookie", "xyz" },
+            { "@odata.count", 1 },
+            { "value", new JsonArray {
+                            new JsonObject
+                            {
+                                {"s.Id", _exampleId}
+                            }
+                        }
+            }
+        });
+
+        var result = await (from s in db.SomeTables
+                           select new { s.Id }).ToResultAsync();
+
+        result.Value
+            .Should()
+            .ContainSingle(s => s.Id == _exampleId);
+
+        result.Count.Should().Be(1);
+        result.FetchXmlPagingCookie.Should().Be("xyz");
+
+        db.Provider.LastUrl.Should().Be(
+            """
+            some_tables?fetchXml=<fetch mapping="logical">
+              <entity name="some_table" alias="s">
+                <attribute name="some_tableid" alias="s.Id" />
+              </entity>
+            </fetch>
+            """);
+    }
+
+    [Fact]
     public async Task TableToListAsyncTest()
     {
         var db = GetSimpleMockDb(new JsonArray
@@ -89,6 +126,94 @@ public class FetchXmlQueryableExecuteTests
                 <attribute name="value" alias="Value" />
                 <attribute name="some_name" alias="Name" />
                 <attribute name="status" alias="Status" />
+              </entity>
+            </fetch>
+            """);
+    }
+
+    [Fact]
+    public async Task UnlimitedListTest()
+    {
+        var db = GetSimpleMockDb(new JsonArray
+        {
+            new JsonObject
+            {
+                {"t.Id", _exampleId},
+            }
+        });
+        var items = await db.SomeTables
+            .Select(t => t.Id)
+            .ToUnlimitedListAsync();
+
+        items
+            .Should()
+            .ContainSingle(id => id == _exampleId);
+
+        db.Provider.LastUrl.Should().Be(
+            """
+            some_tables?fetchXml=<fetch mapping="logical">
+              <entity name="some_table" alias="t">
+                <attribute name="some_tableid" alias="t.Id" />
+              </entity>
+            </fetch>
+            """);
+    }
+
+    [Fact]
+    public async Task WithPagingCookieTest()
+    {
+        var db = GetSimpleMockDb(new JsonArray
+        {
+            new JsonObject
+            {
+                {"t.Id", _exampleId},
+            }
+        });
+        string pagingCookie = "<cookie pagenumber=\"2\" pagingcookie=\"%253ccookie%2520page%253d%25221%2522%253e%253cincidentid%2520last%253d%2522%257b13D5CA4B-6F83-EC11-8D21-000D3AC18FE1%257d%2522%2520first%253d%2522%257bFABFE1B8-9F14-EC11-B6E7-000D3A885032%257d%2522%2520%252f%253e%253c%252fcookie%253e\" istracking=\"False\" />";
+        var items = await db.SomeTables
+            .Select(t => t.Id)
+            .WithPagingCookie(pagingCookie)
+            .ToListAsync();
+
+        items
+            .Should()
+            .ContainSingle(id => id == _exampleId);
+
+        db.Provider.LastUrl.Should().Be(
+            """
+            some_tables?fetchXml=<fetch mapping="logical" paging-cookie="&lt;cookie pagenumber=&quot;2&quot; pagingcookie=&quot;%253ccookie%2520page%253d%25221%2522%253e%253cincidentid%2520last%253d%2522%257b13D5CA4B-6F83-EC11-8D21-000D3AC18FE1%257d%2522%2520first%253d%2522%257bFABFE1B8-9F14-EC11-B6E7-000D3A885032%257d%2522%2520%252f%253e%253c%252fcookie%253e&quot; istracking=&quot;False&quot; /&gt;">
+              <entity name="some_table" alias="t">
+                <attribute name="some_tableid" alias="t.Id" />
+              </entity>
+            </fetch>
+            """);
+    }
+
+    [Fact]
+    public async Task WithPagingCookieTest2()
+    {
+        var db = GetSimpleMockDb(new JsonArray
+        {
+            new JsonObject
+            {
+                {"t.Id", _exampleId},
+            }
+        });
+        string pagingCookie = "<cookie pagenumber=\"2\" pagingcookie=\"%253ccookie%2520page%253d%25221%2522%253e%253cincidentid%2520last%253d%2522%257b13D5CA4B-6F83-EC11-8D21-000D3AC18FE1%257d%2522%2520first%253d%2522%257bFABFE1B8-9F14-EC11-B6E7-000D3A885032%257d%2522%2520%252f%253e%253c%252fcookie%253e\" istracking=\"False\" />";
+        var items = await db.SomeTables
+            .WithPagingCookie(pagingCookie)
+            .Select(t => t.Id)
+            .ToListAsync();
+
+        items
+            .Should()
+            .ContainSingle(id => id == _exampleId);
+
+        db.Provider.LastUrl.Should().Be(
+            """
+            some_tables?fetchXml=<fetch mapping="logical" paging-cookie="&lt;cookie pagenumber=&quot;2&quot; pagingcookie=&quot;%253ccookie%2520page%253d%25221%2522%253e%253cincidentid%2520last%253d%2522%257b13D5CA4B-6F83-EC11-8D21-000D3AC18FE1%257d%2522%2520first%253d%2522%257bFABFE1B8-9F14-EC11-B6E7-000D3A885032%257d%2522%2520%252f%253e%253c%252fcookie%253e&quot; istracking=&quot;False&quot; /&gt;">
+              <entity name="some_table">
+                <attribute name="some_tableid" alias="t.Id" />
               </entity>
             </fetch>
             """);

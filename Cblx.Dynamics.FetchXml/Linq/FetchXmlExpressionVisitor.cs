@@ -26,13 +26,15 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
         );
     }
 
-    public string ToFetchXml()
+    public XElement ToFetchXmlElement()
     {
         var fetchXmlElement = new XElement(FetchElement);
         ReadProjection(_rootExpression!, fetchXmlElement);
-        return fetchXmlElement.ToString();
+        return fetchXmlElement;
     }
 
+    public string ToFetchXml() => ToFetchXmlElement().ToString();
+    
     public string ToRelativeUrl()
     {
         string fetchXml = ToFetchXml();
@@ -57,7 +59,10 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
         {
             switch (methodCallExpression.Method)
             {
-                case { Name: nameof(DynamicsQueryable.LateMaterialize) } m when m.DeclaringType == typeof(DynamicsQueryable):
+                case { 
+                    Name: nameof(DynamicsQueryable.LateMaterialize) 
+                          or nameof(DynamicsQueryable.WithPagingCookie)
+                } m when m.DeclaringType == typeof(DynamicsQueryable):
                     ReadProjection(methodCallExpression.Arguments[0], fetchXml);
                     break;
                 case
@@ -78,9 +83,6 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
                     var projectionExpression = (methodCallExpression.Arguments.Last().UnBox() as LambdaExpression)!;
                     ReadAttributesFromProjection(projectionExpression, fetchXml);
                     break;
-                //    fetchXml.SetAttributeValue("latematerialize", "true");
-                //    ReadProjection(methodCallExpression.Arguments[0], fetchXml);
-                //    break;
                 case
                 {
                     Name: nameof(DynamicsQueryable.ProjectTo)
@@ -138,10 +140,8 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
         }
         return entityElement;
     }
-
-    int _joinCount = 0;
-
-    protected override Expression VisitMethodCall(MethodCallExpression node)
+ 
+    protected override Expression? VisitMethodCall(MethodCallExpression node)
     {
         switch (node.Method)
         {
@@ -162,24 +162,21 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
                     _ => base.VisitMethodCall(node),
                 };
             case { Name: nameof(DynamicsQueryable.LateMaterialize) } m when m.DeclaringType == typeof(DynamicsQueryable):
+                InitializeRootEntityFromChain(node);
                 FetchElement.SetAttributeValue("latematerialize", "true");
-                //return node.Arguments[0];
-                return Visit(node.Arguments[0]!);
-            //    //return base.VisitMethodCall(node);
+                return node.Arguments[0];
+            case { Name: nameof(DynamicsQueryable.WithPagingCookie) } m when m.DeclaringType == typeof(DynamicsQueryable):
+                InitializeRootEntityFromChain(node);
+                var value = (string?)(node.Arguments[1] as ConstantExpression)!.Value;
+                FetchElement.SetAttributeValue("paging-cookie", value);
+                return node.Arguments[0];
             default: return base.VisitMethodCall(node);
         }
     }
 
     Expression VisitFirstOrDefault(MethodCallExpression node)
     {
-        if (node.Arguments[0] is MethodCallExpression methodCallExpression)
-        {
-            Visit(methodCallExpression);
-        }
-        else
-        {
-            CreateRootEntityFromSource(node);
-        }
+        InitializeRootEntityFromChain(node);
 
         FetchElement.SetAttributeValue("top", 1);
         if (node.Arguments.Count > 1)
@@ -289,8 +286,6 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
 
     Expression VisitSelectMany(MethodCallExpression selectManyExpression)
     {
-        _joinCount++;
-
         //Ex:
         //  from p in db.PreviousTable
         //  from t in db.TargetTable.Where(t => t.Id == p.TargetTableId).DefaultIfEmpty()
@@ -385,6 +380,18 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
         return node;
     }
 
+    void InitializeRootEntityFromChain(MethodCallExpression node)
+    {
+        if (node.Arguments[0] is MethodCallExpression methodCallExpression)
+        {
+            Visit(methodCallExpression);
+        }
+        else
+        {
+            CreateRootEntityFromSource(node);
+        }
+    }
+
     void CreateRootEntityFromSource(MethodCallExpression node)
     {
         ConstantExpression? constantExpression = (node.Arguments[0] as ConstantExpression)!;
@@ -400,7 +407,6 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
         FetchElement.Add(entityElement);
         Endpoint = entityType.GetCustomAttribute<ODataEndpointAttribute>()?.Endpoint ?? throw new Exception($@"ODataEndointAttribute not found for {entityType.Name}");
     }
-
     Expression VisitJoin(MethodCallExpression node)
     {
         // 5 arguments:
@@ -411,7 +417,6 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
         // 3    -   The right key accessor
         // 4    -   Select/Projection
 
-        _joinCount++;
         Expression leftQueryableOrPreviousJoinCall = node.Arguments[0];
         Expression leftKeyAccessor = node.Arguments[2];
         Expression rightKeyAccessor = node.Arguments[3];

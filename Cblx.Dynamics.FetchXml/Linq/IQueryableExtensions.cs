@@ -1,4 +1,7 @@
-﻿using System.Linq.Expressions;
+﻿using Cblx.Dynamics.Linq;
+using OData.Client.Abstractions;
+using System.Linq;
+using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("Cblx.Dynamics")]
@@ -46,6 +49,25 @@ public static class IQueryableExtensions{
         if (queryable is not FetchXmlQueryable<T> fetchXmlQueryable) { throw new InvalidOperationException("This Queryable is not a FetchXmlQueryable"); }
         var items = await (fetchXmlQueryable.Provider as FetchXmlQueryProvider)!.ExecuteAsync<IEnumerable<T>>(fetchXmlQueryable.Expression);
         return items.ToList();
+    }
+
+    internal static async Task<DynamicsResult<T>> ToResultAsync<T>(this IQueryable<T> queryable)
+    {
+        if (queryable is not FetchXmlQueryable<T> fetchXmlQueryable) { throw new InvalidOperationException("This Queryable is not a FetchXmlQueryable"); }
+        return await (fetchXmlQueryable.Provider as FetchXmlQueryProvider)!.ExecuteAsync<DynamicsResult<T>>(fetchXmlQueryable.Expression);
+    }
+
+    internal static async Task<List<T>> ToUnlimitedListAsync<T>(this IQueryable<T> queryable)
+    {
+        if (queryable is not FetchXmlQueryable<T> fetchXmlQueryable) { throw new InvalidOperationException("This Queryable is not a FetchXmlQueryable"); }
+        var items = new List<T>();
+        DynamicsResult<T>? result = null;
+        do
+        {
+            result = await ToResultAsync(fetchXmlQueryable.WithPagingCookie(result?.FetchXmlPagingCookie));
+            items.AddRange(result.Value!);
+        } while (string.IsNullOrEmpty(result.FetchXmlPagingCookie) is false);
+        return items;
     }
 
     internal static async Task<int> CountAsync<T>(this IQueryable<T> queryable)

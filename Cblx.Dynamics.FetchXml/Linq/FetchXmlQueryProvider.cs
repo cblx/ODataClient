@@ -1,12 +1,14 @@
 ﻿using System.Collections;
 using System.Linq.Expressions;
 using System.Net;
-using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Xml.Linq;
+using Cblx.Dynamics.Linq;
 using Cblx.OData.Client.Abstractions;
 using OData.Client;
+using OData.Client.Abstractions;
 
 namespace Cblx.Dynamics.FetchXml.Linq;
 
@@ -41,26 +43,35 @@ public class FetchXmlQueryProvider : IAsyncQueryProvider
         return ExecuteAsync<TResult>(expression).Result;
     }
 
+    Task<(HttpResponseMessage HttpResponseMessage, FetchXmlExpressionVisitor Visitor)> ExecuteRequestAsync(
+      Expression expression,
+      CancellationToken cancellationToken = default
+  )
+    {
+        var visitor = new FetchXmlExpressionVisitor();
+        visitor.Visit(expression);
+        return ExecuteRequestAsync(visitor, visitor.ToFetchXmlElement(), cancellationToken);
+    }
+
 
     async Task<(HttpResponseMessage HttpResponseMessage, FetchXmlExpressionVisitor Visitor)> ExecuteRequestAsync(
-        Expression expression,
+        FetchXmlExpressionVisitor visitor,
+        XElement fetchXmlElement,
         CancellationToken cancellationToken = default
     )
     {
+
         if (_httpClient == null)
         {
             throw new InvalidOperationException("Query cannot be execute without a HttpClient");
         }
-
-        var visitor = new FetchXmlExpressionVisitor();
-        visitor.Visit(expression);
-        string url = visitor.ToRelativeUrl();
+        string url = $"{visitor.Endpoint}?fetchXml={fetchXmlElement}";
         var requestMessage = new HttpRequestMessage(HttpMethod.Get, url);
         if (visitor.HasFormattedValues)
         {
             requestMessage.Headers.Add("Prefer", $"odata.include-annotations={DynAnnotations.FormattedValue}");
         }
-        var responseMessage = await _httpClient.SendAsync(requestMessage,cancellationToken);
+        var responseMessage = await _httpClient.SendAsync(requestMessage, cancellationToken);
         LastUrl = url;
         if (responseMessage.StatusCode is not HttpStatusCode.OK)
         {
@@ -72,6 +83,8 @@ public class FetchXmlQueryProvider : IAsyncQueryProvider
         return (responseMessage, visitor);
     }
 
+
+  
     public async Task<string> GetStringResponseAsync(Expression expression,
         CancellationToken cancellationToken = default)
     {
@@ -79,55 +92,78 @@ public class FetchXmlQueryProvider : IAsyncQueryProvider
         return await responseMessage.Content.ReadAsStringAsync(cancellationToken);
     }
 
-    public async Task<TResult> ExecuteAsync<TResult>(Expression expression,
-        CancellationToken cancellationToken = default)
+    public async Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken = default)
     {
-        var (responseMessage, visitor) = await ExecuteRequestAsync(expression, cancellationToken);
+        var nonPublicAndStatic = BindingFlags.NonPublic | BindingFlags.Static;
 
-        // Review: Makes sense using Options to desserialize to a JsonObject?
-        //var jsonSerializerOptions = new JsonSerializerOptions {
-        //    PropertyNameCaseInsensitive = true
-        //};
+        var visitor = new FetchXmlExpressionVisitor();
+        visitor.Visit(expression);
+        Delegate projectionFunc = GetProjectionFunc(expression, visitor);
+        var fetchXmlElement = visitor.ToFetchXmlElement();
+        var (responseMessage, _) = await ExecuteRequestAsync(visitor, fetchXmlElement, cancellationToken);
+
         Stream responseContent = await responseMessage.Content.ReadAsStreamAsync(cancellationToken);
-        JsonObject? jsonObject =
-            await JsonSerializer.DeserializeAsync<JsonObject>(responseContent, 
-                /*jsonSerializerOptions,*/
-                cancellationToken: cancellationToken);
+        JsonObject? jsonObject = await JsonSerializer.DeserializeAsync<JsonObject>(responseContent, cancellationToken: cancellationToken);
         if (jsonObject == null)
         {
             throw new InvalidOperationException("Unexpected behavior: Desserialization result is null");
         }
-
-        LambdaExpression projectionExpression =
-            visitor.IsGroupBy
-                ? new FetchXmlGroupProjectionRewriter(
-                    visitor.GroupExpression,
-                    visitor.GroupByExpression
-                ).Rewrite(expression)
-                : new FetchXmlProjectionRewriter().Rewrite(expression);
-
-        Delegate del = projectionExpression.Compile();
+        
         JsonArray jsonArray = jsonObject["value"]!.AsArray();
         if (typeof(TResult).IsGenericType && typeof(TResult).IsAssignableTo(typeof(IEnumerable)))
         {
             Type itemType = typeof(TResult).GenericTypeArguments[0];
-            return (TResult) GetType()
-                .GetMethod(nameof(ToEnumerable), BindingFlags.NonPublic | BindingFlags.Static)!
+            return (TResult)GetType()
+                .GetMethod(nameof(ToEnumerable), nonPublicAndStatic)!
                 .MakeGenericMethod(itemType)
-                .Invoke(this, new object[] {jsonArray, del})!;
+                .Invoke(this, new object[] { jsonArray, projectionFunc })!;
+        }
+        else if(typeof(TResult).IsGenericType && typeof(TResult).GetGenericTypeDefinition() == typeof(DynamicsResult<>))
+        {
+            Type itemType = typeof(TResult).GenericTypeArguments[0];
+            return (TResult)GetType()
+                .GetMethod(nameof(ToResult), nonPublicAndStatic)!
+                .MakeGenericMethod(itemType)
+                .Invoke(this, new object[] { jsonObject, projectionFunc })!;
         }
         else
         {
-            return (TResult) GetType()
-                .GetMethod(nameof(ToItem), BindingFlags.NonPublic | BindingFlags.Static)!
+            return (TResult)GetType()
+                .GetMethod(nameof(ToItem), nonPublicAndStatic)!
                 .MakeGenericMethod(typeof(TResult))
-                .Invoke(this, new object[] {jsonArray, del})!;
+                .Invoke(this, new object[] { jsonArray, projectionFunc })!;
         }
     }
 
+    private static Delegate GetProjectionFunc(Expression expression, FetchXmlExpressionVisitor visitor)
+    {
+        LambdaExpression projectionExpression =
+        visitor.IsGroupBy
+            ? new FetchXmlGroupProjectionRewriter(
+                visitor.GroupExpression,
+                visitor.GroupByExpression
+            ).Rewrite(expression)
+            : new FetchXmlProjectionRewriter().Rewrite(expression);
+        return projectionExpression.Compile();
+    }
+
+
     static TItem? ToItem<TItem>(JsonArray jsonArray, Delegate del) => ToEnumerable<TItem>(jsonArray, del).FirstOrDefault();
 
-    static IEnumerable<TItem> ToEnumerable<TItem>(JsonArray jsonArray, Delegate del) => jsonArray.Select(item => (TItem) del.DynamicInvoke(item)!)!;
+    static IEnumerable<TItem> ToEnumerable<TItem>(JsonArray jsonArray, Delegate del) => jsonArray.Select(item => (TItem)del.DynamicInvoke(item)!)!;
+
+    static DynamicsResult<TItem> ToResult<TItem>(JsonObject jsonObject, Delegate del)
+    {
+        var jsonArray = jsonObject["value"]!.AsArray();
+        var items = ToEnumerable<TItem>(jsonArray, del);
+        return new DynamicsResult<TItem>
+        {
+            Value = items.ToArray(),
+            Count = jsonObject.ContainsKey("@odata.count") ? jsonObject["@odata.count"]?.GetValue<int>() : null,
+            FetchXmlPagingCookie = jsonObject.ContainsKey("@Microsoft.Dynamics.CRM.fetchxmlpagingcookie") ?
+                jsonObject["@Microsoft.Dynamics.CRM.fetchxmlpagingcookie"]?.GetValue<string>() : null
+        };
+    }
 
     static void ThrowODataErrorIfItFits(string json)
     {
@@ -136,7 +172,8 @@ public class FetchXmlQueryProvider : IAsyncQueryProvider
         try
         {
             error = JsonSerializer.Deserialize<ODataError>(json,
-                new JsonSerializerOptions {
+                new JsonSerializerOptions
+                {
                     PropertyNameCaseInsensitive = true
                 });
         }
