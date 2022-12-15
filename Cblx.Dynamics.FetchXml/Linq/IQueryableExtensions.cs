@@ -3,6 +3,7 @@ using OData.Client.Abstractions;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
+using System.Xml.Linq;
 
 [assembly: InternalsVisibleTo("Cblx.Dynamics")]
 [assembly: InternalsVisibleTo("Cblx.Dynamics.FetchXml.Tests")]
@@ -62,10 +63,16 @@ public static class IQueryableExtensions{
         if (queryable is not FetchXmlQueryable<T> fetchXmlQueryable) { throw new InvalidOperationException("This Queryable is not a FetchXmlQueryable"); }
         var items = new List<T>();
         DynamicsResult<T>? result = null;
+        int page = 1;
         do
         {
-            result = await ToResultAsync(fetchXmlQueryable.WithPagingCookie(result?.FetchXmlPagingCookie));
+            result = await ToResultAsync(
+                fetchXmlQueryable
+                    .Page(page)
+                    .WithPagingCookie(result?.GetPagingCookie())
+            );
             items.AddRange(result.Value!);
+            page++;
         } while (string.IsNullOrEmpty(result.FetchXmlPagingCookie) is false);
         return items;
     }

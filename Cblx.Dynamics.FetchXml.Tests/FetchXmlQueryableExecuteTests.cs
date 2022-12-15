@@ -151,7 +151,7 @@ public class FetchXmlQueryableExecuteTests
 
         db.Provider.LastUrl.Should().Be(
             """
-            some_tables?fetchXml=<fetch mapping="logical">
+            some_tables?fetchXml=<fetch mapping="logical" page="1">
               <entity name="some_table" alias="t">
                 <attribute name="some_tableid" alias="t.Id" />
               </entity>

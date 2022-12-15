@@ -14,16 +14,16 @@ public static class DynamicsQueryable
         );
     }
 
-    //public static IQueryable<T> Page<T>(this IQueryable<T> queryable, int page)
-    //{
-    //    return queryable.Provider.CreateQuery<T>(
-    //       Expression.Call(
-    //           null,
-    //           typeof(DynamicsQueryable).GetMethod(nameof(Page))!.MakeGenericMethod(typeof(T)),
-    //           queryable.Expression,
-    //           Expression.Constant(page))
-    //   );
-    //}
+    public static IQueryable<T> Page<T>(this IQueryable<T> queryable, int page)
+    {
+        return queryable.Provider.CreateQuery<T>(
+           Expression.Call(
+               null,
+               typeof(DynamicsQueryable).GetMethod(nameof(Page))!.MakeGenericMethod(typeof(T)),
+               queryable.Expression,
+               Expression.Constant(page))
+       );
+    }
 
     public static IQueryable<T> WithPagingCookie<T>(this IQueryable<T> queryable, string? pagingCookie)
     {

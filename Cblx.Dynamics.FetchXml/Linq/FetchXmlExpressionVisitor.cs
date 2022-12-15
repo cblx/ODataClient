@@ -16,6 +16,7 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
     public Dictionary<string, XElement> EntityParametersElements { get; } = new();
     public XElement FetchElement { get; }
     public bool HasFormattedValues { get; private set; }
+    public bool IncludeAllAnnotations { get; private set; }
 
     public FetchXmlExpressionVisitor()
     {
@@ -62,6 +63,7 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
                 case { 
                     Name: nameof(DynamicsQueryable.LateMaterialize) 
                           or nameof(DynamicsQueryable.WithPagingCookie)
+                          or nameof(DynamicsQueryable.Page)
                 } m when m.DeclaringType == typeof(DynamicsQueryable):
                     ReadProjection(methodCallExpression.Arguments[0], fetchXml);
                     break;
@@ -165,10 +167,24 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
                 InitializeRootEntityFromChain(node);
                 FetchElement.SetAttributeValue("latematerialize", "true");
                 return node.Arguments[0];
+            case { Name: nameof(DynamicsQueryable.Page) } m when m.DeclaringType == typeof(DynamicsQueryable):
+                InitializeRootEntityFromChain(node);
+                IncludeAllAnnotations = true;
+                var page = (int)(node.Arguments[1] as ConstantExpression)!.Value!;
+                FetchElement.SetAttributeValue("page", page);
+                return node.Arguments[0];
             case { Name: nameof(DynamicsQueryable.WithPagingCookie) } m when m.DeclaringType == typeof(DynamicsQueryable):
                 InitializeRootEntityFromChain(node);
+                IncludeAllAnnotations = true;
                 var value = (string?)(node.Arguments[1] as ConstantExpression)!.Value;
-                FetchElement.SetAttributeValue("paging-cookie", value);
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    FetchElement.Attribute("paging-cookie")?.Remove();
+                }
+                else
+                {
+                    FetchElement.SetAttributeValue("paging-cookie", value);
+                }
                 return node.Arguments[0];
             default: return base.VisitMethodCall(node);
         }

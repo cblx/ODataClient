@@ -4,6 +4,7 @@ using System.Net;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Web;
 using System.Xml.Linq;
 using Cblx.Dynamics.Linq;
 using Cblx.OData.Client.Abstractions;
@@ -65,14 +66,19 @@ public class FetchXmlQueryProvider : IAsyncQueryProvider
         {
             throw new InvalidOperationException("Query cannot be execute without a HttpClient");
         }
-        string url = $"{visitor.Endpoint}?fetchXml={fetchXmlElement}";
+        string url = $"{visitor.Endpoint}?fetchXml={HttpUtility.UrlEncode(fetchXmlElement.ToString())}";
         var requestMessage = new HttpRequestMessage(HttpMethod.Get, url);
-        if (visitor.HasFormattedValues)
+        if (visitor.IncludeAllAnnotations)
+        {
+            // Pagination data will only return with all annotations enabled
+            requestMessage.Headers.Add("Prefer", $"odata.include-annotations={DynAnnotations.All}");
+        }
+        else if (visitor.HasFormattedValues)
         {
             requestMessage.Headers.Add("Prefer", $"odata.include-annotations={DynAnnotations.FormattedValue}");
         }
         var responseMessage = await _httpClient.SendAsync(requestMessage, cancellationToken);
-        LastUrl = url;
+        LastUrl = $"{visitor.Endpoint}?fetchXml={fetchXmlElement}";
         if (responseMessage.StatusCode is not HttpStatusCode.OK)
         {
             string json = await responseMessage.Content.ReadAsStringAsync(cancellationToken);
