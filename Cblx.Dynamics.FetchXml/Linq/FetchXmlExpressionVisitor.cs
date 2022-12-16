@@ -184,6 +184,11 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
                 else
                 {
                     FetchElement.SetAttributeValue("paging-cookie", value);
+                    string sanitizedPagingCookie = FetchElement
+                        .Attribute("paging-cookie")
+                        .ToString()[15..^1]
+                        .Replace("&", "%26");
+                    FetchElement.SetAttributeValue("paging-cookie", sanitizedPagingCookie);
                 }
                 return node.Arguments[0];
             default: return base.VisitMethodCall(node);

@@ -66,7 +66,8 @@ public class FetchXmlQueryProvider : IAsyncQueryProvider
         {
             throw new InvalidOperationException("Query cannot be execute without a HttpClient");
         }
-        string url = $"{visitor.Endpoint}?fetchXml={HttpUtility.UrlEncode(fetchXmlElement.ToString())}";
+        //string url = $"{visitor.Endpoint}?fetchXml={HttpUtility.UrlEncode(fetchXmlElement.ToString())}";
+        string url = $"{visitor.Endpoint}?fetchXml={fetchXmlElement}";
         var requestMessage = new HttpRequestMessage(HttpMethod.Get, url);
         if (visitor.IncludeAllAnnotations)
         {
