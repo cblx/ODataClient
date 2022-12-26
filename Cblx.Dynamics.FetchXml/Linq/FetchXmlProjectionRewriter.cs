@@ -40,16 +40,8 @@ public class FetchXmlProjectionRewriter : ExpressionVisitor
                 Expression body = projectionExpression.Body;
                 switch (body)
                 {
-                    case MemberExpression memberExpression:
-                        {
-                            Expression rewrittenNewExpression = Visit(memberExpression);
-                            return Expression.Lambda(rewrittenNewExpression, _jsonParameterExpression);
-                        }
-                    case NewExpression newExpression:
-                        {
-                            Expression rewrittenNewExpression = Visit(newExpression);
-                            return Expression.Lambda(rewrittenNewExpression, _jsonParameterExpression);
-                        }
+                    case MemberExpression or MemberInitExpression or NewExpression:
+                        return Expression.Lambda(Visit(body), _jsonParameterExpression);
                     case ParameterExpression parameterExpression
                         when parameterExpression.Type.IsDynamicsEntity():
                         {
@@ -59,7 +51,7 @@ public class FetchXmlProjectionRewriter : ExpressionVisitor
                                 null,
                                 createEntityMethod,
                                 _jsonParameterExpression//,
-                                //Expression.Constant(parameterExpression.Name)
+                                                        //Expression.Constant(parameterExpression.Name)
                             );
                             return Expression.Lambda(callCreateEntityExpression, _jsonParameterExpression);
                         }
@@ -79,7 +71,7 @@ public class FetchXmlProjectionRewriter : ExpressionVisitor
                         null,
                         createEntityMethod,
                         _jsonParameterExpression//,
-                        //Expression.Default(typeof(string))
+                                                //Expression.Default(typeof(string))
                     );
                     return Expression.Lambda(callCreateEntityExpression, _jsonParameterExpression);
                 }
@@ -92,7 +84,7 @@ public class FetchXmlProjectionRewriter : ExpressionVisitor
                         null,
                         createEntityMethod,
                         _jsonParameterExpression//,
-                        //Expression.Default(typeof(string))
+                                                //Expression.Default(typeof(string))
                     );
                     return Expression.Lambda(callCreateEntityExpression, _jsonParameterExpression);
                 }

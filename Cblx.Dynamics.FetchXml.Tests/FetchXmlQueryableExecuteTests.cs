@@ -62,6 +62,38 @@ public class FetchXmlQueryableExecuteTests
             """);
     }
 
+    class SelectNewKnownTypeTestDto
+    {
+        public Guid Id { get; set; }
+    }
+    [Fact]
+    public async Task SelectNewKnownTypeTest()
+    {
+        var db = GetSimpleMockDb(new JsonArray
+        {
+            new JsonObject
+            {
+                {"s.Id", _exampleId}
+            }
+        });
+
+        var items = await (from s in db.SomeTables
+                           select new SelectNewKnownTypeTestDto { Id = s.Id }).ToListAsync();
+
+        items
+            .Should()
+            .ContainSingle(s => s.Id == _exampleId);
+
+        db.Provider.LastUrl.Should().Be(
+            """
+            some_tables?fetchXml=<fetch mapping="logical">
+              <entity name="some_table" alias="s">
+                <attribute name="some_tableid" alias="s.Id" />
+              </entity>
+            </fetch>
+            """);
+    }
+
     [Fact]
     public async Task SelectNewToResultTest()
     {
@@ -181,7 +213,7 @@ public class FetchXmlQueryableExecuteTests
 
         db.Provider.LastUrl.Should().Be(
             """
-            some_tables?fetchXml=<fetch mapping="logical" paging-cookie="&lt;cookie pagenumber=&quot;2&quot; pagingcookie=&quot;%253ccookie%2520page%253d%25221%2522%253e%253cincidentid%2520last%253d%2522%257b13D5CA4B-6F83-EC11-8D21-000D3AC18FE1%257d%2522%2520first%253d%2522%257bFABFE1B8-9F14-EC11-B6E7-000D3A885032%257d%2522%2520%252f%253e%253c%252fcookie%253e&quot; istracking=&quot;False&quot; /&gt;">
+            some_tables?fetchXml=<fetch mapping="logical" paging-cookie="%26lt;cookie pagenumber=%26quot;2%26quot; pagingcookie=%26quot;%253ccookie%2520page%253d%25221%2522%253e%253cincidentid%2520last%253d%2522%257b13D5CA4B-6F83-EC11-8D21-000D3AC18FE1%257d%2522%2520first%253d%2522%257bFABFE1B8-9F14-EC11-B6E7-000D3A885032%257d%2522%2520%252f%253e%253c%252fcookie%253e%26quot; istracking=%26quot;False%26quot; /%26gt;">
               <entity name="some_table" alias="t">
                 <attribute name="some_tableid" alias="t.Id" />
               </entity>
@@ -211,7 +243,7 @@ public class FetchXmlQueryableExecuteTests
 
         db.Provider.LastUrl.Should().Be(
             """
-            some_tables?fetchXml=<fetch mapping="logical" paging-cookie="&lt;cookie pagenumber=&quot;2&quot; pagingcookie=&quot;%253ccookie%2520page%253d%25221%2522%253e%253cincidentid%2520last%253d%2522%257b13D5CA4B-6F83-EC11-8D21-000D3AC18FE1%257d%2522%2520first%253d%2522%257bFABFE1B8-9F14-EC11-B6E7-000D3A885032%257d%2522%2520%252f%253e%253c%252fcookie%253e&quot; istracking=&quot;False&quot; /&gt;">
+            some_tables?fetchXml=<fetch mapping="logical" paging-cookie="%26lt;cookie pagenumber=%26quot;2%26quot; pagingcookie=%26quot;%253ccookie%2520page%253d%25221%2522%253e%253cincidentid%2520last%253d%2522%257b13D5CA4B-6F83-EC11-8D21-000D3AC18FE1%257d%2522%2520first%253d%2522%257bFABFE1B8-9F14-EC11-B6E7-000D3A885032%257d%2522%2520%252f%253e%253c%252fcookie%253e%26quot; istracking=%26quot;False%26quot; /%26gt;">
               <entity name="some_table">
                 <attribute name="some_tableid" alias="t.Id" />
               </entity>
