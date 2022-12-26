@@ -44,12 +44,17 @@ public static class IQueryableExtensions{
         fetchXmlQueryable = (fetchXmlQueryable.Where(predicate).Take(1) as FetchXmlQueryable<T>)!;
         return await (fetchXmlQueryable.Provider as FetchXmlQueryProvider)!.ExecuteAsync<T>(fetchXmlQueryable.Expression);
     }
-
+    
     internal static async Task<List<T>> ToListAsync<T>(this IQueryable<T> queryable)
+    {
+        return (await queryable.ToArrayAsync()).ToList();
+    }
+
+    internal static async Task<T[]> ToArrayAsync<T>(this IQueryable<T> queryable)
     {
         if (queryable is not FetchXmlQueryable<T> fetchXmlQueryable) { throw new InvalidOperationException("This Queryable is not a FetchXmlQueryable"); }
         var items = await (fetchXmlQueryable.Provider as FetchXmlQueryProvider)!.ExecuteAsync<IEnumerable<T>>(fetchXmlQueryable.Expression);
-        return items.ToList();
+        return items.ToArray();
     }
 
     internal static async Task<DynamicsResult<T>> ToResultAsync<T>(this IQueryable<T> queryable)

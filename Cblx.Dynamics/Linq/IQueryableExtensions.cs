@@ -32,6 +32,13 @@ public static class IQueryableExtensions
         _ => throw _invalid
     };
 
+    public static Task<T[]> ToArrayAsync<T>(this IQueryable<T> queryable) => queryable switch
+    {
+        ODataQueryable<T> => ODataXt.ToArrayAsync(queryable),
+        FetchXmlQueryable<T> => FetchXmlXt.ToArrayAsync(queryable),
+        _ => throw _invalid
+    };
+
     public static Task<List<T>> ToUnlimitedListAsync<T>(this IQueryable<T> queryable) => queryable switch
     {
         ODataQueryable<T> => throw new NotImplementedException("ToUnlimitedListAsync is not yet implemented for OData Queryables"),
