@@ -48,24 +48,28 @@ namespace Cblx.OData.Client
             markedForRemove.Add(id.Value);
         }
 
-        public void Attach(object? o)
+        public TEntity? AttachOrGetCurrent<TEntity>(TEntity? e)
         {
-            if(o is null){ return; }
-            Guid? id = GetId(o);
+            if (e is null) { return e; }
+            Guid? id = GetId(e);
             if (id is null)
             {
                 throw new InvalidOperationException("Could not find Id for attached entity");
             }
-            states.Add(id.Value, JsonSerializer.Serialize(o, o.GetType(), options));
-            entities.Add(id.Value, o);
+            if (entities.TryGetValue(id.Value, out object? value)) { return (TEntity)value; }
+            states.Add(id.Value, JsonSerializer.Serialize(e, typeof(TEntity), options));
+            entities.Add(id.Value, e);
+            return e;
         }
 
-        public void AttachRange(IEnumerable<object?> items)
+        public IEnumerable<TEntity?> AttachOrGetCurrentRange<TEntity>(IEnumerable<TEntity?> items)
         {
-            foreach (var o in items)
+            var list = new List<TEntity?>();
+            foreach (var e in items)
             {
-                Attach(o);
+               list.Add(AttachOrGetCurrent(e));
             }
+            return list.ToArray();
         }
 
         internal PropertyInfo GetIdProp(object entity)

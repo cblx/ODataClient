@@ -55,7 +55,7 @@ public class ChangeTrackerTests
         var changeTracker = new ChangeTracker();
         var trackedClass = new TrackedClass();
         trackedClass.Name = "João";
-        changeTracker.Attach(trackedClass);
+        changeTracker.AttachOrGetCurrent(trackedClass);
         Change change = changeTracker.GetChange(trackedClass.Id);
         Assert.Null(change);
     }
@@ -65,7 +65,7 @@ public class ChangeTrackerTests
     {
         var changeTracker = new ChangeTracker();
         var trackedClass = new TrackedClass();
-        changeTracker.Attach(trackedClass);
+        changeTracker.AttachOrGetCurrent(trackedClass);
         trackedClass.Name = "João";
         Change change = changeTracker.GetChange(trackedClass.Id);
         Assert.Equal(ChangeType.Update, change.ChangeType);
@@ -77,7 +77,7 @@ public class ChangeTrackerTests
     {
         var changeTracker = new ChangeTracker();
         var trackedClass = (TrackedClassPrivates)Activator.CreateInstance(typeof(TrackedClassPrivates), true);
-        changeTracker.Attach(trackedClass);
+        changeTracker.AttachOrGetCurrent(trackedClass);
         trackedClass.ChangeName("João");
         Change change = changeTracker.GetChange(trackedClass.Id);
         Assert.Equal(ChangeType.Update, change.ChangeType);
@@ -89,7 +89,7 @@ public class ChangeTrackerTests
     {
         var changeTracker = new ChangeTracker();
         var trackedClass = (TrackedClassPrivates)Activator.CreateInstance(typeof(TrackedClassPrivates), true);
-        changeTracker.Attach(trackedClass);
+        changeTracker.AttachOrGetCurrent(trackedClass);
         trackedClass.ChangeName("João");
         trackedClass.ChangeNotTracked("João");
         Change change = changeTracker.GetChange(trackedClass.Id);

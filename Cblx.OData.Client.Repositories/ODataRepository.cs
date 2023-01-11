@@ -48,8 +48,7 @@ namespace Cblx.OData.Client
                 // ObjectDoesNotExist = 0x80040217
                 return null;
             }
-            if (e != null) { changeTracker.Attach(e); }
-            return e;
+            return changeTracker.AttachOrGetCurrent(e);
         }
 
         public void Add(TEntity entity)
