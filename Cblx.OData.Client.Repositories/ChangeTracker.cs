@@ -62,14 +62,15 @@ namespace Cblx.OData.Client
             return e;
         }
 
-        public IEnumerable<TEntity?> AttachOrGetCurrentRange<TEntity>(IEnumerable<TEntity?> items)
+        public IEnumerable<TEntity> AttachOrGetCurrentRange<TEntity>(IEnumerable<TEntity?> items)
         {
             var list = new List<TEntity?>();
             foreach (var e in items)
             {
+                if(e is null) { continue; }
                list.Add(AttachOrGetCurrent(e));
             }
-            return list.ToArray();
+            return list.ToArray()!;
         }
 
         internal PropertyInfo GetIdProp(object entity)

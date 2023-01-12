@@ -106,13 +106,13 @@ public class Tests
                   new Dictionary<string, object>
                   {
                       { "id", parentId },
-                      { 
-                          "children", 
-                          new[] { 
-                              new Dictionary<string, object>{ 
-                                  { "id", childId } 
-                              } 
-                          } 
+                      {
+                          "children",
+                          new[] {
+                              new Dictionary<string, object>{
+                                  { "id", childId }
+                              }
+                          }
                       }
                   }
             }
@@ -130,7 +130,8 @@ public class Tests
     }
 
 
-    private ODataClient CreateODataClientWithResultValue(object value) {
+    private ODataClient CreateODataClientWithResultValue(object value)
+    {
         var data = new { value };
         var json = JsonSerializer.Serialize(data, _jsonMockDataOptions);
         var messageHandler = new MockHttpMessageHandler(json);
@@ -267,15 +268,15 @@ public class Tests
     {
         var data = new
         {
-           value = new[]
+            value = new[]
            {
-                new some_entity{ 
+                new some_entity{
                     id = Guid.NewGuid(),
-                    children = new some_entity[]{ 
+                    children = new some_entity[]{
                         new some_entity{
                             id = Guid.NewGuid()
                         }
-                    } 
+                    }
                 },
                 new some_entity{
                     id = Guid.NewGuid(),
@@ -379,7 +380,7 @@ public class Tests
         item.Condition.Should().BeTrue();
     }
 
-  
+
 
     [Fact]
     public async Task ResultWithMoreThan1ItemTest()
@@ -394,9 +395,9 @@ public class Tests
         };
         var json = JsonSerializer.Serialize(data, _jsonMockDataOptions);
         var messageHandler = new MockHttpMessageHandler(json);
-        var httpClient = new HttpClient(messageHandler) {  BaseAddress = new Uri("http://localhost") };
+        var httpClient = new HttpClient(messageHandler) { BaseAddress = new Uri("http://localhost") };
         var oDataClient = new ODataClient(httpClient);
-        var set = new ODataSet<some_entity>(oDataClient , "some_entities");
+        var set = new ODataSet<some_entity>(oDataClient, "some_entities");
         var items = await set.Select(e => new SomeEntity { Id = e.id }).ToArrayAsync();
         items.Should().HaveCount(2);
         items.ElementAt(0).Id.Should().Be(data.value[0].id);
@@ -568,7 +569,7 @@ public class Tests
         {
             value = new[]
             {
-                new some_entity{ 
+                new some_entity{
                         children = new[]{ new some_entity { name = "Child John"} }
                 },
             }
@@ -608,7 +609,8 @@ public class Tests
         var set = new ODataSet<some_entity>(oDataClient, "some_entities");
 
 
-        var item = await set.Select(e => new SomeEntity { 
+        var item = await set.Select(e => new SomeEntity
+        {
             Id = e.id,
             Name = SomeMethod(e.name)
         }).FirstOrDefaultAsync();
@@ -902,7 +904,7 @@ public class Tests
         Assert.Equal("some_entities?$select=stronglyId", str);
     }
 
-    
+
     [Fact]
     public void ExpandOtherTypeChildTest()
     {
@@ -1813,6 +1815,7 @@ public class Tests
         Assert.Equal("grandchildx", result.Value.First().Child.Child.Name);
     }
 
+ 
     [Fact]
     public async Task GetPicklistOptionsTest()
     {
@@ -1827,9 +1830,41 @@ public class Tests
         }),
             "some_entities");
 
-        var picklistOptions = await set.GetPicklistOptionsAsync(e => e.Age);
+        var picklistOptions = await set.GetPicklistOptionsAsync<int>(e => e.Age);
         picklistOptions.Should().HaveCount(18);
     }
+
+    [Fact]
+    public async Task GetEnumPicklistOptionsTest()
+    {
+        string json = """
+            {"@odata.context":"https://x.api.crm2.dynamics.com/api/data/v9.1/$metadata#EntityDefinitions('some_entity')/Attributes/Microsoft.Dynamics.CRM.PicklistAttributeMetadata(LogicalName,OptionSet(Options))/$entity","LogicalName":"my_option","MetadataId":"90ad1304-8c5f-4d4f-b649-87090a9910cf","OptionSet":{"MetadataId":"6224fb08-2891-e811-8140-e0071b6f9031","Options":[{"Value":808620017,"Color":"#0000ff","IsManaged":false,"ExternalValue":"","ParentValues":[],"MetadataId":null,"HasChanged":null,"Label":{"LocalizedLabels":[{"Label":"Amasia","LanguageCode":1046,"IsManaged":false,"MetadataId":"5a9e8595-238f-4e85-a667-0c537a2f6610","HasChanged":null}],"UserLocalizedLabel":{"Label":"Amasia","LanguageCode":1046,"IsManaged":false,"MetadataId":"5a9e8595-238f-4e85-a667-0c537a2f6610","HasChanged":null}},"Description":{"LocalizedLabels":[],"UserLocalizedLabel":null}},{"Value":808620000,"Color":"#0000ff","IsManaged":false,"ExternalValue":"","ParentValues":[],"MetadataId":null,"HasChanged":null,"Label":{"LocalizedLabels":[{"Label":"Compõe Renda","LanguageCode":1046,"IsManaged":false,"MetadataId":"5f0beb02-2891-e811-8140-e0071b6f9031","HasChanged":null}],"UserLocalizedLabel":{"Label":"Compõe Renda","LanguageCode":1046,"IsManaged":false,"MetadataId":"5f0beb02-2891-e811-8140-e0071b6f9031","HasChanged":null}},"Description":{"LocalizedLabels":[],"UserLocalizedLabel":null}},{"Value":808620001,"Color":"#0000ff","IsManaged":false,"ExternalValue":"","ParentValues":[],"MetadataId":null,"HasChanged":null,"Label":{"LocalizedLabels":[{"Label":"Não Compõe Renda ou Não tem CPF","LanguageCode":1046,"IsManaged":false,"MetadataId":"600beb02-2891-e811-8140-e0071b6f9031","HasChanged":null}],"UserLocalizedLabel":{"Label":"Não Compõe Renda ou Não tem CPF","LanguageCode":1046,"IsManaged":false,"MetadataId":"600beb02-2891-e811-8140-e0071b6f9031","HasChanged":null}},"Description":{"LocalizedLabels":[],"UserLocalizedLabel":null}},{"Value":808620002,"Color":"#0000ff","IsManaged":false,"ExternalValue":"","ParentValues":[],"MetadataId":null,"HasChanged":null,"Label":{"LocalizedLabels":[{"Label":"Titular","LanguageCode":1046,"IsManaged":false,"MetadataId":"610beb02-2891-e811-8140-e0071b6f9031","HasChanged":null}],"UserLocalizedLabel":{"Label":"Titular","LanguageCode":1046,"IsManaged":false,"MetadataId":"610beb02-2891-e811-8140-e0071b6f9031","HasChanged":null}},"Description":{"LocalizedLabels":[],"UserLocalizedLabel":null}},{"Value":808620003,"Color":"#0000ff","IsManaged":false,"ExternalValue":"","ParentValues":[],"MetadataId":null,"HasChanged":null,"Label":{"LocalizedLabels":[{"Label":"Companheira","LanguageCode":1046,"IsManaged":false,"MetadataId":"620beb02-2891-e811-8140-e0071b6f9031","HasChanged":null}],"UserLocalizedLabel":{"Label":"Companheira","LanguageCode":1046,"IsManaged":false,"MetadataId":"620beb02-2891-e811-8140-e0071b6f9031","HasChanged":null}},"Description":{"LocalizedLabels":[],"UserLocalizedLabel":null}},{"Value":808620004,"Color":"#0000ff","IsManaged":false,"ExternalValue":"","ParentValues":[],"MetadataId":null,"HasChanged":null,"Label":{"LocalizedLabels":[{"Label":"Companheiro","LanguageCode":1046,"IsManaged":false,"MetadataId":"630beb02-2891-e811-8140-e0071b6f9031","HasChanged":null}],"UserLocalizedLabel":{"Label":"Companheiro","LanguageCode":1046,"IsManaged":false,"MetadataId":"630beb02-2891-e811-8140-e0071b6f9031","HasChanged":null}},"Description":{"LocalizedLabels":[],"UserLocalizedLabel":null}},{"Value":808620005,"Color":"#0000ff","IsManaged":false,"ExternalValue":"","ParentValues":[],"MetadataId":null,"HasChanged":null,"Label":{"LocalizedLabels":[{"Label":"Cônjuge","LanguageCode":1046,"IsManaged":false,"MetadataId":"640beb02-2891-e811-8140-e0071b6f9031","HasChanged":null}],"UserLocalizedLabel":{"Label":"Cônjuge","LanguageCode":1046,"IsManaged":false,"MetadataId":"640beb02-2891-e811-8140-e0071b6f9031","HasChanged":null}},"Description":{"LocalizedLabels":[],"UserLocalizedLabel":null}},{"Value":808620006,"Color":"#0000ff","IsManaged":false,"ExternalValue":"","ParentValues":[],"MetadataId":null,"HasChanged":null,"Label":{"LocalizedLabels":[{"Label":"Cônjuge (CP)","LanguageCode":1046,"IsManaged":false,"MetadataId":"650beb02-2891-e811-8140-e0071b6f9031","HasChanged":null}],"UserLocalizedLabel":{"Label":"Cônjuge (CP)","LanguageCode":1046,"IsManaged":false,"MetadataId":"650beb02-2891-e811-8140-e0071b6f9031","HasChanged":null}},"Description":{"LocalizedLabels":[],"UserLocalizedLabel":null}},{"Value":808620007,"Color":"#0000ff","IsManaged":false,"ExternalValue":"","ParentValues":[],"MetadataId":null,"HasChanged":null,"Label":{"LocalizedLabels":[{"Label":"Filha","LanguageCode":1046,"IsManaged":false,"MetadataId":"660beb02-2891-e811-8140-e0071b6f9031","HasChanged":null}],"UserLocalizedLabel":{"Label":"Filha","LanguageCode":1046,"IsManaged":false,"MetadataId":"660beb02-2891-e811-8140-e0071b6f9031","HasChanged":null}},"Description":{"LocalizedLabels":[],"UserLocalizedLabel":null}},{"Value":808620008,"Color":"#0000ff","IsManaged":false,"ExternalValue":"","ParentValues":[],"MetadataId":null,"HasChanged":null,"Label":{"LocalizedLabels":[{"Label":"Filho","LanguageCode":1046,"IsManaged":false,"MetadataId":"670beb02-2891-e811-8140-e0071b6f9031","HasChanged":null}],"UserLocalizedLabel":{"Label":"Filho","LanguageCode":1046,"IsManaged":false,"MetadataId":"670beb02-2891-e811-8140-e0071b6f9031","HasChanged":null}},"Description":{"LocalizedLabels":[],"UserLocalizedLabel":null}},{"Value":808620009,"Color":"#0000ff","IsManaged":false,"ExternalValue":"","ParentValues":[],"MetadataId":null,"HasChanged":null,"Label":{"LocalizedLabels":[{"Label":"Irmã","LanguageCode":1046,"IsManaged":false,"MetadataId":"680beb02-2891-e811-8140-e0071b6f9031","HasChanged":null}],"UserLocalizedLabel":{"Label":"Irmã","LanguageCode":1046,"IsManaged":false,"MetadataId":"680beb02-2891-e811-8140-e0071b6f9031","HasChanged":null}},"Description":{"LocalizedLabels":[],"UserLocalizedLabel":null}},{"Value":808620010,"Color":"#0000ff","IsManaged":false,"ExternalValue":"","ParentValues":[],"MetadataId":null,"HasChanged":null,"Label":{"LocalizedLabels":[{"Label":"Irmão","LanguageCode":1046,"IsManaged":false,"MetadataId":"690beb02-2891-e811-8140-e0071b6f9031","HasChanged":null}],"UserLocalizedLabel":{"Label":"Irmão","LanguageCode":1046,"IsManaged":false,"MetadataId":"690beb02-2891-e811-8140-e0071b6f9031","HasChanged":null}},"Description":{"LocalizedLabels":[],"UserLocalizedLabel":null}},{"Value":808620011,"Color":"#0000ff","IsManaged":false,"ExternalValue":"","ParentValues":[],"MetadataId":null,"HasChanged":null,"Label":{"LocalizedLabels":[{"Label":"Mãe","LanguageCode":1046,"IsManaged":false,"MetadataId":"6a0beb02-2891-e811-8140-e0071b6f9031","HasChanged":null}],"UserLocalizedLabel":{"Label":"Mãe","LanguageCode":1046,"IsManaged":false,"MetadataId":"6a0beb02-2891-e811-8140-e0071b6f9031","HasChanged":null}},"Description":{"LocalizedLabels":[],"UserLocalizedLabel":null}},{"Value":808620012,"Color":"#0000ff","IsManaged":false,"ExternalValue":"","ParentValues":[],"MetadataId":null,"HasChanged":null,"Label":{"LocalizedLabels":[{"Label":"Pai","LanguageCode":1046,"IsManaged":false,"MetadataId":"6b0beb02-2891-e811-8140-e0071b6f9031","HasChanged":null}],"UserLocalizedLabel":{"Label":"Pai","LanguageCode":1046,"IsManaged":false,"MetadataId":"6b0beb02-2891-e811-8140-e0071b6f9031","HasChanged":null}},"Description":{"LocalizedLabels":[],"UserLocalizedLabel":null}},{"Value":808620013,"Color":"#0000ff","IsManaged":false,"ExternalValue":"","ParentValues":[],"MetadataId":null,"HasChanged":null,"Label":{"LocalizedLabels":[{"Label":"Sogra","LanguageCode":1046,"IsManaged":false,"MetadataId":"6c0beb02-2891-e811-8140-e0071b6f9031","HasChanged":null}],"UserLocalizedLabel":{"Label":"Sogra","LanguageCode":1046,"IsManaged":false,"MetadataId":"6c0beb02-2891-e811-8140-e0071b6f9031","HasChanged":null}},"Description":{"LocalizedLabels":[],"UserLocalizedLabel":null}},{"Value":808620014,"Color":"#0000ff","IsManaged":false,"ExternalValue":"","ParentValues":[],"MetadataId":null,"HasChanged":null,"Label":{"LocalizedLabels":[{"Label":"Sogro","LanguageCode":1046,"IsManaged":false,"MetadataId":"6d0beb02-2891-e811-8140-e0071b6f9031","HasChanged":null}],"UserLocalizedLabel":{"Label":"Sogro","LanguageCode":1046,"IsManaged":false,"MetadataId":"6d0beb02-2891-e811-8140-e0071b6f9031","HasChanged":null}},"Description":{"LocalizedLabels":[],"UserLocalizedLabel":null}},{"Value":808620015,"Color":"#0000ff","IsManaged":false,"ExternalValue":"","ParentValues":[],"MetadataId":null,"HasChanged":null,"Label":{"LocalizedLabels":[{"Label":"Não Informado","LanguageCode":1046,"IsManaged":false,"MetadataId":"6e0beb02-2891-e811-8140-e0071b6f9031","HasChanged":null}],"UserLocalizedLabel":{"Label":"Não Informado","LanguageCode":1046,"IsManaged":false,"MetadataId":"6e0beb02-2891-e811-8140-e0071b6f9031","HasChanged":null}},"Description":{"LocalizedLabels":[],"UserLocalizedLabel":null}},{"Value":808620016,"Color":"#0000ff","IsManaged":false,"ExternalValue":"","ParentValues":[],"MetadataId":null,"HasChanged":null,"Label":{"LocalizedLabels":[{"Label":"Outros","LanguageCode":1046,"IsManaged":false,"MetadataId":"6f0beb02-2891-e811-8140-e0071b6f9031","HasChanged":null}],"UserLocalizedLabel":{"Label":"Outros","LanguageCode":1046,"IsManaged":false,"MetadataId":"6f0beb02-2891-e811-8140-e0071b6f9031","HasChanged":null}},"Description":{"LocalizedLabels":[],"UserLocalizedLabel":null}}]}}
+        """;
+
+        var set = new ODataSet<TblEntityWithEnum>(new(new HttpClient(
+                new MockHttpMessageHandler(json, HttpStatusCode.BadRequest))
+        {
+            BaseAddress = new Uri("http://localhost")
+        }),
+            "some_entities");
+
+        var picklistOptions = await set.GetPicklistOptionsAsync<SomeOptions>(e => e.MyOption);
+        picklistOptions.Should().HaveCount(18);
+    }
+
+    [ODataEndpoint("some_entities")]
+    [DynamicsEntity("some_entity")]
+    public class TblEntityWithEnum
+    {
+        [JsonPropertyName("my_option")]
+        public SomeOptions MyOption { get; set; }
+    }
+
+    public enum SomeOptions
+    {
+        Option1
+    }
+
 
     [Fact]
     public async Task GetStatusCodePicklistOptionsTest()
@@ -1845,7 +1880,7 @@ public class Tests
         }),
             "some_entities");
 
-        var picklistOptions = await set.GetPicklistOptionsAsync(e => e.StatusCode);
+        var picklistOptions = await set.GetPicklistOptionsAsync<int>(e => e.StatusCode);
         picklistOptions.Should().HaveCount(43);
     }
 

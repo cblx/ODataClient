@@ -66,7 +66,7 @@ public class ODataSet<TSource> : IODataSet<TSource>
     }
 
     public Task<ODataResult<TSource>> ToResultAsync() => ToResultAsync<TSource>();
-    
+
     public async Task<ODataResult<TEntity>> ToResultAsync<TEntity>() where TEntity : class
     {
         var selectAndExpandParser = new SelectAndExpandParser<TSource, TEntity>();
@@ -224,8 +224,40 @@ public class ODataSet<TSource> : IODataSet<TSource>
         return Get<TEntity>(CreateFindString<TEntity>(id))!;
     }
 
-  
-    public async Task<PicklistOption[]> GetPicklistOptionsAsync(Expression<Func<TSource, object?>> propertyExpression)
+    public async Task<PicklistOption[]> GetNonGenericPicklistOptionsAsync(Expression<Func<TSource, object?>> propertyExpression)
+    {
+        var jsonArray = await GetPicklistOptionsJsonArray(propertyExpression);
+        var picklistOptions = new List<PicklistOption>();
+        foreach (var item in jsonArray!)
+        {
+            picklistOptions.Add(new PicklistOption
+            {
+                Text = item!["Label"]!["LocalizedLabels"]![0]!["Label"]!.GetValue<string>(),
+                Value = item["Value"]!.GetValue<int>()
+            });
+        }
+        return picklistOptions.ToArray();
+    }
+
+    public async Task<PicklistOption<T>[]> GetPicklistOptionsAsync<T>(Expression<Func<TSource, T?>> propertyExpression) where T : struct
+    {
+        var jsonArray = await GetPicklistOptionsJsonArray(propertyExpression);
+        var picklistOptions = new List<PicklistOption<T>>();
+        Func<JsonNode, T> getValue = typeof(T).IsEnum ? 
+            (JsonNode node) => (T)((object)node["Value"]!.GetValue<int>()) :
+            (JsonNode node) => node["Value"]!.GetValue<T>();
+        foreach (var item in jsonArray!)
+        {
+            picklistOptions.Add(new PicklistOption<T>
+            {
+                Text = item!["Label"]!["LocalizedLabels"]![0]!["Label"]!.GetValue<string>(),
+                Value = getValue(item)
+            });
+        }
+        return picklistOptions.ToArray();
+    }
+
+    private async Task<JsonArray> GetPicklistOptionsJsonArray<T>(Expression<Func<TSource, T?>> propertyExpression)
     {
         string? entityLogicalName = typeof(TSource).GetCustomAttribute<DynamicsEntityAttribute>()?.Name;
         if (entityLogicalName is null)
@@ -259,16 +291,7 @@ public class ODataSet<TSource> : IODataSet<TSource>
             jsonObject = jsonObject["value"]!.AsArray()!.First()!.AsObject();
         }
         var jsonArray = jsonObject!["OptionSet"]!["Options"] as JsonArray;
-        var picklistOptions = new List<PicklistOption>();
-        foreach (var item in jsonArray!)
-        {
-            picklistOptions.Add(new PicklistOption
-            {
-                Text = item!["Label"]!["LocalizedLabels"]![0]!["Label"]!.GetValue<string>(),
-                Value = item["Value"]!.GetValue<int>()
-            });
-        }
-        return picklistOptions.ToArray();
+        return jsonArray!;
     }
 
     private async Task<ODataResult<TSource>> Get(string url)

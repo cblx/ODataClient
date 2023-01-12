@@ -53,6 +53,8 @@ public interface IODataSet<TSource>
     Task<ODataResult<TEntity>> ToResultAsync<TEntity>() where TEntity : class;
     Task<TSource?> FirstOrDefaultAsync();
     Task<TEntity?> FirstOrDefaultAsync<TEntity>() where TEntity : class;
-    Task<PicklistOption[]> GetPicklistOptionsAsync(Expression<Func<TSource, object?>> propertyExpression);
+    Task<PicklistOption<T>[]> GetPicklistOptionsAsync<T>(Expression<Func<TSource, T?>> propertyExpression) where T: struct;
+    [Obsolete("Use the generic version")]
+    Task<PicklistOption[]> GetNonGenericPicklistOptionsAsync(Expression<Func<TSource, object?>> propertyExpression);
 }
 
