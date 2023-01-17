@@ -233,7 +233,7 @@ public class ODataSet<TSource> : IODataSet<TSource>
             picklistOptions.Add(new PicklistOption
             {
                 Text = item!["Label"]!["LocalizedLabels"]![0]!["Label"]!.GetValue<string>(),
-                Value = item["Value"]!.GetValue<int>()
+                RawValue = item["Value"]!.GetValue<int>()
             });
         }
         return picklistOptions.ToArray();
@@ -243,15 +243,12 @@ public class ODataSet<TSource> : IODataSet<TSource>
     {
         var jsonArray = await GetPicklistOptionsJsonArray(propertyExpression);
         var picklistOptions = new List<PicklistOption<T>>();
-        Func<JsonNode, T> getValue = typeof(T).IsEnum ? 
-            (JsonNode node) => (T)((object)node["Value"]!.GetValue<int>()) :
-            (JsonNode node) => node["Value"]!.GetValue<T>();
         foreach (var item in jsonArray!)
         {
             picklistOptions.Add(new PicklistOption<T>
             {
                 Text = item!["Label"]!["LocalizedLabels"]![0]!["Label"]!.GetValue<string>(),
-                Value = getValue(item)
+                RawValue = item["Value"]!.GetValue<int>()
             });
         }
         return picklistOptions.ToArray();
