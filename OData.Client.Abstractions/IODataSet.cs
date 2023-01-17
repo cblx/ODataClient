@@ -56,5 +56,7 @@ public interface IODataSet<TSource>
     Task<PicklistOption<T>[]> GetPicklistOptionsAsync<T>(Expression<Func<TSource, T?>> propertyExpression) where T: struct;
     [Obsolete("Use the generic version")]
     Task<PicklistOption[]> GetNonGenericPicklistOptionsAsync(Expression<Func<TSource, object?>> propertyExpression);
+    Task<PicklistOption<TOption>[]> GetMultiSelectPicklistOptionsAsync<TOption>(Expression<Func<TSource, string?>> propertyExpression) where TOption : struct, Enum;
+    Task<PicklistOption[]> GetNonGenericMultiSelectPicklistOptionsAsync(Expression<Func<TSource, string?>> propertyExpression);
 }
 

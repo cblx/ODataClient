@@ -233,7 +233,40 @@ public class ODataSet<TSource> : IODataSet<TSource>
             picklistOptions.Add(new PicklistOption
             {
                 Text = item!["Label"]!["LocalizedLabels"]![0]!["Label"]!.GetValue<string>(),
-                RawValue = item["Value"]!.GetValue<int>()
+                Value = item["Value"]!.GetValue<int>()
+            });
+        }
+        return picklistOptions.ToArray();
+    }
+
+    public async Task<PicklistOption[]> GetNonGenericMultiSelectPicklistOptionsAsync(Expression<Func<TSource, string?>> propertyExpression)
+    {
+        var jsonArray = await GetMultiSelectPicklistOptionsJsonArray(propertyExpression);
+        var picklistOptions = new List<PicklistOption>();
+        foreach (var item in jsonArray!)
+        {
+            picklistOptions.Add(new PicklistOption
+            {
+                Text = item!["Label"]!["LocalizedLabels"]![0]!["Label"]!.GetValue<string>(),
+                Value = item["Value"]!.GetValue<int>()
+            });
+        }
+        return picklistOptions.ToArray();
+    }
+
+    public async Task<PicklistOption<TOption>[]> GetMultiSelectPicklistOptionsAsync<TOption>(Expression<Func<TSource, string?>> propertyExpression) where TOption : struct, Enum
+    {
+        var jsonArray = await GetPicklistOptionsJsonArray(propertyExpression);
+        var picklistOptions = new List<PicklistOption<TOption>>();
+        Func<JsonNode, TOption> getValue = typeof(TOption).IsEnum ?
+            (JsonNode node) => (TOption)((object)node["Value"]!.GetValue<int>()) :
+            (JsonNode node) => node["Value"]!.GetValue<TOption>();
+        foreach (var item in jsonArray!)
+        {
+            picklistOptions.Add(new PicklistOption<TOption>
+            {
+                Text = item!["Label"]!["LocalizedLabels"]![0]!["Label"]!.GetValue<string>(),
+                Value = getValue(item)
             });
         }
         return picklistOptions.ToArray();
@@ -243,12 +276,15 @@ public class ODataSet<TSource> : IODataSet<TSource>
     {
         var jsonArray = await GetPicklistOptionsJsonArray(propertyExpression);
         var picklistOptions = new List<PicklistOption<T>>();
+        Func<JsonNode, T> getValue = typeof(T).IsEnum ? 
+            (JsonNode node) => (T)((object)node["Value"]!.GetValue<int>()) :
+            (JsonNode node) => node["Value"]!.GetValue<T>();
         foreach (var item in jsonArray!)
         {
             picklistOptions.Add(new PicklistOption<T>
             {
                 Text = item!["Label"]!["LocalizedLabels"]![0]!["Label"]!.GetValue<string>(),
-                RawValue = item["Value"]!.GetValue<int>()
+                Value = getValue(item)
             });
         }
         return picklistOptions.ToArray();
@@ -278,6 +314,37 @@ public class ODataSet<TSource> : IODataSet<TSource>
                 "statuscode " => $"EntityDefinitions(LogicalName='{entityLogicalName}')/Attributes/Microsoft.Dynamics.CRM.StatusAttributeMetadata?$select=LogicalName&$expand=OptionSet($select=Options)",
                 _ => $"EntityDefinitions(LogicalName='{entityLogicalName}')/Attributes(LogicalName='{attributeLogicalName}')/Microsoft.Dynamics.CRM.PicklistAttributeMetadata?$select=LogicalName&$expand=OptionSet($select=Options)"
             };
+
+        var requestMessage = new HttpRequestMessage(HttpMethod.Get, uri);
+        HttpResponseMessage responseMessage = await client.Invoker.SendAsync(requestMessage, default);
+        var jsonObject = await JsonSerializer.DeserializeAsync<JsonObject>(await responseMessage.Content.ReadAsStreamAsync());
+        // when searching for statuscode options, we'll get it inside an array "value"
+        if (jsonObject!.ContainsKey("value"))
+        {
+            jsonObject = jsonObject["value"]!.AsArray()!.First()!.AsObject();
+        }
+        var jsonArray = jsonObject!["OptionSet"]!["Options"] as JsonArray;
+        return jsonArray!;
+    }
+
+    private async Task<JsonArray> GetMultiSelectPicklistOptionsJsonArray(Expression<Func<TSource, string?>> propertyExpression)
+    {
+        string? entityLogicalName = typeof(TSource).GetCustomAttribute<DynamicsEntityAttribute>()?.Name;
+        if (entityLogicalName is null)
+        {
+            throw new InvalidOperationException("You must annotate source class with [DynamicsEntity] to use this method");
+        }
+        Expression memberExpression = propertyExpression.Body;
+        if (memberExpression is UnaryExpression unaryExpression)
+        {
+            memberExpression = unaryExpression.Operand;
+        }
+        string attributeLogicalName = (memberExpression as MemberExpression)!
+            .Member!
+            .GetCustomAttribute<JsonPropertyNameAttribute>()!
+            .Name;
+
+        string uri = $"EntityDefinitions(LogicalName='{entityLogicalName}')/Attributes(LogicalName='{attributeLogicalName}')/Microsoft.Dynamics.CRM.MultiSelectPicklistAttributeMetadata?$select=LogicalName&$expand=OptionSet($select=Options)";
 
         var requestMessage = new HttpRequestMessage(HttpMethod.Get, uri);
         HttpResponseMessage responseMessage = await client.Invoker.SendAsync(requestMessage, default);
