@@ -467,6 +467,7 @@ public class FetchXmlQueryableExecuteTests
             """);
     }
 
+
     [Fact]
     public async Task SelectFormattedValueTest()
     {
@@ -543,13 +544,13 @@ public class FetchXmlQueryableExecuteTests
         name.Should().Be("x");
 
         db.Provider.LastUrl.Should().Be(
-"""
-some_tables?fetchXml=<fetch mapping="logical" top="1">
-  <entity name="some_table" alias="s">
-    <attribute name="some_name" alias="s.Name" />
-  </entity>
-</fetch>
-""");
+            """
+            some_tables?fetchXml=<fetch mapping="logical" top="1">
+              <entity name="some_table" alias="s">
+                <attribute name="some_name" alias="s.Name" />
+              </entity>
+            </fetch>
+            """);
     }
 
     [Fact]
@@ -799,6 +800,59 @@ some_tables?fetchXml=<fetch mapping="logical" top="1">
         items
             .Should()
             .ContainSingle(s => s.Id == _exampleId);
+
+        db.Provider.LastUrl.Should().Be("""
+            some_tables?fetchXml=<fetch mapping="logical">
+              <entity name="some_table">
+                <filter>
+                  <condition attribute="value" operator="gt" value="0" />
+                </filter>
+                <attribute name="some_tableid" alias="Id" />
+                <attribute name="other_table" alias="OtherTableId" />
+                <attribute name="another_table" alias="AnotherTableId" />
+                <attribute name="yet_other_table" alias="YetOtherTableId" />
+                <attribute name="value" alias="Value" />
+                <attribute name="some_name" alias="Name" />
+                <attribute name="status" alias="Status" />
+                <attribute name="date_only" alias="DateOnly" />
+              </entity>
+            </fetch>
+            """);
+    }
+
+    [Fact]
+    public async Task InTest()
+    {
+        var db = GetSimpleMockDb(new JsonArray
+        {
+            new JsonObject
+            {
+                {"s.Id", _exampleId}
+            }
+        });
+
+        var items = await db.SomeTables
+            .Where(s => DynFunctions.In(s.Name, new[] { "John", "Mary" }))
+            .Select(s => new { s.Id })
+            .ToListAsync();
+
+        items
+            .Should()
+            .ContainSingle(s => s.Id == _exampleId);
+
+        db.Provider.LastUrl.Should().Be("""
+            some_tables?fetchXml=<fetch mapping="logical">
+              <entity name="some_table">
+                <filter>
+                  <condition attribute="some_name" operator="in">
+                    <value>John</value>
+                    <value>Mary</value>
+                  </condition>
+                </filter>
+                <attribute name="some_tableid" alias="s.Id" />
+              </entity>
+            </fetch>
+            """);
     }
 
     [Fact]

@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+﻿using System.Collections;
+using System.Linq.Expressions;
 using System.Xml.Linq;
 using Cblx.OData.Client.Abstractions.Ids;
 
@@ -129,11 +130,27 @@ public class FetchXmlWhereVisitor : ExpressionVisitor
 
     protected override Expression VisitMethodCall(MethodCallExpression node)
     {
-        if(node.Object is MemberExpression memberExpression)
+        switch (node.Method)
         {
-            switch (node.Method.Name)
-            {
-                case "Contains":
+            case { Name: nameof(DynFunctions.In) } m when m.DeclaringType == typeof(DynFunctions) && node.Arguments[0] is MemberExpression memberExpression:
+                {
+                    var conditionElement = new XElement("condition");
+                    string entityAlias = memberExpression.GetEntityAlias();
+                    SetEntityNameForLinkedEntity(entityAlias, conditionElement);
+                    conditionElement.SetAttributeValue("attribute", memberExpression.GetColName());
+                    conditionElement.SetAttributeValue("operator", "in");
+                    IEnumerable values = (Expression.Lambda(node.Arguments[1]).Compile().DynamicInvoke() as IEnumerable)!;
+                    foreach(var val in values)
+                    {
+                        var valueElement = new XElement("value");
+                        valueElement.Add(GetStringRepresentation(val));
+                        conditionElement.Add(valueElement);
+                    }
+                    FilterElement.Add(conditionElement);
+                    return node;
+                }
+            case { Name: "Contains" } m when m.DeclaringType == typeof(string) && node.Object is MemberExpression memberExpression:
+                {
                     var conditionElement = new XElement("condition");
                     string entityAlias = memberExpression.GetEntityAlias();
                     SetEntityNameForLinkedEntity(entityAlias, conditionElement);
@@ -143,7 +160,7 @@ public class FetchXmlWhereVisitor : ExpressionVisitor
                     conditionElement.SetAttributeValue("value", $"%25{GetStringRepresentation(val)}%25");
                     FilterElement.Add(conditionElement);
                     return node;
-            }
+                }
         }
         object? obj = Expression.Lambda(node).Compile().DynamicInvoke();
         return Expression.Constant(obj);

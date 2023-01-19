@@ -1,12 +1,20 @@
 ﻿using Cblx.OData.Client.Abstractions.Ids;
 using System.Collections;
-using System.Linq.Expressions;
 using System.Text;
 
 namespace Cblx.OData.Client;
 
 internal static class ODataHelpers
 {
+    public static string? ParseValue(object? o)
+    {
+        if(TryParseValue(o, out var value))
+        {
+            return value;
+        }
+        throw new InvalidOperationException($"The value '{o}' could not be parsed in OData Expression");
+    }
+
     public static bool TryParseValue(object? o, out string? stringValue)
     {
         if (o == null)

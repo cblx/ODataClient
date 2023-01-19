@@ -295,6 +295,30 @@ public class ODataTests
     }
 
     [Fact]
+    public async Task InTest()
+    {
+        var db = GetSimpleMockDb(new JsonArray
+            {
+                new JsonObject
+                {
+                    {"some_tableid", _exampleId},
+                }
+            });
+
+        var items = await db.SomeTables
+              .Where(s => DynFunctions.In(s.Name, new[] { "John", "Mary" }))
+              .Select(s => new { s.Id })
+              .ToListAsync();
+
+        items.Should().ContainSingle(s => s.Id == _exampleId);
+
+        db.Provider
+            .LastUrl
+            .Should()
+            .Be("some_tables?$select=some_tableid&$filter=Microsoft.Dynamics.CRM.In(PropertyName='some_name',PropertyValues=['John','Mary'])");
+    }
+
+    [Fact]
     public async Task QueryableToListAsyncTest()
     {
         var db = GetSimpleMockDb(new JsonArray
@@ -355,6 +379,26 @@ public class ODataTests
           .LastUrl
           .Should()
           .Be("some_tables?$select=_another_table_value,_other_table_value,date_only,some_name,some_tableid,status,value&$filter=value gt 0");
+    }
+
+    [Fact]
+    public async Task QueryableWhereSelectToListAsyncTest()
+    {
+        var db = GetSimpleMockDb(new JsonArray
+            {
+                new JsonObject
+                {
+                    {"some_tableid", _exampleId}
+                }
+            });
+
+        var items = await db.SomeTables.Where(s => s.Value > 0).Select(s => new { s.Id }).ToListAsync();
+        items.First().Id.Should().Be(_exampleId);
+
+        db.Provider
+          .LastUrl
+          .Should()
+          .Be("some_tables?$select=some_tableid&$filter=value gt 0");
     }
 
     [Fact]

@@ -1,8 +1,10 @@
 ﻿using Cblx.Dynamics;
 using Cblx.OData.Client;
+using System.Collections;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using System.Xml.Linq;
 
 namespace OData.Client;
 internal class FilterVisitor : ExpressionVisitor
@@ -73,6 +75,17 @@ internal class FilterVisitor : ExpressionVisitor
                 Query += $"Microsoft.Dynamics.CRM.{m.Name}(PropertyName='";
                 Visit(node.Arguments[0]);
                 Query += "')";
+                break;
+            case
+            {
+                Name: nameof(DynFunctions.In)
+            } m when m.DeclaringType == typeof(DynFunctions):
+                Query += $"Microsoft.Dynamics.CRM.In(PropertyName='";
+                Visit(node.Arguments[0]);
+                Query += "',PropertyValues=[";
+                IEnumerable values = (Expression.Lambda(node.Arguments[1]).Compile().DynamicInvoke() as IEnumerable)!;
+                Query += string.Join(",", values.Cast<object>().Select(ODataHelpers.ParseValue));
+                Query += "])";
                 break;
             case 
             { 

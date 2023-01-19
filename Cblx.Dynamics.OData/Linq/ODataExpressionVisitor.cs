@@ -1,5 +1,7 @@
 ﻿using OData.Client;
 using System.Linq.Expressions;
+using System.Net.Http.Headers;
+using System.Reflection.Metadata.Ecma335;
 
 namespace Cblx.Dynamics.OData.Linq;
 
@@ -99,9 +101,15 @@ public class ODataExpressionVisitor : ExpressionVisitor
                 case "Select":
                     {
                         string endpoint = "";
+                        // From constant Queryable
                         if(methodCallExpression.Arguments.First() is ConstantExpression constantExpression && constantExpression.Value is IQueryable queryable)
                         {
                             Type entityType = queryable.GetType().GetGenericArguments().First();
+                            endpoint = entityType.GetEndpointName();
+                        // From resultando Queryable (like a .Where)
+                        }else if(methodCallExpression.Arguments.First() is MethodCallExpression fromCallExpression && fromCallExpression.Method.IsGenericMethod)
+                        {
+                            Type entityType = fromCallExpression.Method.GetGenericArguments()[0];
                             endpoint = entityType.GetEndpointName();
                         }
 
@@ -136,7 +144,7 @@ public class ODataExpressionVisitor : ExpressionVisitor
             //"Distinct" => VisitDistinct(node),
             "Take" => VisitTake(node),
             "FirstOrDefault" => VisitFirstOrDefault(node),
-            "Select" => node, // manage by SelectAndExpandVisitor
+            "Select" => VisitSelect(node), // manage by SelectAndExpandVisitor
             "Where" => VisitWhere(node), // managed by FilterVisitor
             //"OrderBy" => VisitOrderBy(node),
             //"OrderByDescending" => VisitOrderBy(node, true),
@@ -240,48 +248,18 @@ public class ODataExpressionVisitor : ExpressionVisitor
     //    return node;
     //}
 
-    //Expression VisitSelect(MethodCallExpression node)
-    //{
-    //    var projectionExpression = ((node.Arguments[1] as UnaryExpression)!.Operand as LambdaExpression)!;
-    //    if (projectionExpression is NewExpression newExpression)
-    //    {
-
-    //    }
-
-    //    //Expression fromExpression = node.Arguments[0];
-    //    //var projectionExpression = ((node.Arguments[1] as UnaryExpression)!.Operand as LambdaExpression)!;
-    //    //if (fromExpression is MethodCallExpression methodCallExpression)
-    //    //{
-    //    //    Visit(methodCallExpression);
-    //    //}
-    //    //else
-    //    //{
-    //    //    ParameterExpression parameterExpression = projectionExpression.Parameters[0];
-    //    //    //string entityAlias = parameterExpression.Name!;
-    //    //    //var entityElement = new XElement(
-    //    //    //    "entity",
-    //    //    //    new XAttribute(
-    //    //    //        "name",
-    //    //    //        parameterExpression.Type.GetCustomAttribute<DynamicsEntityAttribute>()?.Name ??
-    //    //    //        parameterExpression.Type.Name
-    //    //    //    ),
-    //    //    //    new XAttribute(
-    //    //    //        "alias",
-    //    //    //        entityAlias
-    //    //    //    )
-    //    //    //);
-    //    //    //FetchElement.Add(entityElement);
-    //    //    //if (EntityParametersElements.Count == 0)
-    //    //    //{
-    //    //    //    Endpoint = parameterExpression.Type.GetCustomAttribute<ODataEndpointAttribute>()?.Endpoint ??
-    //    //    //               "endpoint-missing";
-    //    //    //}
-
-    //    //    //EntityParametersElements[entityAlias] = entityElement;
-    //    //}
-
-    //    return node;
-    //}
+    Expression VisitSelect(MethodCallExpression node)
+    {
+        Expression fromExpression = node.Arguments[0];
+        if (fromExpression is MethodCallExpression methodCallExpression)
+        {
+            Visit(methodCallExpression);
+        }
+        //LambdaExpression selectExpression = ((node.Arguments[1] as UnaryExpression)!.Operand as LambdaExpression)!;
+        //var filterVisitor = new SelectAndExpandVisitor(true, null);
+        //filterVisitor.Visit(selectExpression);
+        return node;
+    }
 
     Stack<string> _filters = new();
 
@@ -292,7 +270,14 @@ public class ODataExpressionVisitor : ExpressionVisitor
         filterVisitor.Visit(filterExpression);
         _filters.Push(filterVisitor.Query);
         _queryString["$filter"] = String.Join(" and ", _filters);
-        return base.VisitMethodCall(node);
+        // Other Where methods should be called in sequence
+        Expression fromExpression = node.Arguments[0];
+        if (fromExpression is MethodCallExpression methodCallExpression)
+        {
+            Visit(methodCallExpression);
+        }
+        //return base.VisitMethodCall(node);
+        return node;
     }
 
     //void CreateRootEntityFromSource(MethodCallExpression node)
