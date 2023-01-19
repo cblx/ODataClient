@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Cblx.OData.Client.Abstractions.Ids;
 
@@ -46,18 +47,20 @@ public static class RewriterHelpers
 
         Type type = typeof(T);
         type = Nullable.GetUnderlyingType(type) ?? type;
-        if (type.IsAssignableTo(typeof(Id)))
+        switch (type)
         {
-            Guid? guid = jsonNode.GetValue<Guid?>();
-            if (guid == null) { return default; }
-            return (T)Activator.CreateInstance(typeof(T), guid)!;
-        }else if (type.IsAssignableTo(typeof(Enum)))
-        {
-            int? val = jsonNode.GetValue<int?>();
-            if(val == null){ return default; }
-            return (T)Enum.Parse(type, val.ToString()!);
+            case var t when t.IsAssignableTo(typeof(Id)):
+                Guid? guid = jsonNode.GetValue<Guid?>();
+                if (guid == null) { return default; }
+                return (T)Activator.CreateInstance(typeof(T), guid)!;
+            case var t when t.IsAssignableTo(typeof(Enum)):
+                int? val = jsonNode.GetValue<int?>();
+                if (val == null) { return default; }
+                return (T)Enum.Parse(type, val.ToString()!);
+            case var t when t == typeof(DateOnly):
+                return jsonNode.Deserialize<T>();
+            default: return jsonNode.GetValue<T>();
         }
-        return jsonNode.GetValue<T>();
     }
 
     public static TEnum? ToNullableEnum<TEnum>(int? value)

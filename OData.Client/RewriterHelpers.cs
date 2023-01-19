@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Cblx.OData.Client.Abstractions.Ids;
 
@@ -71,13 +72,8 @@ public static class RewriterHelpers
 
         Type type = typeof(T);
         type = Nullable.GetUnderlyingType(type) ?? type;
-
         switch (type)
         {
-            case var t when t == typeof(DateOnly):
-                string? dtOnlyString = jsonNode.GetValue<string>();
-                if (!DateOnly.TryParse(dtOnlyString, out var dt)) { return default; }
-                return (T)(object)dt;
             case var t when t.IsAssignableTo(typeof(Id)):
                 Guid? guid = jsonNode.GetValue<Guid?>();
                 if (guid == null) { return default; }
@@ -86,6 +82,8 @@ public static class RewriterHelpers
                 int? val = jsonNode.GetValue<int?>();
                 if (val == null) { return default; }
                 return (T)Enum.Parse(type, val.ToString()!);
+            case var t when t == typeof(DateOnly):
+                return jsonNode.Deserialize<T>();
             default: return jsonNode.GetValue<T>();
         }
     }

@@ -25,6 +25,7 @@ public class FetchXmlQueryableToFetchXmlTests
                 <attribute name="value" alias="s.Value" />
                 <attribute name="some_name" alias="s.Name" />
                 <attribute name="status" alias="s.Status" />
+                <attribute name="date_only" alias="s.DateOnly" />
               </entity>
             </fetch>
             """, str);
@@ -48,6 +49,7 @@ public class FetchXmlQueryableToFetchXmlTests
                 <attribute name="value" alias="Value" />
                 <attribute name="some_name" alias="Name" />
                 <attribute name="status" alias="Status" />
+                <attribute name="date_only" alias="DateOnly" />
               </entity>
             </fetch>
             """, str);
@@ -75,6 +77,7 @@ public class FetchXmlQueryableToFetchXmlTests
                 <attribute name="value" alias="Value" />
                 <attribute name="some_name" alias="Name" />
                 <attribute name="status" alias="Status" />
+                <attribute name="date_only" alias="DateOnly" />
               </entity>
             </fetch>
             """, str);

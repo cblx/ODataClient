@@ -36,4 +36,7 @@ public class TbSomeTable
     [ReferentialConstraint("_yet_other_table_value")]
     [JsonPropertyName("yet_other_table")]
     public TbOtherTable? YetOtherTable { get; set; }
+
+    [JsonPropertyName("date_only")]
+    public DateOnly? DateOnly { get; set; }
 }

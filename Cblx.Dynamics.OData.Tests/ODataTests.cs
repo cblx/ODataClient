@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Cblx.Dynamics.OData.Linq.Extensions;
 using FluentAssertions;
@@ -47,6 +48,28 @@ public class ODataTests
             .ContainSingle(s => s.Id == _exampleId);
 
         db.Provider.LastUrl.Should().Be("some_tables?$select=some_tableid");
+    }
+
+    [Fact]
+    public async Task SelectNewDateOnlyTest()
+    {
+        var dt = new DateOnly(1983, 5, 23);
+        var db = GetSimpleMockDb(new JsonArray
+        {
+            new JsonObject
+            {
+                {"date_only", dt.ToString("yyyy-MM-dd")}
+            }
+        });
+
+        var items = await (from s in db.SomeTables
+                           select new { s.DateOnly }).ToListAsync();
+
+        items
+            .Should()
+            .ContainSingle(s => s.DateOnly == dt);
+
+        db.Provider.LastUrl.Should().Be("some_tables?$select=date_only");
     }
 
     [Fact]
@@ -166,7 +189,7 @@ public class ODataTests
         db.Provider
             .LastUrl
             .Should()
-            .Be("some_tables?$select=_another_table_value,_other_table_value,some_name,some_tableid,status,value");
+            .Be("some_tables?$select=_another_table_value,_other_table_value,date_only,some_name,some_tableid,status,value");
     }
 
     [Fact]
@@ -192,7 +215,7 @@ public class ODataTests
         db.Provider
            .LastUrl
            .Should()
-           .Be("some_tables?$select=_another_table_value,_other_table_value,some_name,some_tableid,status,value&$top=1");
+           .Be("some_tables?$select=_another_table_value,_other_table_value,date_only,some_name,some_tableid,status,value&$top=1");
     }
 
     [Fact]
@@ -218,7 +241,7 @@ public class ODataTests
         db.Provider
          .LastUrl
          .Should()
-         .Be("some_tables?$select=_another_table_value,_other_table_value,some_name,some_tableid,status,value&$top=1");
+         .Be("some_tables?$select=_another_table_value,_other_table_value,date_only,some_name,some_tableid,status,value&$top=1");
     }
 
     [Fact]
@@ -243,7 +266,7 @@ public class ODataTests
         db.Provider
             .LastUrl
             .Should()
-            .Be("some_tables?$select=_another_table_value,_other_table_value,some_name,some_tableid,status,value&$top=1");
+            .Be("some_tables?$select=_another_table_value,_other_table_value,date_only,some_name,some_tableid,status,value&$top=1");
     }
 
     [Fact]
@@ -268,7 +291,7 @@ public class ODataTests
         db.Provider
             .LastUrl
             .Should()
-            .Be("some_tables?$select=_another_table_value,_other_table_value,some_name,some_tableid,status,value&$filter=value gt 0&$top=1");
+            .Be("some_tables?$select=_another_table_value,_other_table_value,date_only,some_name,some_tableid,status,value&$filter=value gt 0&$top=1");
     }
 
     [Fact]
@@ -291,7 +314,7 @@ public class ODataTests
         db.Provider
           .LastUrl
           .Should()
-          .Be("some_tables?$select=_another_table_value,_other_table_value,some_name,some_tableid,status,value");
+          .Be("some_tables?$select=_another_table_value,_other_table_value,date_only,some_name,some_tableid,status,value");
     }
 
     [Fact]
@@ -311,7 +334,7 @@ public class ODataTests
         db.Provider
         .LastUrl
         .Should()
-        .Be("some_tables?$select=_another_table_value,_other_table_value,some_name,some_tableid,status,value&$top=1");
+        .Be("some_tables?$select=_another_table_value,_other_table_value,date_only,some_name,some_tableid,status,value&$top=1");
     }
 
     [Fact]
@@ -331,7 +354,7 @@ public class ODataTests
         db.Provider
           .LastUrl
           .Should()
-          .Be("some_tables?$select=_another_table_value,_other_table_value,some_name,some_tableid,status,value&$filter=value gt 0");
+          .Be("some_tables?$select=_another_table_value,_other_table_value,date_only,some_name,some_tableid,status,value&$filter=value gt 0");
     }
 
     [Fact]
@@ -354,7 +377,7 @@ public class ODataTests
         db.Provider
           .LastUrl
           .Should()
-          .Be("some_tables?$select=_another_table_value,_other_table_value,some_name,some_tableid,status,value&$filter=value gt 0 and value lt 10");
+          .Be("some_tables?$select=_another_table_value,_other_table_value,date_only,some_name,some_tableid,status,value&$filter=value gt 0 and value lt 10");
     }
 
     [Fact]
@@ -377,7 +400,7 @@ public class ODataTests
         db.Provider
           .LastUrl
           .Should()
-          .Be("some_tables?$select=_another_table_value,_other_table_value,some_name,some_tableid,status,value&$filter=(value gt 0 or value le -1) and (value lt 10 or value eq 50)");
+          .Be("some_tables?$select=_another_table_value,_other_table_value,date_only,some_name,some_tableid,status,value&$filter=(value gt 0 or value le -1) and (value lt 10 or value eq 50)");
     }
 
     [Fact]

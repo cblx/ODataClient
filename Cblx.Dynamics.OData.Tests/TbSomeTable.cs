@@ -23,6 +23,9 @@ public class TbSomeTable
     [JsonPropertyName("value")]
     public int Value { get; set; }
 
+    [JsonPropertyName("date_only")]
+    public DateOnly? DateOnly { get; set; }
+
     [JsonPropertyName("some_name")]
     public string? Name { get; set; }
 

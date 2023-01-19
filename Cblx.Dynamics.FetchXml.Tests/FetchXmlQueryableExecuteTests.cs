@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Net.Http;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using Cblx.Dynamics.FetchXml.Linq.Extensions;
@@ -57,6 +58,63 @@ public class FetchXmlQueryableExecuteTests
             some_tables?fetchXml=<fetch mapping="logical">
               <entity name="some_table" alias="s">
                 <attribute name="some_tableid" alias="s.Id" />
+              </entity>
+            </fetch>
+            """);
+    }
+
+    [Fact]
+    public async Task SelectNewDateOnlyTest()
+    {
+        var dt = new DateOnly(1983, 5, 23);
+        var db = GetSimpleMockDb(new JsonArray
+        {
+            new JsonObject
+            {
+                {"s.DateOnly", dt.ToString("yyyy-MM-dd") }
+            }
+        });
+
+        var items = await (from s in db.SomeTables
+                           select new { s.DateOnly }).ToListAsync();
+
+        items
+            .Should()
+            .ContainSingle(s => s.DateOnly == dt);
+
+        db.Provider.LastUrl.Should().Be(
+            """
+            some_tables?fetchXml=<fetch mapping="logical">
+              <entity name="some_table" alias="s">
+                <attribute name="date_only" alias="s.DateOnly" />
+              </entity>
+            </fetch>
+            """);
+    }
+
+    [Fact]
+    public async Task SelectNewDateOnlyNullTest()
+    {
+        var db = GetSimpleMockDb(new JsonArray
+        {
+            new JsonObject
+            {
+                {"s.DateOnly", null }
+            }
+        });
+
+        var items = await (from s in db.SomeTables
+                           select new { s.DateOnly }).ToListAsync();
+
+        items
+            .Should()
+            .ContainSingle(s => s.DateOnly == null);
+
+        db.Provider.LastUrl.Should().Be(
+            """
+            some_tables?fetchXml=<fetch mapping="logical">
+              <entity name="some_table" alias="s">
+                <attribute name="date_only" alias="s.DateOnly" />
               </entity>
             </fetch>
             """);
@@ -158,6 +216,7 @@ public class FetchXmlQueryableExecuteTests
                 <attribute name="value" alias="Value" />
                 <attribute name="some_name" alias="Name" />
                 <attribute name="status" alias="Status" />
+                <attribute name="date_only" alias="DateOnly" />
               </entity>
             </fetch>
             """);
@@ -279,6 +338,7 @@ public class FetchXmlQueryableExecuteTests
                 <attribute name="value" alias="Value" />
                 <attribute name="some_name" alias="Name" />
                 <attribute name="status" alias="Status" />
+                <attribute name="date_only" alias="DateOnly" />
               </entity>
             </fetch>
             """);
@@ -562,6 +622,7 @@ some_tables?fetchXml=<fetch mapping="logical" top="1">
                 <attribute name="value" alias="s.Value" />
                 <attribute name="some_name" alias="s.Name" />
                 <attribute name="status" alias="s.Status" />
+                <attribute name="date_only" alias="s.DateOnly" />
               </entity>
             </fetch>
             """);
@@ -641,6 +702,7 @@ some_tables?fetchXml=<fetch mapping="logical" top="1">
                 <attribute name="value" alias="Value" />
                 <attribute name="some_name" alias="Name" />
                 <attribute name="status" alias="Status" />
+                <attribute name="date_only" alias="DateOnly" />
               </entity>
             </fetch>
             """);
@@ -681,6 +743,7 @@ some_tables?fetchXml=<fetch mapping="logical" top="1">
                 <attribute name="value" alias="Value" />
                 <attribute name="some_name" alias="Name" />
                 <attribute name="status" alias="Status" />
+                <attribute name="date_only" alias="DateOnly" />
               </entity>
             </fetch>
             """);
@@ -789,6 +852,7 @@ some_tables?fetchXml=<fetch mapping="logical" top="1">
                 <attribute name="value" alias="Value" />
                 <attribute name="some_name" alias="Name" />
                 <attribute name="status" alias="Status" />
+                <attribute name="date_only" alias="DateOnly" />
               </entity>
             </fetch>
             """);
@@ -841,6 +905,7 @@ some_tables?fetchXml=<fetch mapping="logical" top="1">
                 <attribute name="value" alias="Value" />
                 <attribute name="some_name" alias="Name" />
                 <attribute name="status" alias="Status" />
+                <attribute name="date_only" alias="DateOnly" />
               </entity>
             </fetch>
             """);
@@ -891,6 +956,7 @@ some_tables?fetchXml=<fetch mapping="logical" top="1">
                 <attribute name="value" alias="Value" />
                 <attribute name="some_name" alias="Name" />
                 <attribute name="status" alias="Status" />
+                <attribute name="date_only" alias="DateOnly" />
               </entity>
             </fetch>
             """);
@@ -940,6 +1006,7 @@ some_tables?fetchXml=<fetch mapping="logical" top="1">
                 <attribute name="value" alias="Value" />
                 <attribute name="some_name" alias="Name" />
                 <attribute name="status" alias="Status" />
+                <attribute name="date_only" alias="DateOnly" />
               </entity>
             </fetch>
             """);
