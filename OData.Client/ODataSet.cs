@@ -256,7 +256,7 @@ public class ODataSet<TSource> : IODataSet<TSource>
 
     public async Task<PicklistOption<TOption>[]> GetMultiSelectPicklistOptionsAsync<TOption>(Expression<Func<TSource, string?>> propertyExpression) where TOption : struct, Enum
     {
-        var jsonArray = await GetPicklistOptionsJsonArray(propertyExpression);
+        var jsonArray = await GetMultiSelectPicklistOptionsJsonArray(propertyExpression);
         var picklistOptions = new List<PicklistOption<TOption>>();
         Func<JsonNode, TOption> getValue = typeof(TOption).IsEnum ?
             (JsonNode node) => (TOption)((object)node["Value"]!.GetValue<int>()) :
