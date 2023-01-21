@@ -310,11 +310,11 @@ public class ODataSet<TSource> : IODataSet<TSource>
         string uri =
             attributeLogicalName switch
             {
-                "statecode" => $"EntityDefinitions(LogicalName='{entityLogicalName}')/Attributes/Microsoft.Dynamics.CRM.StateAttributeMetadata?$select=LogicalName&$expand=OptionSet($select=Options)",
-                "statuscode " => $"EntityDefinitions(LogicalName='{entityLogicalName}')/Attributes/Microsoft.Dynamics.CRM.StatusAttributeMetadata?$select=LogicalName&$expand=OptionSet($select=Options)",
-                _ => $"EntityDefinitions(LogicalName='{entityLogicalName}')/Attributes(LogicalName='{attributeLogicalName}')/Microsoft.Dynamics.CRM.PicklistAttributeMetadata?$select=LogicalName&$expand=OptionSet($select=Options)"
+                "statecode" =>  $"EntityDefinitions(LogicalName='{entityLogicalName}')/Attributes/Microsoft.Dynamics.CRM.StateAttributeMetadata?$select=LogicalName&$expand=OptionSet($select=Options)",
+                "statuscode" => $"EntityDefinitions(LogicalName='{entityLogicalName}')/Attributes/Microsoft.Dynamics.CRM.StatusAttributeMetadata?$select=LogicalName&$expand=OptionSet($select=Options)",
+                _ =>            $"EntityDefinitions(LogicalName='{entityLogicalName}')/Attributes(LogicalName='{attributeLogicalName}')/Microsoft.Dynamics.CRM.PicklistAttributeMetadata?$select=LogicalName&$expand=OptionSet($select=Options)"
             };
-
+        LastQuery = uri;
         var requestMessage = new HttpRequestMessage(HttpMethod.Get, uri);
         HttpResponseMessage responseMessage = await client.Invoker.SendAsync(requestMessage, default);
         var jsonObject = await JsonSerializer.DeserializeAsync<JsonObject>(await responseMessage.Content.ReadAsStreamAsync());
@@ -345,7 +345,7 @@ public class ODataSet<TSource> : IODataSet<TSource>
             .Name;
 
         string uri = $"EntityDefinitions(LogicalName='{entityLogicalName}')/Attributes(LogicalName='{attributeLogicalName}')/Microsoft.Dynamics.CRM.MultiSelectPicklistAttributeMetadata?$select=LogicalName&$expand=OptionSet($select=Options)";
-
+        LastQuery = uri;
         var requestMessage = new HttpRequestMessage(HttpMethod.Get, uri);
         HttpResponseMessage responseMessage = await client.Invoker.SendAsync(requestMessage, default);
         var jsonObject = await JsonSerializer.DeserializeAsync<JsonObject>(await responseMessage.Content.ReadAsStreamAsync());
