@@ -114,11 +114,10 @@ public class FetchXmlWhereVisitor : ExpressionVisitor
         }
 
         _mainVisitor.FindOrCreateElementForMemberExpression(memberExpression);
-
-
         var conditionElement = new XElement("condition");
         string entityAlias = memberExpression.GetEntityAlias();
         SetEntityNameForLinkedEntity(entityAlias, conditionElement);
+        
         conditionElement.SetAttributeValue("attribute", memberExpression.GetColName());
         conditionElement.SetAttributeValue("operator", op);
         if (rightObj != null)
@@ -134,6 +133,7 @@ public class FetchXmlWhereVisitor : ExpressionVisitor
         {
             case { Name: nameof(DynFunctions.In) } m when m.DeclaringType == typeof(DynFunctions) && node.Arguments[0] is MemberExpression memberExpression:
                 {
+                    _mainVisitor.FindOrCreateElementForMemberExpression(memberExpression);
                     var conditionElement = new XElement("condition");
                     string entityAlias = memberExpression.GetEntityAlias();
                     SetEntityNameForLinkedEntity(entityAlias, conditionElement);
@@ -149,8 +149,9 @@ public class FetchXmlWhereVisitor : ExpressionVisitor
                     FilterElement.Add(conditionElement);
                     return node;
                 }
-            case { Name: "Contains" } m when m.DeclaringType == typeof(string) && node.Object is MemberExpression memberExpression:
+            case { Name: nameof(string.Contains) } m when m.DeclaringType == typeof(string) && node.Object is MemberExpression memberExpression:
                 {
+                    _mainVisitor.FindOrCreateElementForMemberExpression(memberExpression);
                     var conditionElement = new XElement("condition");
                     string entityAlias = memberExpression.GetEntityAlias();
                     SetEntityNameForLinkedEntity(entityAlias, conditionElement);

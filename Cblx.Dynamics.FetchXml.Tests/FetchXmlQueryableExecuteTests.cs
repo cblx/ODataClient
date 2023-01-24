@@ -940,6 +940,94 @@ public class FetchXmlQueryableExecuteTests
             </fetch>
             """);
     }
+    
+    [Fact]
+    public async Task MultipleWhereOnNavigationsAndProjectionTest()
+    {
+        var db = GetSimpleMockDb(new JsonArray
+        {
+            new JsonObject
+            {
+                {"w.Id", _exampleId}
+            }
+        });
+
+        var items = await db.SomeTables
+            .Where(s => s.OtherTable!.Value > 0)
+            .Where(x => x.OtherTable!.AnotherTable!.Value < 0)
+            .Where(y => y.YetOtherTableId!.Value == Guid.Empty)
+            .Where(z => z.Status == SomeStatusEnum.Active)
+            .Select(w => new { w.Id })
+            .ToListAsync();
+
+        items
+            .Should()
+            .ContainSingle(s => s.Id == _exampleId);
+
+        db.Provider
+            .LastUrl
+            .Should()
+            .Be("""
+            some_tables?fetchXml=<fetch mapping="logical">
+              <entity name="some_table">
+                <link-entity name="other_table" to="other_table" alias="s.OtherTable" />
+                <filter>
+                  <condition entityname="s.OtherTable" attribute="value" operator="gt" value="0" />
+                </filter>
+                <link-entity name="other_table" to="other_table" alias="x.OtherTable">
+                  <link-entity name="another_table" to="another_table" alias="x.OtherTable.AnotherTable" />
+                </link-entity>
+                <filter>
+                  <condition entityname="x.OtherTable.AnotherTable" attribute="value" operator="lt" value="0" />
+                </filter>
+                <filter>
+                  <condition attribute="Value" operator="eq" value="00000000-0000-0000-0000-000000000000" />
+                </filter>
+                <filter>
+                  <condition attribute="status" operator="eq" value="1" />
+                </filter>
+                <attribute name="some_tableid" alias="w.Id" />
+              </entity>
+            </fetch>
+            """);
+    }
+    
+    [Fact]
+    public async Task ContainsInNavigationTest()
+    {
+        var db = GetSimpleMockDb(new JsonArray
+        {
+            new JsonObject
+            {
+                {"w.Id", _exampleId}
+            }
+        });
+
+        var items = await db.SomeTables
+            .Where(z => z.Name!.Contains("something") || z.OtherTable!.Name!.Contains("something"))
+            .Select(w => new { w.Id })
+            .ToListAsync();
+
+        items
+            .Should()
+            .ContainSingle(s => s.Id == _exampleId);
+
+        db.Provider
+            .LastUrl
+            .Should()
+            .Be("""
+            some_tables?fetchXml=<fetch mapping="logical">
+              <entity name="some_table">
+                <link-entity name="other_table" to="other_table" alias="z.OtherTable" />
+                <filter type="or">
+                  <condition attribute="some_name" operator="like" value="%25something%25" />
+                  <condition entityname="z.OtherTable" attribute="name" operator="like" value="%25something%25" />
+                </filter>
+                <attribute name="some_tableid" alias="w.Id" />
+              </entity>
+            </fetch>
+            """);
+    }
 
     [Fact]
     public async Task MultipleWheresWithParameterNameMismatchTest()
