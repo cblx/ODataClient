@@ -158,7 +158,7 @@ public class FetchXmlQueryableExecuteTests
         var db = GetSimpleMockDb(new JsonObject
         {
             { "@Microsoft.Dynamics.CRM.fetchxmlpagingcookie", "xyz" },
-            { "@odata.count", 1 },
+            { "@Microsoft.Dynamics.CRM.totalrecordcount", 1 },
             { "value", new JsonArray {
                             new JsonObject
                             {
@@ -169,7 +169,7 @@ public class FetchXmlQueryableExecuteTests
         });
 
         var result = await (from s in db.SomeTables
-                           select new { s.Id }).ToResultAsync();
+                           select new { s.Id }).IncludeCount().ToResultAsync();
 
         result.Value
             .Should()
@@ -180,7 +180,7 @@ public class FetchXmlQueryableExecuteTests
 
         db.Provider.LastUrl.Should().Be(
             """
-            some_tables?fetchXml=<fetch mapping="logical">
+            some_tables?fetchXml=<fetch mapping="logical" returntotalrecordcount="true">
               <entity name="some_table" alias="s">
                 <attribute name="some_tableid" alias="s.Id" />
               </entity>

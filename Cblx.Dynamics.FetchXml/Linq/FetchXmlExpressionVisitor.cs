@@ -65,6 +65,7 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
                           or nameof(DynamicsQueryable.WithPagingCookie)
                           or nameof(DynamicsQueryable.Page)
                           or nameof(DynamicsQueryable.PageCount)
+                          or nameof(DynamicsQueryable.IncludeCount)
                 } m when m.DeclaringType == typeof(DynamicsQueryable):
                     ReadProjection(methodCallExpression.Arguments[0], fetchXml);
                     break;
@@ -167,6 +168,10 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
             case { Name: nameof(DynamicsQueryable.LateMaterialize) } m when m.DeclaringType == typeof(DynamicsQueryable):
                 InitializeRootEntityFromChain(node);
                 FetchElement.SetAttributeValue("latematerialize", "true");
+                return node.Arguments[0];
+            case { Name: nameof(DynamicsQueryable.IncludeCount) } m when m.DeclaringType == typeof(DynamicsQueryable):
+                InitializeRootEntityFromChain(node);
+                FetchElement.SetAttributeValue("returntotalrecordcount", "true");
                 return node.Arguments[0];
             case { Name: nameof(DynamicsQueryable.Page) } m when m.DeclaringType == typeof(DynamicsQueryable):
                 InitializeRootEntityFromChain(node);

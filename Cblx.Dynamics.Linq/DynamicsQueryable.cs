@@ -13,6 +13,16 @@ public static class DynamicsQueryable
                 queryable.Expression)
         );
     }
+    
+    public static IQueryable<T> IncludeCount<T>(this IQueryable<T> queryable)
+    {
+        return queryable.Provider.CreateQuery<T>(
+            Expression.Call(
+                null,
+                typeof(DynamicsQueryable).GetMethod(nameof(IncludeCount))!.MakeGenericMethod(typeof(T)),
+                queryable.Expression)
+        );
+    }
 
     public static IQueryable<T> Page<T>(this IQueryable<T> queryable, int page)
     {

@@ -166,7 +166,7 @@ public class FetchXmlQueryProvider : IAsyncQueryProvider
         return new DynamicsResult<TItem>
         {
             Value = items.ToArray(),
-            Count = jsonObject.ContainsKey("@odata.count") ? jsonObject["@odata.count"]?.GetValue<int>() : null,
+            Count = jsonObject.ContainsKey("@Microsoft.Dynamics.CRM.totalrecordcount") ? jsonObject["@Microsoft.Dynamics.CRM.totalrecordcount"]?.GetValue<int>() : null,
             FetchXmlPagingCookie = jsonObject.ContainsKey("@Microsoft.Dynamics.CRM.fetchxmlpagingcookie") ?
                 jsonObject["@Microsoft.Dynamics.CRM.fetchxmlpagingcookie"]?.GetValue<string>() : null
         };
