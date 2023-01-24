@@ -251,6 +251,35 @@ public class FetchXmlQueryableExecuteTests
     }
 
     [Fact]
+    public async Task PageTest()
+    {
+        var db = GetSimpleMockDb(new JsonArray
+        {
+            new JsonObject
+            {
+                {"t.Id", _exampleId},
+            }
+        });
+        var items = await db.SomeTables
+            .Select(t => t.Id)
+            .Page(1)
+            .PageCount(20)
+            .ToListAsync();
+        items
+            .Should()
+            .ContainSingle(id => id == _exampleId);
+        
+        db.Provider.LastUrl.Should().Be(
+            """
+            some_tables?fetchXml=<fetch mapping="logical" page="1" count="20">
+              <entity name="some_table" alias="t">
+                <attribute name="some_tableid" alias="t.Id" />
+              </entity>
+            </fetch>
+            """);
+    }
+
+    [Fact]
     public async Task WithPagingCookieTest()
     {
         var db = GetSimpleMockDb(new JsonArray

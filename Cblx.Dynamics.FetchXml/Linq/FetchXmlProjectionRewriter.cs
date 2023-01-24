@@ -18,6 +18,7 @@ public class FetchXmlProjectionRewriter : ExpressionVisitor
                 Method.Name: nameof(DynamicsQueryable.LateMaterialize)
                              or nameof(DynamicsQueryable.WithPagingCookie)
                              or nameof(DynamicsQueryable.Page)
+                             or nameof(DynamicsQueryable.PageCount)
             } m when m.Method.DeclaringType == typeof(DynamicsQueryable):
                 return Rewrite(m.Arguments[0]);
             case MethodCallExpression
@@ -88,6 +89,8 @@ public class FetchXmlProjectionRewriter : ExpressionVisitor
                     );
                     return Expression.Lambda(callCreateEntityExpression, _jsonParameterExpression);
                 }
+            case MethodCallExpression methodCallExpression:
+                throw new InvalidOperationException($"Unsupported method {methodCallExpression.Method.Name}");
         }
         throw new InvalidOperationException("Invalid expression during projection rewrite");
     }
