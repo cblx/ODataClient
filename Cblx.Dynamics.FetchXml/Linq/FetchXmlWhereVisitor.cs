@@ -210,6 +210,7 @@ public class FetchXmlWhereVisitor : ExpressionVisitor
                 str = str.Replace("'", "''")
                     .Replace("%", "%25")
                     .Replace("#", "%23")
+                    .Replace(":", "%3A")
                     .Replace("+", "%2B")
                     .Replace("/", "%2F")
                     .Replace("?", "%3F")
