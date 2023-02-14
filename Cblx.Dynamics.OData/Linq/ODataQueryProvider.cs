@@ -4,6 +4,7 @@ using System.Net;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Cblx.Dynamics.Linq;
 using Cblx.OData.Client.Abstractions;
 using OData.Client;
 
@@ -76,14 +77,11 @@ public class ODataQueryProvider : IAsyncQueryProvider
     public async Task<TResult> ExecuteAsync<TResult>(Expression expression,
         CancellationToken cancellationToken = default)
     {
+        var nonPublicAndStatic = BindingFlags.NonPublic | BindingFlags.Static;
+        
         var (responseMessage, visitor) = await ExecuteRequestAsync(expression, cancellationToken);
-        // Review: makes sense using options to desserialize to JsonObject?
-        //var jsonSerializerOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
         Stream responseContent = await responseMessage.Content.ReadAsStreamAsync(cancellationToken);
-        JsonObject? jsonObject =
-            await JsonSerializer.DeserializeAsync<JsonObject>(responseContent, 
-                //jsonSerializerOptions,
-                cancellationToken: cancellationToken);
+        JsonObject? jsonObject = await JsonSerializer.DeserializeAsync<JsonObject>(responseContent,  cancellationToken: cancellationToken);
         if (jsonObject == null)
         {
             throw new InvalidOperationException("Unexpected behavior: Desserialization result is null");
@@ -95,31 +93,47 @@ public class ODataQueryProvider : IAsyncQueryProvider
         {
             Type itemType = typeof(TResult).GenericTypeArguments[0];
             return (TResult)GetType()
-                .GetMethod(nameof(ToEnumerable), BindingFlags.NonPublic | BindingFlags.Instance)!
+                .GetMethod(nameof(ToEnumerable), nonPublicAndStatic)!
                 .MakeGenericMethod(itemType)
                 .Invoke(this, new object[] { jsonArray, del })!;
+        }
+        else if(typeof(TResult).IsGenericType && typeof(TResult).GetGenericTypeDefinition() == typeof(DynamicsResult<>))
+        {
+            Type itemType = typeof(TResult).GenericTypeArguments[0];
+            return (TResult)GetType()
+                .GetMethod(nameof(ToResult), nonPublicAndStatic)!
+                .MakeGenericMethod(itemType)
+                .Invoke(this, new object[] { jsonObject, del })!;
         }
         else
         {
             return (TResult)GetType()
-                .GetMethod(nameof(ToItem), BindingFlags.NonPublic | BindingFlags.Instance)!
+                .GetMethod(nameof(ToItem), nonPublicAndStatic)!
                 .MakeGenericMethod(typeof(TResult))
                 .Invoke(this, new object[] { jsonArray, del })!;
         }
     }
 
-    TItem? ToItem<TItem>(JsonArray jsonArray, Delegate del)
+    static TItem? ToItem<TItem>(JsonArray jsonArray, Delegate del)
     {
         TItem? item = ToEnumerable<TItem>(jsonArray, del).FirstOrDefault();
         return item;
     }
 
-    IEnumerable<TItem> ToEnumerable<TItem>(JsonArray jsonArray, Delegate del)
+    private static IEnumerable<TItem> ToEnumerable<TItem>(JsonArray jsonArray, Delegate del) => jsonArray.Select(item => (TItem)del.DynamicInvoke(item)!)!;
+
+    private static DynamicsResult<TItem> ToResult<TItem>(JsonObject jsonObject, Delegate del)
     {
-        return jsonArray.Select(item => (TItem)del.DynamicInvoke(item)!)!;
+        var jsonArray = jsonObject["value"]!.AsArray();
+        var items = ToEnumerable<TItem>(jsonArray, del);
+        return new DynamicsResult<TItem>
+        {
+            Value = items.ToArray(),
+            Count = jsonObject.ContainsKey("@odata.count") ? jsonObject["@odata.count"]?.GetValue<int>() : null
+        };
     }
 
-    static void ThrowODataErrorIfItFits(string json)
+    private static void ThrowODataErrorIfItFits(string json)
     {
         ODataError? error = null;
 

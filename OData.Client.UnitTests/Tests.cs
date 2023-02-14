@@ -1582,6 +1582,30 @@ public class Tests
         });
         Assert.Equal("some_entities?$expand=children($select=id,name;$filter=name eq 'x')", str);
     }
+    
+    [Fact]
+    public void OrderedExpandTest()
+    {
+        var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
+        var guidEmpty = Guid.Empty;
+        string str = set.ToString(e => new SomeEntity
+        {
+            Children = e.children.OrderBy(c => c.name).Select(c => new SomeEntity { Id = c.id })
+        });
+        Assert.Equal("some_entities?$expand=children($select=id,name;$orderby=name)", str);
+    }
+    
+    [Fact]
+    public void OrderedDescendingExpandTest()
+    {
+        var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
+        var guidEmpty = Guid.Empty;
+        string str = set.ToString(e => new SomeEntity
+        {
+            Children = e.children.OrderByDescending(c => c.name).Select(c => new SomeEntity { Id = c.id })
+        });
+        Assert.Equal("some_entities?$expand=children($select=id,name;$orderby=name desc)", str);
+    }
 
     [Fact]
     public void TblFilteredExpandTest()

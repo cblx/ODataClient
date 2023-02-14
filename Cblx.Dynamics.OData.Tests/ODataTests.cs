@@ -19,6 +19,11 @@ public class ODataTests
                 value
             }
         };
+        return GetSimpleMockDbFullResult(jsonObject);
+    }
+    
+    static ODataContext GetSimpleMockDbFullResult(JsonObject jsonObject)
+    {
         var httpClient = new HttpClient(
             new MockHttpMessageHandler(jsonObject.ToJsonString())
         )
@@ -47,6 +52,33 @@ public class ODataTests
             .Should()
             .ContainSingle(s => s.Id == _exampleId);
 
+        db.Provider.LastUrl.Should().Be("some_tables?$select=some_tableid");
+    }
+    
+    [Fact]
+    public async Task SelectNewResultTest()
+    {
+        var db = GetSimpleMockDbFullResult(new JsonObject
+        {
+            { "@odata.count", 100 },
+            { "value", new JsonArray()
+                {
+                    new JsonObject
+                    {
+                        {"some_tableid", _exampleId}
+                    }                    
+                }
+            }
+        });
+
+        var result = await (from s in db.SomeTables
+            select new { s.Id }).ToResultAsync();
+
+        result
+            .Value
+            .Should()
+            .ContainSingle(s => s.Id == _exampleId);
+        result.Count.Should().Be(100);
         db.Provider.LastUrl.Should().Be("some_tables?$select=some_tableid");
     }
 

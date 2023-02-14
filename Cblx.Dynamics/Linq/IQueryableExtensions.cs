@@ -48,7 +48,7 @@ public static class IQueryableExtensions
 
     public static Task<DynamicsResult<T>> ToResultAsync<T>(this IQueryable<T> queryable) => queryable switch
     {
-        ODataQueryable<T> => throw new NotImplementedException("ToResultAsync is not yet implemented for OData Queryables"),
+        ODataQueryable<T> => ODataXt.ToResultAsync(queryable),
         FetchXmlQueryable<T> => FetchXmlXt.ToResultAsync(queryable),
         _ => throw _invalid
     };

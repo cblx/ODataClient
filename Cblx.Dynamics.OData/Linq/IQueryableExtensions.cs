@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+﻿using Cblx.Dynamics.Linq;
+using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Cblx.Dynamics")]
 [assembly: InternalsVisibleTo("Cblx.Dynamics.OData.Tests")]
@@ -18,16 +19,16 @@ public static class IQueryableExtensions
 
     internal static async Task<T?> FirstOrDefaultAsync<T>(this IQueryable<T> queryable)
     {
-        if (queryable is not ODataQueryable<T> fetchXmlQueryable) { throw new InvalidOperationException("This Queryable is not a ODataQueryable"); }
-        fetchXmlQueryable = (fetchXmlQueryable.Take(1) as ODataQueryable<T>)!;
-        return await (fetchXmlQueryable.Provider as ODataQueryProvider)!.ExecuteAsync<T>(fetchXmlQueryable.Expression);
+        if (queryable is not ODataQueryable<T> oDataQueryable) { throw new InvalidOperationException("This Queryable is not a ODataQueryable"); }
+        oDataQueryable = (oDataQueryable.Take(1) as ODataQueryable<T>)!;
+        return await (oDataQueryable.Provider as ODataQueryProvider)!.ExecuteAsync<T>(oDataQueryable.Expression);
     }
 
     internal static async Task<T?> FirstOrDefaultAsync<T>(this IQueryable<T> queryable, Expression<Func<T, bool>> predicate)
     {
-        if (queryable is not ODataQueryable<T> fetchXmlQueryable) { throw new InvalidOperationException("This Queryable is not a ODataQueryable"); }
-        fetchXmlQueryable = (fetchXmlQueryable.Where(predicate).Take(1) as ODataQueryable<T>)!;
-        return await (fetchXmlQueryable.Provider as ODataQueryProvider)!.ExecuteAsync<T>(fetchXmlQueryable.Expression);
+        if (queryable is not ODataQueryable<T> oDataQueryable) { throw new InvalidOperationException("This Queryable is not a ODataQueryable"); }
+        oDataQueryable = (oDataQueryable.Where(predicate).Take(1) as ODataQueryable<T>)!;
+        return await (oDataQueryable.Provider as ODataQueryProvider)!.ExecuteAsync<T>(oDataQueryable.Expression);
     }
 
     internal static async Task<List<T>> ToListAsync<T>(this IQueryable<T> queryable)
@@ -37,15 +38,21 @@ public static class IQueryableExtensions
 
     internal static async Task<T[]> ToArrayAsync<T>(this IQueryable<T> queryable)
     {
-        if (queryable is not ODataQueryable<T> fetchXmlQueryable) { throw new InvalidOperationException("This Queryable is not a ODataQueryable"); }
-        var items = await (fetchXmlQueryable.Provider as ODataQueryProvider)!.ExecuteAsync<IEnumerable<T>>(fetchXmlQueryable.Expression);
+        if (queryable is not ODataQueryable<T> oDataQueryable) { throw new InvalidOperationException("This Queryable is not a ODataQueryable"); }
+        var items = await (oDataQueryable.Provider as ODataQueryProvider)!.ExecuteAsync<IEnumerable<T>>(oDataQueryable.Expression);
         return items.ToArray();
+    }
+
+    internal static async Task<DynamicsResult<T>> ToResultAsync<T>(this IQueryable<T> queryable)
+    {
+        if (queryable is not ODataQueryable<T> oDataQueryable) { throw new InvalidOperationException("This Queryable is not a FetchXmlQueryable"); }
+        return await (oDataQueryable.Provider as ODataQueryProvider)!.ExecuteAsync<DynamicsResult<T>>(oDataQueryable.Expression);
     }
 
     internal static async Task<int> CountAsync<T>(this IQueryable<T> queryable)
     {
-        if (queryable is not ODataQueryable<T> fetchXmlQueryable) { throw new InvalidOperationException("This Queryable is not a FetchXmlQueryable"); }
-        var items = await (fetchXmlQueryable.Provider as ODataQueryProvider)!.ExecuteAsync<IEnumerable<T>>(fetchXmlQueryable.Expression);
+        if (queryable is not ODataQueryable<T> oDataQueryable) { throw new InvalidOperationException("This Queryable is not a FetchXmlQueryable"); }
+        var items = await (oDataQueryable.Provider as ODataQueryProvider)!.ExecuteAsync<IEnumerable<T>>(oDataQueryable.Expression);
         return items.Count();
     }
 
