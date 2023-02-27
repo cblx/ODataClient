@@ -388,6 +388,12 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
 
         targetTableElement.SetAttributeValue("from", targetTableMemberAccess.GetColName());
         targetTableElement.SetAttributeValue("to", previousTableMemberAccess.GetColName());
+        CheckAndChangeAliasFromIntermediateSelect(resultSelectorExpression);
+        return selectManyExpression;
+    }
+
+    void CheckAndChangeAliasFromIntermediateSelect(LambdaExpression resultSelectorExpression)
+    {
         // When the query is splitted by intermediate select
         if (resultSelectorExpression.Body is NewExpression newExpression)
         {
@@ -395,18 +401,29 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
 
             for (int i = 0; i < newExpression.Arguments.Count; i++)
             {
-                var paramName = (newExpression.Arguments[i] as ParameterExpression)?.Name ?? (newExpression.Arguments[i] as MemberExpression)?.Member?.Name;
-                var member = newExpression.Members[i] as PropertyInfo;
-                if (!member!.PropertyType.IsDynamicsEntity()) { continue; }
-                if (paramName != member.Name)
-                {
-                    EntityParametersElements[paramName!].Attribute("alias")!.SetValue(member.Name);
-                    EntityParametersElements[member.Name] = EntityParametersElements[paramName!];
-                    EntityParametersElements.Remove(paramName!);
-                }
+                RenameAlias(newExpression.Arguments[i], newExpression.Members[i]);
             }
         }
-        return selectManyExpression;
+        else if (resultSelectorExpression.Body is MemberInitExpression initExpression)
+        {
+            foreach (MemberAssignment b in initExpression.Bindings.OfType<MemberAssignment>())
+            {
+                RenameAlias(b.Expression, b.Member);
+            }
+        }
+
+        void RenameAlias(Expression currentExpression, MemberInfo newMemberInfo)
+        {
+            var paramName = (currentExpression as ParameterExpression)?.Name ?? (currentExpression as MemberExpression)?.Member?.Name;
+            var member = newMemberInfo as PropertyInfo;
+            if (!member!.PropertyType.IsDynamicsEntity()) { return; }
+            if (paramName != member.Name)
+            {
+                EntityParametersElements[paramName!].Attribute("alias")!.SetValue(member.Name);
+                EntityParametersElements[member.Name] = EntityParametersElements[paramName!];
+                EntityParametersElements.Remove(paramName!);
+            }
+        }
     }
 
 

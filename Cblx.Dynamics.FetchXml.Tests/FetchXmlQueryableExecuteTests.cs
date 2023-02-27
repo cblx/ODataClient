@@ -101,6 +101,56 @@ public class FetchXmlQueryableExecuteTests
             """);
     }
 
+    public class SplitProjectionDto
+    {
+        public TbSomeTable? S { get; internal set; }
+        public TbOtherTable? O { get; internal set; }
+        public TbAnotherTable? A { get; internal set; }
+    }
+
+    [Fact]
+    public void SplitProjectionAndUseDivergentNamesFromLinksStronglyTyped()
+    {
+        var db = GetSimpleMockDb(new JsonArray { });
+        var query = from s in db.SomeTables
+                    from o in db.OtherTables.Where(o => o.Id == s.OtherTableId)
+                    from a in db.AnotherTables.Where(an => an.Id == o.AnotherTableId)
+                    select new SplitProjectionDto
+                    {
+                        S = s,
+                        O = o,
+                        A = a
+                    };
+
+        var finalQuery = query
+            .Where(p => p.O!.Value > 10)
+            .Select(p => new
+            {
+                p.S!.Id,
+                OtherTableId = p.O!.Id,
+                AnotherTableId = p.A!.Id
+            });
+
+
+        string fetchXml = finalQuery.ToFetchXml();
+        fetchXml.Should().Be("""
+            <fetch mapping="logical">
+              <entity name="some_table" alias="S">
+                <link-entity name="other_table" alias="O" from="other_tableid" to="other_table">
+                  <link-entity name="another_table" alias="A" from="another_tableid" to="another_table">
+                    <attribute name="another_tableid" alias="p.A.Id" />
+                  </link-entity>
+                  <attribute name="other_tableid" alias="p.O.Id" />
+                </link-entity>
+                <filter>
+                  <condition entityname="O" attribute="value" operator="gt" value="10" />
+                </filter>
+                <attribute name="some_tableid" alias="p.S.Id" />
+              </entity>
+            </fetch>
+            """);
+    }
+
     // TODO: support this sometime
     //[Fact]
     //public async Task SplitProjectionAndUseDivergentNamesFromNavs()
