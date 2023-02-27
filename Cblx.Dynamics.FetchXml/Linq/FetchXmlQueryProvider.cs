@@ -82,9 +82,9 @@ public class FetchXmlQueryProvider : IAsyncQueryProvider
         LastUrl = $"{visitor.Endpoint}?fetchXml={fetchXmlElement}";
         if (responseMessage.StatusCode is not HttpStatusCode.OK)
         {
-            string json = await responseMessage.Content.ReadAsStringAsync(cancellationToken);
+            var json = await responseMessage.Content.ReadAsStringAsync(cancellationToken);
             ThrowODataErrorIfItFits(json);
-            throw new HttpRequestException(responseMessage.StatusCode.ToString() + ": " + json);
+            throw new HttpRequestException(responseMessage.StatusCode + ": " + json);
         }
 
         return (responseMessage, visitor);

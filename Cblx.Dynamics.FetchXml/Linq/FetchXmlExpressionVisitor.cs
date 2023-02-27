@@ -35,7 +35,7 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
     }
 
     public string ToFetchXml() => ToFetchXmlElement().ToString();
-    
+
     public string ToRelativeUrl()
     {
         string fetchXml = ToFetchXml();
@@ -60,8 +60,9 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
         {
             switch (methodCallExpression.Method)
             {
-                case { 
-                    Name: nameof(DynamicsQueryable.LateMaterialize) 
+                case
+                {
+                    Name: nameof(DynamicsQueryable.LateMaterialize)
                           or nameof(DynamicsQueryable.WithPagingCookie)
                           or nameof(DynamicsQueryable.Page)
                           or nameof(DynamicsQueryable.PageCount)
@@ -71,7 +72,7 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
                     break;
                 case
                 {
-                    Name: nameof(Queryable.Distinct) 
+                    Name: nameof(Queryable.Distinct)
                           or nameof(Queryable.Take)
                           or nameof(Queryable.Where)
                           or nameof(Queryable.FirstOrDefault)
@@ -101,7 +102,7 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
                     // from o in db.Originals
                     // join etc...
                     // ...select o).ProjectTo<Other>()
-                    Type originalEntityType = 
+                    Type originalEntityType =
                         methodCallExpression.Arguments[0] is ConstantExpression constantExpression ?
                                                 // The constant, directly from IQueryable<TblOriginal>
                                                 (constantExpression.Value as IQueryable)!.GetType().GetGenericArguments().First()
@@ -144,7 +145,7 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
         }
         return entityElement;
     }
- 
+
     protected override Expression? VisitMethodCall(MethodCallExpression node)
     {
         switch (node.Method)
@@ -387,6 +388,24 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
 
         targetTableElement.SetAttributeValue("from", targetTableMemberAccess.GetColName());
         targetTableElement.SetAttributeValue("to", previousTableMemberAccess.GetColName());
+        // When the query is splitted by intermediate select
+        if (resultSelectorExpression.Body is NewExpression newExpression)
+        {
+            if (newExpression.Arguments.Count != newExpression.Members?.Count) { throw new InvalidOperationException("Invalid expression for fetchXml"); }
+
+            for (int i = 0; i < newExpression.Arguments.Count; i++)
+            {
+                var paramName = (newExpression.Arguments[i] as ParameterExpression)?.Name ?? (newExpression.Arguments[i] as MemberExpression)?.Member?.Name;
+                var member = newExpression.Members[i] as PropertyInfo;
+                if (!member!.PropertyType.IsDynamicsEntity()) { continue; }
+                if (paramName != member.Name)
+                {
+                    EntityParametersElements[paramName!].Attribute("alias")!.SetValue(member.Name);
+                    EntityParametersElements[member.Name] = EntityParametersElements[paramName!];
+                    EntityParametersElements.Remove(paramName!);
+                }
+            }
+        }
         return selectManyExpression;
     }
 

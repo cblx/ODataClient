@@ -1,9 +1,4 @@
-﻿using System;
-using System.Linq;
-using System.Net.Http;
-using System.Text.Json;
-using System.Text.Json.Nodes;
-using System.Threading.Tasks;
+﻿using System.Text.Json.Nodes;
 using Cblx.Dynamics.FetchXml.Linq.Extensions;
 using Cblx.Dynamics.Linq;
 using FluentAssertions;
@@ -47,7 +42,7 @@ public class FetchXmlQueryableExecuteTests
         });
 
         var items = await (from s in db.SomeTables
-            select new {s.Id}).ToListAsync();
+                           select new { s.Id }).ToListAsync();
 
         items
             .Should()
@@ -62,6 +57,87 @@ public class FetchXmlQueryableExecuteTests
             </fetch>
             """);
     }
+
+    [Fact]
+    public void SplitProjectionAndUseDivergentNamesFromLinks()
+    {
+        var db = GetSimpleMockDb(new JsonArray { });
+        var query = from s in db.SomeTables
+                    from o in db.OtherTables.Where(o => o.Id == s.OtherTableId)
+                    from a in db.AnotherTables.Where(an => an.Id == o.AnotherTableId)
+                    select new
+                    {
+                        S = s,
+                        O = o,
+                        A = a
+                    };
+
+        var finalQuery = query
+            .Where(p => p.O.Value > 10)
+            .Select(p => new
+        {
+            p.S.Id,
+            OtherTableId = p.O.Id,
+            AnotherTableId = p.A.Id
+        });
+
+
+        string fetchXml = finalQuery.ToFetchXml();
+        fetchXml.Should().Be("""
+            <fetch mapping="logical">
+              <entity name="some_table" alias="S">
+                <link-entity name="other_table" alias="O" from="other_tableid" to="other_table">
+                  <link-entity name="another_table" alias="A" from="another_tableid" to="another_table">
+                    <attribute name="another_tableid" alias="p.A.Id" />
+                  </link-entity>
+                  <attribute name="other_tableid" alias="p.O.Id" />
+                </link-entity>
+                <filter>
+                  <condition entityname="O" attribute="value" operator="gt" value="10" />
+                </filter>
+                <attribute name="some_tableid" alias="p.S.Id" />
+              </entity>
+            </fetch>
+            """);
+    }
+
+    // TODO: support this sometime
+    //[Fact]
+    //public async Task SplitProjectionAndUseDivergentNamesFromNavs()
+    //{
+    //    var db = GetSimpleMockDb(new JsonArray { });
+    //    var query = from s in db.SomeTables
+    //                select new
+    //                {
+    //                    S = s,
+    //                    O = s.OtherTable,
+    //                    A = s.OtherTable!.AnotherTable
+    //                };
+
+    //    var finalQuery = query.Select(p => new
+    //    {
+    //        p.S.Id,
+    //        OtherTableId = p.O.Id,
+    //        AnotherTableId = p.A.Id
+    //    });
+
+
+    //    string fetchXml = finalQuery.ToFetchXml();
+    //    fetchXml.Should().Be("""
+    //        <fetch mapping="logical">
+    //          <entity name="some_table" alias="s">
+    //            <link-entity name="other_table" alias="o" from="other_tableid" to="other_table">
+    //              <link-entity name="another_table" alias="a" from="another_tableid" to="another_table">
+    //                <attribute name="another_tableid" alias="p.A.Id" />
+    //              </link-entity>
+    //              <attribute name="other_tableid" alias="p.O.Id" />
+    //            </link-entity>
+    //            <attribute name="some_tableid" alias="p.S.Id" />
+    //          </entity>
+    //        </fetch>
+    //        """);
+    //}
+
 
     [Fact]
     public async Task SelectNewDateOnlyTest()
@@ -169,7 +245,7 @@ public class FetchXmlQueryableExecuteTests
         });
 
         var result = await (from s in db.SomeTables
-                           select new { s.Id }).IncludeCount().ToResultAsync();
+                            select new { s.Id }).IncludeCount().ToResultAsync();
 
         result.Value
             .Should()
@@ -268,7 +344,7 @@ public class FetchXmlQueryableExecuteTests
         items
             .Should()
             .ContainSingle(id => id == _exampleId);
-        
+
         db.Provider.LastUrl.Should().Be(
             """
             some_tables?fetchXml=<fetch mapping="logical" page="1" count="20">
@@ -432,10 +508,10 @@ public class FetchXmlQueryableExecuteTests
         });
 
         var query = (from tbl in db.SomeTables
-                    from oth in db.OtherTables.Where(o => o.Id == tbl.OtherTableId)
-                    where oth.Value == 1
-                    where tbl.Value == 2 || tbl.Name == "Maria"
-                    select tbl).LateMaterialize();
+                     from oth in db.OtherTables.Where(o => o.Id == tbl.OtherTableId)
+                     where oth.Value == 1
+                     where tbl.Value == 2 || tbl.Name == "Maria"
+                     select tbl).LateMaterialize();
 
         var items = await query.ProjectTo<SomeEntity>().ToListAsync();
 
@@ -510,9 +586,10 @@ public class FetchXmlQueryableExecuteTests
         });
 
         var items = await (from s in db.SomeTables
-                           select new { 
+                           select new
+                           {
                                s.Id,
-                               FormattedId = DynFunctions.FormattedValue(s.Id) 
+                               FormattedId = DynFunctions.FormattedValue(s.Id)
                            }).ToListAsync();
 
         items
@@ -540,7 +617,7 @@ public class FetchXmlQueryableExecuteTests
         });
 
         var ids = await (from s in db.SomeTables
-                           select s.Id).ToListAsync();
+                         select s.Id).ToListAsync();
 
         ids
             .Should()
@@ -568,7 +645,7 @@ public class FetchXmlQueryableExecuteTests
         });
 
         string? name = await (from s in db.SomeTables
-                         select s.Name).FirstOrDefaultAsync();
+                              select s.Name).FirstOrDefaultAsync();
 
         name.Should().Be("x");
 
@@ -596,11 +673,11 @@ public class FetchXmlQueryableExecuteTests
         var thing = new { Data = "x" };
 
         var obj = await (from s in db.SomeTables
-                              select new
-                              {
-                                  s.Name,
-                                  thing.Data
-                              }).FirstOrDefaultAsync();
+                         select new
+                         {
+                             s.Name,
+                             thing.Data
+                         }).FirstOrDefaultAsync();
 
         obj!.Name.Should().Be("x");
         obj.Data.Should().Be("x");
@@ -630,7 +707,7 @@ public class FetchXmlQueryableExecuteTests
         });
 
         var items = await (from s in db.SomeTables
-            select s).ToListAsync();
+                           select s).ToListAsync();
 
         items
             .Should()
@@ -638,7 +715,7 @@ public class FetchXmlQueryableExecuteTests
                 s.Id == _exampleId
                 && s.Name == "John"
                 && s.Status == SomeStatusEnum.Active
-                //&& s.Áccent == "wôrd"
+            //&& s.Áccent == "wôrd"
             );
 
         db.Provider.LastUrl.Should().Be(
@@ -672,7 +749,7 @@ public class FetchXmlQueryableExecuteTests
         });
 
         var item = await (from s in db.SomeTables
-            select s).FirstOrDefaultAsync();
+                          select s).FirstOrDefaultAsync();
 
         item!.Id.Should().Be(_exampleId);
         item!.Name.Should().Be("John");
@@ -693,7 +770,7 @@ public class FetchXmlQueryableExecuteTests
         });
 
         var item = (from s in db.SomeTables
-            select s).FirstOrDefault();
+                    select s).FirstOrDefault();
 
         item!.Id.Should().Be(_exampleId);
         item!.Name.Should().Be("John");
@@ -940,7 +1017,7 @@ public class FetchXmlQueryableExecuteTests
             </fetch>
             """);
     }
-    
+
     [Fact]
     public async Task MultipleWhereOnNavigationsAndProjectionTest()
     {
@@ -991,7 +1068,7 @@ public class FetchXmlQueryableExecuteTests
             </fetch>
             """);
     }
-    
+
     [Fact]
     public async Task ContainsInNavigationTest()
     {
@@ -1132,7 +1209,7 @@ public class FetchXmlQueryableExecuteTests
             </fetch>
             """);
     }
-    
+
     [Fact]
     public void MultipleWheresWithParameterNameMismatchFirstOrDefaultPredicateTest()
     {
@@ -1197,9 +1274,9 @@ public class FetchXmlQueryableExecuteTests
         });
 
         var items = await (from s in db.SomeTables
-            join o in db.OtherTables on s.OtherTableId equals o.Id
-            where o.Value > 0
-            select new {s.Id, OtherTableId = o.Id}).ToListAsync();
+                           join o in db.OtherTables on s.OtherTableId equals o.Id
+                           where o.Value > 0
+                           select new { s.Id, OtherTableId = o.Id }).ToListAsync();
 
         items
             .Should()
@@ -1221,11 +1298,11 @@ public class FetchXmlQueryableExecuteTests
 #pragma warning disable CS8073
         var items =
             await (from someTable in db.SomeTables
-                from otherTable in db.OtherTables.Where(otherTable => otherTable.Id == someTable.OtherTableId)
-                from anotherTable in db.AnotherTables
-                    .Where(anotherTable => anotherTable.Id == otherTable.AnotherTableId).DefaultIfEmpty()
-                where anotherTable.Id == null
-                select new {someTable.AnotherTableId}).Distinct().ToListAsync();
+                   from otherTable in db.OtherTables.Where(otherTable => otherTable.Id == someTable.OtherTableId)
+                   from anotherTable in db.AnotherTables
+                       .Where(anotherTable => anotherTable.Id == otherTable.AnotherTableId).DefaultIfEmpty()
+                   where anotherTable.Id == null
+                   select new { someTable.AnotherTableId }).Distinct().ToListAsync();
 #pragma warning restore CS8073
 
         items
@@ -1246,7 +1323,7 @@ public class FetchXmlQueryableExecuteTests
         });
 
         var items = await (from s in db.SomeTables
-            select new {s.OtherTable!.Id}).ToListAsync();
+                           select new { s.OtherTable!.Id }).ToListAsync();
 
         db.Provider.LastUrl.Should().Be(
             """
@@ -1343,7 +1420,7 @@ public class FetchXmlQueryableExecuteTests
         });
 
         var items = await (from s in db.SomeTables
-            select new {s.Id}).Distinct().ToListAsync();
+                           select new { s.Id }).Distinct().ToListAsync();
 
         items
             .Should()
@@ -1362,7 +1439,7 @@ public class FetchXmlQueryableExecuteTests
         });
 
         var items = await (from s in db.SomeTables
-            select new {s.Id}).Take(10).ToListAsync();
+                           select new { s.Id }).Take(10).ToListAsync();
 
         items
             .Should()
@@ -1395,7 +1472,7 @@ public class FetchXmlQueryableExecuteTests
         var db = new FetchXmlContext(httpClient);
 
         var items = await (from s in db.SomeTables
-            select new {s.Id}).Distinct().Take(10).ToListAsync();
+                           select new { s.Id }).Distinct().Take(10).ToListAsync();
 
         items
             .Should()

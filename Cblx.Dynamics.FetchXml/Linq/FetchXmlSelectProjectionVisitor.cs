@@ -33,6 +33,11 @@ public class FetchXmlSelectProjectionVisitor : ExpressionVisitor
         return node;
     }
 
+    protected override Expression VisitMemberInit(MemberInitExpression node)
+    {
+        return base.VisitMemberInit(node);
+    }
+
     protected override Expression VisitMember(MemberExpression? node)
     {
         XElement? linkedNavigationEntityElement = _fetchXmlElement.FindOrCreateElementForMemberExpression(node);
