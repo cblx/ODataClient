@@ -314,7 +314,7 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
 
             EntityParametersElements[entityAlias] = entityElement;
         }
-
+        CheckAndChangeAliasFromIntermediateSelect(projectionExpression);
         return node;
     }
 
@@ -422,6 +422,12 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
                 EntityParametersElements[paramName!].Attribute("alias")!.SetValue(member.Name);
                 EntityParametersElements[member.Name] = EntityParametersElements[paramName!];
                 EntityParametersElements.Remove(paramName!);
+                var references = FetchElement.Descendants()
+                    .Where(n => n.Attribute("entityname")?.Value == paramName);
+                foreach(var reference in references)
+                {
+                    reference.SetAttributeValue("entityname", member.Name);
+                }
             }
         }
     }

@@ -101,6 +101,58 @@ public class FetchXmlQueryableExecuteTests
             """);
     }
 
+
+    [Fact]
+    public void SplitProjectionAndUseDivergentNamesFromLinksInitialFilter()
+    {
+        var db = GetSimpleMockDb(new JsonArray { });
+        var query = from s in db.SomeTables
+                    from o in db.OtherTables.Where(o => o.Id == s.OtherTableId)
+                    from a in db.AnotherTables.Where(an => an.Id == o.AnotherTableId)
+                    where s.Value == 1
+                    where o.Value == 2
+                    select new
+                    {
+                        S = s,
+                        O = o,
+                        A = a
+                    };
+
+        var finalQuery = query
+            .Where(p => p.O.Value > 10)
+            .Select(p => new
+            {
+                p.S.Id,
+                OtherTableId = p.O.Id,
+                AnotherTableId = p.A.Id
+            });
+
+
+        string fetchXml = finalQuery.ToFetchXml();
+        fetchXml.Should().Be("""
+            <fetch mapping="logical">
+              <entity name="some_table" alias="S">
+                <link-entity name="other_table" alias="O" from="other_tableid" to="other_table">
+                  <link-entity name="another_table" alias="A" from="another_tableid" to="another_table">
+                    <attribute name="another_tableid" alias="p.A.Id" />
+                  </link-entity>
+                  <attribute name="other_tableid" alias="p.O.Id" />
+                </link-entity>
+                <filter>
+                  <condition attribute="value" operator="eq" value="1" />
+                </filter>
+                <filter>
+                  <condition entityname="O" attribute="value" operator="eq" value="2" />
+                </filter>
+                <filter>
+                  <condition entityname="O" attribute="value" operator="gt" value="10" />
+                </filter>
+                <attribute name="some_tableid" alias="p.S.Id" />
+              </entity>
+            </fetch>
+            """);
+    }
+
     public class SplitProjectionDto
     {
         public TbSomeTable? S { get; internal set; }
@@ -121,7 +173,6 @@ public class FetchXmlQueryableExecuteTests
                         O = o,
                         A = a
                     };
-
         var finalQuery = query
             .Where(p => p.O!.Value > 10)
             .Select(p => new
