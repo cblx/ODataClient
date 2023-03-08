@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Nodes;
+﻿using System.Runtime.InteropServices.JavaScript;
+using System.Text.Json.Nodes;
 using Cblx.Dynamics.FetchXml.Linq.Extensions;
 using Cblx.Dynamics.Linq;
 using FluentAssertions;
@@ -671,6 +672,46 @@ public class FetchXmlQueryableExecuteTests
               </entity>
             </fetch>
             """);
+    }
+
+    [Fact]
+    public async Task ShouldHaveDynamicsHeadersWhenUsingFormattedValueTest()
+    {
+        var httpClient = new HttpClient(new MockHttpMessageHandler("""
+            { "value": [] }
+            """))
+        {
+            BaseAddress = new Uri("http://test.tst")
+        };
+        var db = new FetchXmlContext(httpClient);
+        await (from s in db.SomeTables
+                           select new
+                           {
+                               s.Id,
+                               FormattedId = DynFunctions.FormattedValue(s.Id)
+                           }).ToListAsync();
+        db.Provider.LastRequestMessage?.Headers.Should().Contain(
+            h => h.Key == "Prefer" && h.Value.FirstOrDefault() == $"odata.include-annotations={DynAnnotations.FormattedValue}");
+    }
+
+    [Fact]
+    public async Task ShouldHaveDynamicsHeadersWhenUsingFormattedValueAndUsingOtherMethodsTest()
+    {
+        var httpClient = new HttpClient(new MockHttpMessageHandler("""
+            { "value": [] }
+            """))
+        {
+            BaseAddress = new Uri("http://test.tst")
+        };
+        var db = new FetchXmlContext(httpClient);
+        await (from s in db.SomeTables
+               select new
+               {
+                   FormattedId = DynFunctions.FormattedValue(s.Id),
+                   StringId = s.Id.ToString(),
+               }).ToListAsync();
+        db.Provider.LastRequestMessage?.Headers.Should().Contain(
+            h => h.Key == "Prefer" && h.Value.FirstOrDefault() == $"odata.include-annotations={DynAnnotations.FormattedValue}");
     }
 
 

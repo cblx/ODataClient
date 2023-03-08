@@ -61,7 +61,7 @@ public class FetchXmlSelectProjectionVisitor : ExpressionVisitor
 
     protected override Expression VisitMethodCall(MethodCallExpression node)
     {
-        HasFormattedValues = node.Method is { Name: nameof(DynFunctions.FormattedValue) } && node.Method.DeclaringType == typeof(DynFunctions);
+        HasFormattedValues = HasFormattedValues || node.Method is { Name: nameof(DynFunctions.FormattedValue) } && node.Method.DeclaringType == typeof(DynFunctions);
         return base.VisitMethodCall(node);
     }
 }

@@ -9,13 +9,13 @@ using System.Xml.Linq;
 using Cblx.Dynamics.Linq;
 using Cblx.OData.Client.Abstractions;
 using OData.Client;
-using OData.Client.Abstractions;
 
 namespace Cblx.Dynamics.FetchXml.Linq;
 
 public class FetchXmlQueryProvider : IAsyncQueryProvider
 {
     public string LastUrl { get; private set; } = string.Empty;
+    public HttpRequestMessage? LastRequestMessage { get; private set; }
 
     private readonly HttpClient? _httpClient;
 
@@ -69,6 +69,7 @@ public class FetchXmlQueryProvider : IAsyncQueryProvider
         //string url = $"{visitor.Endpoint}?fetchXml={HttpUtility.UrlEncode(fetchXmlElement.ToString())}";
         string url = $"{visitor.Endpoint}?fetchXml={fetchXmlElement}";
         var requestMessage = new HttpRequestMessage(HttpMethod.Get, url);
+        LastRequestMessage = requestMessage;
         if (visitor.IncludeAllAnnotations)
         {
             // Pagination data will only return with all annotations enabled
