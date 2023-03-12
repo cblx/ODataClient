@@ -6,10 +6,10 @@ using System.Reflection;
 namespace OData.Client;
 public class ODataClient : IODataClient
 {
-    public ODataClientOptions Options { get; private set; }
+    public DynamicsOptions Options { get; private set; }
     public HttpMessageInvoker Invoker { get; private set; }
 
-    public ODataClient(HttpMessageInvoker invoker, ODataClientOptions? options = null)
+    public ODataClient(HttpMessageInvoker invoker, DynamicsOptions? options = null)
     {
         this.Invoker = invoker;
         this.Options = options ?? new();

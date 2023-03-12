@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Options;
 using Moq;
 using FluentAssertions;
 using System.Net;

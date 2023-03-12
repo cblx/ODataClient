@@ -1,5 +1,4 @@
-﻿using System.Runtime.InteropServices.JavaScript;
-using System.Text.Json.Nodes;
+﻿using System.Text.Json.Nodes;
 using Cblx.Dynamics.FetchXml.Linq.Extensions;
 using Cblx.Dynamics.Linq;
 using FluentAssertions;

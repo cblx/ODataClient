@@ -7,33 +7,32 @@ namespace Cblx.Dynamics.AspNetCore;
 
 public static class ServicesExtensions
 {
-    public static void AddDynamics(this IServiceCollection services, Action<DynamicsOptionsBuilder>? setup = null) => AddDynamics(services, (Delegate?)setup);
-    public static void AddDynamics(this IServiceCollection services, Action<IServiceProvider, DynamicsOptionsBuilder>? setup) => AddDynamics(services, (Delegate?) setup);
+    public static void AddDynamics(this IServiceCollection services, Action<DynamicsOptions>? setup = null) => AddDynamics(services, (Delegate?)setup);
     private static void AddDynamics(this IServiceCollection services, Delegate? setup = null)
     {
         // Options configuration
-        services.AddScoped(sp =>
+        services.AddSingleton(sp =>
         {
-            var optionsBuilder = new DynamicsOptionsBuilder();
+            var options = new DynamicsOptions();
             if (setup != null)
             {
                 switch (setup.Method.GetParameters().Length)
                 {
                     case 1:
-                        setup.DynamicInvoke(optionsBuilder);
+                        setup.DynamicInvoke(options);
                         break;
                     case 2:
-                        setup.DynamicInvoke(sp, optionsBuilder);
+                        setup.DynamicInvoke(sp, options);
                         break;
                 }
                 if (setup.Method.GetParameters().Length == 1)
                 {
-                    setup?.DynamicInvoke(optionsBuilder);
+                    setup?.DynamicInvoke(options);
                 }
             }
-            return optionsBuilder.Options;
+            return options;
         });
-
+        
         services.AddSingleton<IDynamicsAuthenticator, DynamicsAuthenticator>();
         // Default Config, binding from "Dynamics" section
         services
@@ -55,7 +54,7 @@ public static class ServicesExtensions
         services.AddScoped<IODataClient, ODataClient>(sp =>
         {
             var options = sp.GetRequiredService<DynamicsOptions>();
-            var httpClient = options.HttpClient ?? sp.GetRequiredService<IHttpClientFactory>().CreateClient(options.HttpClientName!);
+            var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient(options.HttpClientName!);
             var oDataClient = new ODataClient(httpClient, options);
             return oDataClient;
         });

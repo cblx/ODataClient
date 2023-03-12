@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.Options;
-
-namespace Cblx.Dynamics;
+﻿namespace Cblx.Dynamics;
 
 public class DynamicsAuthorizationMessageHandler : DelegatingHandler {
     private readonly IDynamicsAuthenticator _dynamicsAuthenticator;

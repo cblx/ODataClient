@@ -14,13 +14,13 @@ public class ODataSet<TSource> : IODataSet<TSource>
     where TSource : class
 {
     private readonly string _endpoint;
-    private readonly ODataClient client;
-    private readonly ODataOptions options = new();
+    private readonly ODataClient _client;
+    private readonly ODataOptions _options = new();
     private Action<HttpRequestMessage>? _requestMessageConfiguration;
 
     public ODataSet(ODataClient client, string endpoint)
     {
-        this.client = client;
+        this._client = client;
         _endpoint = endpoint;
     }
 
@@ -29,22 +29,22 @@ public class ODataSet<TSource> : IODataSet<TSource>
         ODataOptions options
     )
     {
-        client = originalODataSet.client;
+        _client = originalODataSet._client;
         _endpoint = originalODataSet._endpoint;
         _requestMessageConfiguration = originalODataSet._requestMessageConfiguration;
-        this.options = options;
+        this._options = options;
     }
 
     public string? LastQuery { get; private set; }
 
     public IODataSet<TSource> ConfigureRequestMessage(Action<HttpRequestMessage> requestMessageConfiguration)
     {
-        return new ODataSet<TSource>(this, options) { _requestMessageConfiguration = requestMessageConfiguration };
+        return new ODataSet<TSource>(this, _options) { _requestMessageConfiguration = requestMessageConfiguration };
     }
 
     public IODataSet<TSource> AddOptionValue(string option, string value)
     {
-        return new ODataSet<TSource>(this, options.Clone().Add(option, value));
+        return new ODataSet<TSource>(this, _options.Clone().Add(option, value));
     }
 
     public async Task<List<TProjection>> SelectListAsync<TProjection>(Expression<Func<TSource, TProjection>> selectExpression)
@@ -316,7 +316,7 @@ public class ODataSet<TSource> : IODataSet<TSource>
             };
         LastQuery = uri;
         var requestMessage = new HttpRequestMessage(HttpMethod.Get, uri);
-        HttpResponseMessage responseMessage = await client.Invoker.SendAsync(requestMessage, default);
+        HttpResponseMessage responseMessage = await _client.Invoker.SendAsync(requestMessage, default);
         var jsonObject = await JsonSerializer.DeserializeAsync<JsonObject>(await responseMessage.Content.ReadAsStreamAsync());
         // when searching for statuscode options, we'll get it inside an array "value"
         if (jsonObject!.ContainsKey("value"))
@@ -347,7 +347,7 @@ public class ODataSet<TSource> : IODataSet<TSource>
         string uri = $"EntityDefinitions(LogicalName='{entityLogicalName}')/Attributes(LogicalName='{attributeLogicalName}')/Microsoft.Dynamics.CRM.MultiSelectPicklistAttributeMetadata?$select=LogicalName&$expand=OptionSet($select=Options)";
         LastQuery = uri;
         var requestMessage = new HttpRequestMessage(HttpMethod.Get, uri);
-        HttpResponseMessage responseMessage = await client.Invoker.SendAsync(requestMessage, default);
+        HttpResponseMessage responseMessage = await _client.Invoker.SendAsync(requestMessage, default);
         var jsonObject = await JsonSerializer.DeserializeAsync<JsonObject>(await responseMessage.Content.ReadAsStreamAsync());
         // when searching for statuscode options, we'll get it inside an array "value"
         if (jsonObject!.ContainsKey("value"))
@@ -377,7 +377,7 @@ public class ODataSet<TSource> : IODataSet<TSource>
         //                  $"odata.include-annotations={DynAnnotations.FormattedValue}"
         //              );
         //}
-        return HttpHelpers.Get<TResult>(new RequestParameters(client, _requestMessageConfiguration, url));
+        return HttpHelpers.Get<TResult>(new RequestParameters(_client, _requestMessageConfiguration, url));
     }
 
     public string CreateFindString<TEntity>(Guid id) where TEntity : class
@@ -414,7 +414,7 @@ public class ODataSet<TSource> : IODataSet<TSource>
         var parts = new List<string>();
         if (!string.IsNullOrWhiteSpace(preOption)) parts.Add(preOption);
 
-        foreach (var option in options.Items)
+        foreach (var option in _options.Items)
         {
             var part = $"{option.Key}=";
             part += option.Key switch
