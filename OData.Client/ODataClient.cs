@@ -1,18 +1,24 @@
-﻿using Cblx.OData.Client.Abstractions;
+﻿using Cblx.Dynamics;
+using Cblx.OData.Client.Abstractions;
 using OData.Client.Abstractions;
 using OData.Client.Abstractions.Write;
 using System.Linq.Expressions;
-using System.Reflection;
 namespace OData.Client;
 public class ODataClient : IODataClient
 {
     public DynamicsOptions Options { get; private set; }
     public HttpMessageInvoker Invoker { get; private set; }
+    public IDynamicsMetadataProvider MetadataProvider { get; private set; }
 
-    public ODataClient(HttpMessageInvoker invoker, DynamicsOptions? options = null)
+    public ODataClient(
+        HttpMessageInvoker invoker, 
+        IDynamicsMetadataProvider? metadataProvider = null,
+        DynamicsOptions? options = null
+    )
     {
-        this.Invoker = invoker;
-        this.Options = options ?? new();
+        Options = options ?? new();
+        Invoker = invoker;
+        MetadataProvider = metadataProvider ?? new DynamicsCodeMetadataProvider();
     }
 
     public IODataSet<T> From<T>() where T : class

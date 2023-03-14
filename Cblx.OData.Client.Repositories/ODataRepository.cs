@@ -73,11 +73,7 @@ namespace Cblx.OData.Client
 
         async Task SaveChangesForAsync(TEntity entity)
         {
-            Guid? id = changeTracker.GetId(entity);
-            if (id == null)
-            {
-                throw new InvalidOperationException("Could not find Id for entity");
-            }
+            Guid? id = changeTracker.GetId(entity) ?? throw new InvalidOperationException("Could not find Id for entity");
             Change? change = changeTracker.GetChange(id.Value);
             if (change == null) { return; }
 
@@ -87,7 +83,7 @@ namespace Cblx.OData.Client
             }
             else
             {
-                var body = new Body<TTable>();
+                var body = new Body<TTable>(oDataClient.MetadataProvider);
                 foreach (ChangedProperty changedProperty in change.ChangedProperties)
                 {
                     string? fieldName = changedProperty.PropertyInfo.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name;

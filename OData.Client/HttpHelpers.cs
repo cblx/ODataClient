@@ -16,7 +16,7 @@ record RequestParameters(
 
 record RequestParametersWithValue(
     ODataClient ODataClient,
-    Action<HttpRequestMessage> RequestMessageConfiguration,
+    Action<HttpRequestMessage>? RequestMessageConfiguration,
     string Url, object Value) : RequestParameters(ODataClient, RequestMessageConfiguration, Url);
 
 static class HttpHelpers

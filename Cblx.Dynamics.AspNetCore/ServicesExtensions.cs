@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Cblx.OData.Client.Abstractions;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using OData.Client;
@@ -34,6 +35,7 @@ public static class ServicesExtensions
         });
         
         services.AddSingleton<IDynamicsAuthenticator, DynamicsAuthenticator>();
+        services.AddSingleton<IDynamicsMetadataProvider, DynamicsMetadataProvider>();
         // Default Config, binding from "Dynamics" section
         services
             .AddOptions<DynamicsConfig>()
@@ -49,14 +51,15 @@ public static class ServicesExtensions
                 var dynamicsConfig = sp.GetRequiredService<IOptions<DynamicsConfig>>().Value;
                 httpClient.BaseAddress = DynamicsBaseAddress.FromResourceUrl(dynamicsConfig.ResourceUrl);
             });
-        services.AddScoped<DynamicsAuthorizationMessageHandler>();
-
+        services.AddTransient<DynamicsAuthorizationMessageHandler>();
         services.AddScoped<IODataClient, ODataClient>(sp =>
         {
             var options = sp.GetRequiredService<DynamicsOptions>();
-            var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient(options.HttpClientName!);
-            var oDataClient = new ODataClient(httpClient, options);
-            return oDataClient;
+            return new ODataClient(
+                sp.GetRequiredService<IHttpClientFactory>().CreateClient(options.HttpClientName!), 
+                sp.GetRequiredService<IDynamicsMetadataProvider>(),
+                options
+            );
         });
     }
 }

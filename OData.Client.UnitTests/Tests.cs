@@ -3,6 +3,7 @@ using Cblx.OData.Client.Abstractions;
 using Cblx.OData.Client.Abstractions.Ids;
 using Cblx.OData.Client.Abstractions.Json;
 using FluentAssertions;
+using Moq;
 using OData.Client.Abstractions;
 using OData.Client.Abstractions.Write;
 using System;
@@ -1779,7 +1780,7 @@ public class Tests
     public void ShouldBeAbleToSetCastableValues()
     {
         Guid id = Guid.NewGuid();
-        Action exec = () => new Body<TblEntity>().Set(c => c.Id, id);
+        Action exec = () => new Body<TblEntity>(Mock.Of<IDynamicsMetadataProvider>()).Set(c => c.Id, id);
         exec.Should().NotThrow<NullReferenceException>();
     }
 

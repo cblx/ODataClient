@@ -1,4 +1,5 @@
-﻿using System.Collections.ObjectModel;
+﻿using Cblx.OData.Client.Abstractions;
+using System.Collections.ObjectModel;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.Json.Serialization;
@@ -6,15 +7,17 @@ using System.Text.Json.Serialization;
 namespace OData.Client.Abstractions.Write;
 public class Body<T> where T : class
 {
-    readonly Dictionary<string, object?> data = new();
+    private readonly Dictionary<string, object?> _data = new();
+    private readonly IDynamicsMetadataProvider _metadataProvider;
+    public Body(IDynamicsMetadataProvider metadataProvider) => _metadataProvider = metadataProvider;
 
     public Body<T> Set(string propName, object? value)
     {
-        if (IsDate(propName))
+        if (_metadataProvider.IsEdmDate<T>(propName))
         {
             value = ToDateFormat(value);
         }
-        data.Add(propName, value);
+        _data.Add(propName, value);
         return this;
     }
 
@@ -27,21 +30,21 @@ public class Body<T> where T : class
         {
             v = ToDateFormat(v);
         }
-        data.Add(kvp.Key, v);
+        _data.Add(kvp.Key, v);
         return this;
     }
 
     public Body<T> Set<TValue>(string propName, TValue value)
     {
         var kvp = new Set<T, TValue>(propName, value).ToKeyValuePair();
-        data.Add(kvp.Key, kvp.Value);
+        _data.Add(kvp.Key, kvp.Value);
         return this;
     }
 
     public Body<T> Bind(string nav, Guid id)
     {
         var kvp = new Bind<T>(nav, id).ToKeyValuePair();
-        data.Add(kvp.Key, kvp.Value);
+        _data.Add(kvp.Key, kvp.Value);
         return this;
     }
 
@@ -51,21 +54,21 @@ public class Body<T> where T : class
         return Bind(nav, id);
     }
 
-    static bool IsDate(string propName)
-    {
-        // Use DateTime? for Edm.Date
-        PropertyInfo? propertyInfo = typeof(T)
-            .GetProperties()
-                .FirstOrDefault(p => 
-                    p.Name == propName 
-                    || 
-                    p.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name == propName
-                );
-        if(propertyInfo == null) {
-            return false;
-        }
-        return IsDate(propertyInfo);
-    }
+    //static bool IsDate(string propName)
+    //{
+    //    // Use DateTime? for Edm.Date
+    //    PropertyInfo? propertyInfo = typeof(T)
+    //        .GetProperties()
+    //            .FirstOrDefault(p => 
+    //                p.Name == propName 
+    //                || 
+    //                p.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name == propName
+    //            );
+    //    if(propertyInfo == null) {
+    //        return false;
+    //    }
+    //    return IsDate(propertyInfo);
+    //}
     
     static bool IsDate(PropertyInfo propertyInfo)
     {
@@ -93,7 +96,5 @@ public class Body<T> where T : class
         return o;
     }
 
-    
-
-    public IDictionary<string, object?> ToDictionary() => new ReadOnlyDictionary<string, object?>(this.data);
+    public IDictionary<string, object?> ToDictionary() => new ReadOnlyDictionary<string, object?>(this._data);
 }

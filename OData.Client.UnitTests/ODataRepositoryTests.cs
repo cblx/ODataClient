@@ -1,7 +1,8 @@
-﻿using FluentAssertions;
+﻿using Cblx.Dynamics;
+using FluentAssertions;
+using Moq;
 using OData.Client;
 using OData.Client.Abstractions;
-using OData.Client.UnitTests;
 using System;
 using System.Net.Http;
 using System.Text.Json.Serialization;
@@ -15,7 +16,7 @@ public class ODataRepositoryTests
     public async Task Test()
     {
         var httpClient = new HttpClient();
-        var oDataClient = new ODataClient(httpClient);
+        var oDataClient = new ODataClient(httpClient, new DynamicsMetadataProvider(Mock.Of<IHttpClientFactory>(), new DynamicsOptions { DownloadMetadataAndConfigure = false }));
         var repository = new Repo(oDataClient);
         repository.Add(new SaveEntity() { 
             RelId = Guid.NewGuid(),
