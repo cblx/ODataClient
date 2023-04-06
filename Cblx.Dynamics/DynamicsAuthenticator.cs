@@ -9,20 +9,14 @@ public class DynamicsAuthenticator : IDynamicsAuthenticator
     private int _current = 0;
     private readonly object _toSync = new();
     private readonly ConcurrentDictionary<string, List<ClientAuthCredentials>> _clientsPerDynamics = new();
-    //private readonly AuthenticationContext _authenticationContext;
-    //private readonly IOptions<DynamicsConfig> _configOptions;
-
-    //public string DefaultResourceUrl => _configOptions.Value.ResourceUrl;
     
-    public DynamicsAuthenticator(/*IOptions<DynamicsConfig> configOptions*/)
+    public DynamicsAuthenticator()
     {
-        //_configOptions = configOptions;
-        //_authenticationContext = new AuthenticationContext(configOptions.Value.Authority);
     }
 
     private List<ClientAuthCredentials> GetClients(DynamicsConfig config)
     {
-        string configKey = $"{config.Authority}-{config.ResourceUrl}-{config.Users}";
+        string configKey = $"{config.Authority}-{config.ResourceUrl}-{config.Users}-{config.ClientId}-{config.ClientSecret}";
         return _clientsPerDynamics.GetOrAdd(configKey, _ => new());
     }
 
