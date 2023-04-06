@@ -24,7 +24,7 @@
 		<PackageTags>Dynamics;OData,FetchXml</PackageTags>
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All"/>
+		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\Cblx.Dynamics.FetchXml\Cblx.Dynamics.FetchXml.csproj" />
@@ -35,8 +35,8 @@
 		<ProjectReference Include="..\Cblx.OData.Client.SourceGenerators\Cblx.OData.Client.SourceGenerators.csproj" />
 		<ProjectReference Include="..\OData.Client.Abstractions\Cblx.OData.Client.Abstractions.csproj" />
 		<ProjectReference Include="..\OData.Client\Cblx.OData.Client.csproj" />
-		<PackageReference Include="Microsoft.IdentityModel.Clients.ActiveDirectory" Version="5.2.9" />
-		<PackageReference Include="Microsoft.Extensions.Options" Version="6.0.0" />
+		<PackageReference Include="Microsoft.IdentityModel.Clients.ActiveDirectory" Version="5.3.0" />
+		<PackageReference Include="Microsoft.Extensions.Options" Version="7.0.1" />
 	</ItemGroup>
 
 </Project>
