@@ -2,7 +2,6 @@
 using System.Collections.ObjectModel;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text.Json.Serialization;
 
 namespace OData.Client.Abstractions.Write;
 public class Body<T> where T : class
@@ -43,7 +42,7 @@ public class Body<T> where T : class
 
     public Body<T> Bind(string nav, Guid id)
     {
-        var kvp = new Bind<T>(nav, id).ToKeyValuePair();
+        var kvp = new Bind<T>(_metadataProvider, nav, id).ToKeyValuePair();
         _data.Add(kvp.Key, kvp.Value);
         return this;
     }
@@ -54,22 +53,6 @@ public class Body<T> where T : class
         return Bind(nav, id);
     }
 
-    //static bool IsDate(string propName)
-    //{
-    //    // Use DateTime? for Edm.Date
-    //    PropertyInfo? propertyInfo = typeof(T)
-    //        .GetProperties()
-    //            .FirstOrDefault(p => 
-    //                p.Name == propName 
-    //                || 
-    //                p.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name == propName
-    //            );
-    //    if(propertyInfo == null) {
-    //        return false;
-    //    }
-    //    return IsDate(propertyInfo);
-    //}
-    
     static bool IsDate(PropertyInfo propertyInfo)
     {
         return propertyInfo.PropertyType == typeof(DateTime?);

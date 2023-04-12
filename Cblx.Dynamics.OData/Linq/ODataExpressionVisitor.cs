@@ -1,10 +1,7 @@
 ﻿using OData.Client;
 using System.Linq.Expressions;
-using System.Net.Http.Headers;
-using System.Reflection.Metadata.Ecma335;
 
 namespace Cblx.Dynamics.OData.Linq;
-
 
 public class ODataExpressionVisitor : ExpressionVisitor
 {

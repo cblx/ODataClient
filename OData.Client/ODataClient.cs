@@ -22,14 +22,14 @@ public class ODataClient : IODataClient
     }
 
     public IODataSet<T> From<T>() where T : class
-        => new ODataSet<T>(this, ODataClientHelpers.ResolveEndpointName<T>());
+        => new ODataSet<T>(this, MetadataProvider.GetEndpoint<T>());
 
     public Task Post<T>(Body<T> body, Action<HttpRequestMessage>? requestMessageConfiguration = null) where T : class
         => HttpHelpers.Post(
             new(
                 this,
                 requestMessageConfiguration,
-                ODataClientHelpers.ResolveEndpointName<T>(),
+                MetadataProvider.GetEndpoint<T>(),
                 body.ToDictionary()
             )
         );
@@ -39,30 +39,31 @@ public class ODataClient : IODataClient
             new(
                 this,
                 requestMessageConfiguration,
-                $"{ODataClientHelpers.ResolveEndpointName<T>()}({id})",
+                $"{MetadataProvider.GetEndpoint<T>()}({id})",
                 body.ToDictionary()
             )
         );
 
-    public Task Delete<T>(object id, Action<HttpRequestMessage>? requestMessageConfiguration = null)
+    public Task Delete<T>(object id, Action<HttpRequestMessage>? requestMessageConfiguration = null) where T: class
         => HttpHelpers.Delete(
             new(
                 this,
                 requestMessageConfiguration,
-                $"{ODataClientHelpers.ResolveEndpointName<T>()}({id})"
+                $"{MetadataProvider.GetEndpoint<T>()}({id})"
             )
         );
 
-    public Task Unbind<T>(object id, string nav, Action<HttpRequestMessage>? requestMessageConfiguration = null)
+    public Task Unbind<T>(object id, string nav, Action<HttpRequestMessage>? requestMessageConfiguration = null) where T: class
         => HttpHelpers.Delete(
             new(
                 this,
                 requestMessageConfiguration,
-                $"{ODataClientHelpers.ResolveEndpointName<T>()}({id})/{nav}/$ref"
+                $"{MetadataProvider.GetEndpoint<T>()}({id})/{nav}/$ref"
             )
         );
 
     public Task Unbind<T, TBind>(object id, Expression<Func<T, TBind>> navExpression, Action<HttpRequestMessage>? requestMessageConfiguration = null)
+        where T: class
         where TBind : class
     {
         var member = navExpression.Body as MemberExpression;

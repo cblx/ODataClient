@@ -1,4 +1,5 @@
 ﻿using Cblx.OData.Client.Abstractions;
+using OData.Client.Abstractions;
 using System.Reflection;
 using System.Text.Json.Serialization;
 
@@ -31,5 +32,23 @@ public class DynamicsCodeMetadataProvider : IDynamicsMetadataProvider
         type = Nullable.GetUnderlyingType(type) ?? type;
         return type == typeof(DateTime)
             || type == typeof(DateOnly);
+    }
+
+    public virtual string GetEndpoint<TEntity>() where TEntity : class => GetEndpoint(typeof(TEntity));
+
+    public virtual string GetEndpoint(Type entityType)
+    {
+        var endpointName = entityType.GetCustomAttribute<ODataEndpointAttribute>()?.Endpoint;
+        if (endpointName != null) { return endpointName; }
+        endpointName = entityType.Name;
+        if (endpointName.EndsWith("s"))
+        {
+            endpointName += "es";
+        }
+        else
+        {
+            endpointName += "s";
+        }
+        return endpointName;
     }
 }

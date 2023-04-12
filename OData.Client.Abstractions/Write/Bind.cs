@@ -2,36 +2,39 @@
 using System.Reflection;
 using System.Text.Json.Serialization;
 namespace OData.Client.Abstractions.Write;
-public class Bind<T> : BodyElement<T>
+internal class Bind<T> : BodyElement<T>
     where T : class
 {
-    private readonly object foreignId;
-    private readonly PropertyInfo navPropInfo;
+    private readonly object _foreignId;
+    private readonly IDynamicsMetadataProvider _metadataProvider;
+    private readonly PropertyInfo _navPropInfo;
 
-    public Bind(PropertyInfo navPropInfo, object foreignId)
+    public Bind(IDynamicsMetadataProvider metadataProvider, PropertyInfo navPropInfo, object foreignId)
     {
-        this.navPropInfo = navPropInfo;
-        this.foreignId = foreignId;
+        _metadataProvider = metadataProvider;
+        _navPropInfo = navPropInfo;
+        _foreignId = foreignId;
     }
 
-    public Bind(string nav, object foreignId)
+    public Bind(IDynamicsMetadataProvider metadataProvider, string nav, object foreignId)
     {
-        this.navPropInfo = typeof(T).GetProperties().FirstOrDefault(p => p.Name == nav || p.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name == nav);
-        if(this.navPropInfo == null)
+        _navPropInfo = typeof(T).GetProperties().FirstOrDefault(p => p.Name == nav || p.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name == nav);
+        if(_navPropInfo == null)
         {
             throw new ArgumentOutOfRangeException($"No {nav} property found in {typeof(T).Name} nor a property annotated with JsonPropertyNameAttribute using {nav} as Name");
         }
-        this.foreignId = foreignId;
+        _metadataProvider = metadataProvider;
+        _foreignId = foreignId;
     }
 
     public KeyValuePair<string, object> ToKeyValuePair()
     {
-        var propType = navPropInfo.PropertyType;
-        string endpointName = ODataClientHelpers.ResolveEndpointName(propType);
-        string navPropName = navPropInfo.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name ?? navPropInfo.Name;
+        var propType = _navPropInfo.PropertyType;
+        string endpointName = _metadataProvider.GetEndpoint(propType);
+        string navPropName = _navPropInfo.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name ?? _navPropInfo.Name;
         return new KeyValuePair<string, object>(
                 $"{navPropName}@odata.bind",
-                $"/{endpointName}({foreignId})"
+                $"/{endpointName}({_foreignId})"
         );
     }
 }
