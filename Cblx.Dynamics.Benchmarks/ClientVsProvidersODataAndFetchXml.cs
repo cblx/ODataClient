@@ -57,7 +57,7 @@ public class ClientVsProvidersODataAndFetchXml
 """,
         HttpStatusCode.OK);
         var httpClient = new HttpClient(httpMessageHandlerMock) { BaseAddress = new Uri("http://localhost") };
-        var provider = new ODataQueryProvider(httpClient);
+        var provider = new ODataQueryProvider(httpClient, new DynamicsCodeMetadataProvider());
         var things = new ODataQueryable<TbThing>(provider);
 
         await things
@@ -85,7 +85,7 @@ public class ClientVsProvidersODataAndFetchXml
 """,
         HttpStatusCode.OK);
         var httpClient = new HttpClient(httpMessageHandlerMock) { BaseAddress = new Uri("http://localhost") };
-        var provider = new FetchXmlQueryProvider(httpClient);
+        var provider = new FetchXmlQueryProvider(httpClient, new DynamicsCodeMetadataProvider());
         var things = new FetchXmlQueryable<TbThing>(provider);
 
         await things

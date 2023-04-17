@@ -10,7 +10,7 @@ public class ODataContext
     public IQueryable<TbAnotherTable> AnotherTables { get; }
     public ODataContext(HttpClient? httpClient = null)
     {
-        Provider = new ODataQueryProvider(httpClient);
+        Provider = new ODataQueryProvider(httpClient, new DynamicsCodeMetadataProvider());
         SomeTables = new ODataQueryable<TbSomeTable>(Provider);
         OtherTables = new ODataQueryable<TbOtherTable>(Provider);
         AnotherTables = new ODataQueryable<TbAnotherTable>(Provider);

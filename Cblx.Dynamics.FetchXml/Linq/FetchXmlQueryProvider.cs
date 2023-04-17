@@ -17,11 +17,13 @@ public class FetchXmlQueryProvider : IAsyncQueryProvider
     public string LastUrl { get; private set; } = string.Empty;
     public HttpRequestMessage? LastRequestMessage { get; private set; }
 
-    private readonly HttpClient? _httpClient;
+    private readonly HttpClient _httpClient;
+    private readonly IDynamicsMetadataProvider _metadataProvider;
 
-    public FetchXmlQueryProvider(HttpClient? httpClient = null)
+    public FetchXmlQueryProvider(HttpClient httpClient, IDynamicsMetadataProvider metadataProvider)
     {
         _httpClient = httpClient;
+        _metadataProvider = metadataProvider;
     }
 
     public IQueryable CreateQuery(Expression expression)

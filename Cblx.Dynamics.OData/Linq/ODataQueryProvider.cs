@@ -14,11 +14,13 @@ public class ODataQueryProvider : IAsyncQueryProvider
 {
     public string LastUrl { get; private set; } = string.Empty;
 
-    private readonly HttpClient? _httpClient;
+    private readonly HttpClient _httpClient;
+    private readonly IDynamicsMetadataProvider _metadataProvider;
 
-    public ODataQueryProvider(HttpClient? httpClient = null)
+    public ODataQueryProvider(HttpClient httpClient, IDynamicsMetadataProvider metadataProvider)
     {
         _httpClient = httpClient;
+        _metadataProvider = metadataProvider;
     }
 
     public IQueryable CreateQuery(Expression expression)

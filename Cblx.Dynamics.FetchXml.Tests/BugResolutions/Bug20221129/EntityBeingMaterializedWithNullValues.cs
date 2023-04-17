@@ -51,7 +51,7 @@ public class EntityBeingMaterializedWithNullValues
     public class FetchXmlContext : DynamicsContext, IFetchXmlContext
     {
         private readonly FetchXmlQueryProvider _provider;
-        public FetchXmlContext(HttpClient httpClient) => _provider = new FetchXmlQueryProvider(httpClient);
+        public FetchXmlContext(HttpClient httpClient) => _provider = new FetchXmlQueryProvider(httpClient, new DynamicsCodeMetadataProvider());
         public FetchXmlQueryProvider Provider => _provider;
         protected override IQueryable<T> Set<T>() => new FetchXmlQueryable<T>(_provider);
     }

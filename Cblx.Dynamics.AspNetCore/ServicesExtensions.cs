@@ -1,4 +1,6 @@
-﻿using Cblx.OData.Client.Abstractions;
+﻿using Cblx.Dynamics.FetchXml.Linq;
+using Cblx.Dynamics.OData.Linq;
+using Cblx.OData.Client.Abstractions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -61,5 +63,13 @@ public static class ServicesExtensions
                 options
             );
         });
+        services.AddScoped(sp => new FetchXmlQueryProvider(
+            sp.GetRequiredService<IHttpClientFactory>().CreateClient(sp.GetRequiredService<DynamicsOptions>().HttpClientName!),
+            sp.GetRequiredService<IDynamicsMetadataProvider>()
+        ));
+        services.AddScoped(sp => new ODataQueryProvider(
+            sp.GetRequiredService<IHttpClientFactory>().CreateClient(sp.GetRequiredService<DynamicsOptions>().HttpClientName!),
+            sp.GetRequiredService<IDynamicsMetadataProvider>()
+        ));
     }
 }

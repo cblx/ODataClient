@@ -12,7 +12,7 @@ public class FetchXmlContext
     public IQueryable<TbAnotherTable> AnotherTables { get; }
     public FetchXmlContext(HttpClient? httpClient = null)
     {
-        Provider = new FetchXmlQueryProvider(httpClient);
+        Provider = new FetchXmlQueryProvider(httpClient, new DynamicsCodeMetadataProvider());
         SomeTables = new FetchXmlQueryable<TbSomeTable>(Provider);
         OtherTables = new FetchXmlQueryable<TbOtherTable>(Provider);
         AnotherTables = new FetchXmlQueryable<TbAnotherTable>(Provider);
