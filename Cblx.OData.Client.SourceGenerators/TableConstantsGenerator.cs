@@ -15,16 +15,9 @@ namespace Cblx.OData.Client.SourceGenerators
             {
                 SemanticModel model = context.Compilation.GetSemanticModel(classDeclarationSyntax.SyntaxTree);
                 var symbol = model.GetDeclaredSymbol(classDeclarationSyntax) as ITypeSymbol;
-                string endpointFromClassName = symbol.Name.EndsWith("s") ? symbol.Name + "es" : symbol.Name + "s";
-                string endpointFromAttribute = symbol
-                    .GetAttributes()
-                    .FirstOrDefault(attr => attr.AttributeClass.Name == "ODataEndpointAttribute")?
-                    .ConstructorArguments[0].Value.ToString();
-                string endpoint = endpointFromAttribute ?? endpointFromClassName;
                 string source = $@"namespace {symbol.ContainingNamespace};
 public partial class {symbol.Name} 
 {{
-    public const string ENDPOINT = ""{endpoint}"";
     public static class Cols {{
 {string.Join("\r\n", symbol
     .GetMembers()

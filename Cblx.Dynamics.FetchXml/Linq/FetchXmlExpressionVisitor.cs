@@ -3,12 +3,15 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Xml.Linq;
 using Cblx.Dynamics.Linq;
+using Cblx.OData.Client.Abstractions;
 using OData.Client.Abstractions;
 
 namespace Cblx.Dynamics.FetchXml.Linq;
 
 public class FetchXmlExpressionVisitor : ExpressionVisitor
 {
+    private readonly IDynamicsMetadataProvider _metadataProvider;
+
     public bool IsGroupBy => GroupExpression != null;
     public string? Endpoint { get; private set; }
     public LambdaExpression? GroupExpression { get; private set; }
@@ -18,13 +21,14 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
     public bool HasFormattedValues { get; private set; }
     public bool IncludeAllAnnotations { get; private set; }
 
-    public FetchXmlExpressionVisitor()
+    public FetchXmlExpressionVisitor(IDynamicsMetadataProvider metadataProvider)
     {
         FetchElement = new XElement(
             "fetch",
             new XAttribute("mapping", "logical") //,
                                                  //_entityElement
         );
+        _metadataProvider = metadataProvider;
     }
 
     public XElement ToFetchXmlElement()
@@ -139,8 +143,7 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
                     entityType.Name
                 )
             );
-            Endpoint = entityType.GetCustomAttribute<ODataEndpointAttribute>()?.Endpoint ??
-                       throw new Exception($"No endpoint found for Entity {entityType.Name}");
+            Endpoint = _metadataProvider.GetEndpoint(entityType);
             fetchXml.Add(entityElement);
         }
         return entityElement;
@@ -308,8 +311,7 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
             FetchElement.Add(entityElement);
             if (EntityParametersElements.Count == 0)
             {
-                Endpoint = parameterExpression.Type.GetCustomAttribute<ODataEndpointAttribute>()?.Endpoint ??
-                           "endpoint-missing";
+                Endpoint = _metadataProvider.GetEndpoint(parameterExpression.Type);
             }
 
             EntityParametersElements[entityAlias] = entityElement;
@@ -480,7 +482,7 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
             )
         );
         FetchElement.Add(entityElement);
-        Endpoint = entityType.GetCustomAttribute<ODataEndpointAttribute>()?.Endpoint ?? throw new Exception($@"ODataEndointAttribute not found for {entityType.Name}");
+        Endpoint = _metadataProvider.GetEndpoint(entityType);
     }
     Expression VisitJoin(MethodCallExpression node)
     {
@@ -534,8 +536,7 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
             FetchElement.Add(entityElement);
             if (EntityParametersElements.Count == 0)
             {
-                Endpoint = parameterExpression.Type.GetCustomAttribute<ODataEndpointAttribute>()?.Endpoint ??
-                           "endpoint-missing";
+                Endpoint = _metadataProvider.GetEndpoint(parameterExpression.Type);
             }
 
             EntityParametersElements[entityAlias] = entityElement;
@@ -616,7 +617,7 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
         bool isRootEntity = parent == FetchElement;
         if (isRootEntity)
         {
-            Endpoint = entityType.GetCustomAttribute<ODataEndpointAttribute>()?.Endpoint;
+            Endpoint = _metadataProvider.GetEndpoint(entityType);
         }
 
         var entityElement = new XElement(
@@ -723,7 +724,7 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
             bool isRoot = _parentElement.Name == "fetch";
             if (isRoot)
             {
-                _mainVisitor.Endpoint = entityType.GetCustomAttribute<ODataEndpointAttribute>()?.Endpoint;
+                _mainVisitor.Endpoint = _mainVisitor._metadataProvider.GetEndpoint(entityType);
             }
 
             var entityElement = new XElement(

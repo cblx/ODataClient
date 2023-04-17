@@ -51,10 +51,10 @@ public class ODataQueryProvider : IAsyncQueryProvider
     {
         if (_httpClient == null)
         {
-            throw new Exception("Query cannot be execute without a HttpClient");
+            throw new InvalidOperationException("Query cannot be execute without a HttpClient");
         }
 
-        var visitor = new ODataExpressionVisitor();
+        var visitor = new ODataExpressionVisitor(_metadataProvider);
         visitor.Visit(expression);
         string url = visitor.ToRelativeUrl();
         HttpResponseMessage responseMessage = await _httpClient.GetAsync(url, cancellationToken);

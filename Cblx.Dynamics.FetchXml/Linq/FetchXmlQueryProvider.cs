@@ -4,7 +4,6 @@ using System.Net;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using System.Web;
 using System.Xml.Linq;
 using Cblx.Dynamics.Linq;
 using Cblx.OData.Client.Abstractions;
@@ -16,14 +15,14 @@ public class FetchXmlQueryProvider : IAsyncQueryProvider
 {
     public string LastUrl { get; private set; } = string.Empty;
     public HttpRequestMessage? LastRequestMessage { get; private set; }
+    internal IDynamicsMetadataProvider MetadataProvider { get; private set; }
 
     private readonly HttpClient _httpClient;
-    private readonly IDynamicsMetadataProvider _metadataProvider;
 
     public FetchXmlQueryProvider(HttpClient httpClient, IDynamicsMetadataProvider metadataProvider)
     {
         _httpClient = httpClient;
-        _metadataProvider = metadataProvider;
+        MetadataProvider = metadataProvider;
     }
 
     public IQueryable CreateQuery(Expression expression)
@@ -51,7 +50,7 @@ public class FetchXmlQueryProvider : IAsyncQueryProvider
       CancellationToken cancellationToken = default
   )
     {
-        var visitor = new FetchXmlExpressionVisitor();
+        var visitor = new FetchXmlExpressionVisitor(MetadataProvider);
         visitor.Visit(expression);
         return ExecuteRequestAsync(visitor, visitor.ToFetchXmlElement(), cancellationToken);
     }
@@ -106,7 +105,7 @@ public class FetchXmlQueryProvider : IAsyncQueryProvider
     {
         var nonPublicAndStatic = BindingFlags.NonPublic | BindingFlags.Static;
 
-        var visitor = new FetchXmlExpressionVisitor();
+        var visitor = new FetchXmlExpressionVisitor(MetadataProvider);
         visitor.Visit(expression);
         Delegate projectionFunc = GetProjectionFunc(expression, visitor);
         var fetchXmlElement = visitor.ToFetchXmlElement();
