@@ -17,7 +17,6 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace OData.Client.UnitTests;
 public class Tests
@@ -56,7 +55,7 @@ public class Tests
         {
             BaseAddress = new Uri("http://localhost")
         };
-        var set = new ODataSet<EntityWithFormattedValue>(new ODataClient(httpClient), "some_entities");
+        var set = new ODataSet<EntityWithFormattedValue>(new ODataClient(httpClient), _metadataProviderMock);
         var entities = await set.ToListAsync();
         entities.Should().ContainSingle(e => e.FormattedField == "xx");
         set.LastQuery.Should().Be("some_entities?$select=id,age");
@@ -84,7 +83,7 @@ public class Tests
         {
             BaseAddress = new Uri("http://localhost")
         };
-        var set = new ODataSet<TblEntity>(new ODataClient(httpClient), "some_entities");
+        var set = new ODataSet<TblEntity>(new ODataClient(httpClient), _metadataProviderMock);
         var entities = await set.ToListAsync<EntityWithFormattedValue>();
         entities.Should().ContainSingle(e => e.FormattedField == "xx");
         set.LastQuery.Should().Be("some_entities?$select=id,age");
@@ -101,9 +100,8 @@ public class Tests
         options.Converters.Add(new DateOnlyJsonConverter());
         var parentId = StronglyTipedId.NewId();
         var childId = StronglyTipedId.NewId();
-        var data = new
-        {
-            value = new[] {
+
+        var set = CreateODataSetWithResultValue(new[] {
                   new Dictionary<string, object>
                   {
                       { "id", parentId },
@@ -116,19 +114,14 @@ public class Tests
                           }
                       }
                   }
-            }
-        };
-        var set = new ODataSet<some_entity>(new(new HttpClient(
-            new MockHttpMessageHandler(JsonSerializer.Serialize(data, options)))
-        {
-            BaseAddress = new Uri("http://localhost")
-        }),
-            "some_entities");
+            });
         var items = await set.ToListAsync<TblEntity>();
         items.First().Id.Should().Be(parentId);
         items.First().Children.First().Id.Should().Be(childId);
         set.LastQuery.Should().Be("some_entities?$select=id,name,active,age,nullableInt,at,partyDay&$expand=child($select=id,name,active,age,nullableInt,at,partyDay),otherChild($select=name),children($select=id,name,active,age,nullableInt,at,partyDay)");
     }
+
+    readonly IDynamicsMetadataProvider _metadataProviderMock = new DynamicsCodeMetadataProvider();
 
 
     private ODataClient CreateODataClientWithResultValue(object value)
@@ -144,7 +137,7 @@ public class Tests
     private ODataSet<some_entity> CreateODataSetWithResultValue(object value)
     {
         var oDataClient = CreateODataClientWithResultValue(value);
-        var set = new ODataSet<some_entity>(oDataClient, "some_entities");
+        var set = new ODataSet<some_entity>(oDataClient, _metadataProviderMock);
         return set;
     }
 
@@ -166,7 +159,7 @@ public class Tests
     [Fact]
     public void TestFilters()
     {
-        var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<some_entity>(new(new HttpClient()), _metadataProviderMock);
         var eAux = new SomeEntity();
         eAux.Id = Guid.Empty;
         string str = set
@@ -210,7 +203,7 @@ public class Tests
         {
             BaseAddress = new Uri("http://localhost")
         }),
-            "some_entities");
+            _metadataProviderMock);
 
         var eAux = new SomeEntity();
         eAux.Id = Guid.Empty;
@@ -254,7 +247,7 @@ public class Tests
         var messageHandler = new MockHttpMessageHandler(json);
         var httpClient = new HttpClient(messageHandler) { BaseAddress = new Uri("http://localhost") };
         var oDataClient = new ODataClient(httpClient);
-        var set = new ODataSet<some_entity>(oDataClient, "some_entities");
+        var set = new ODataSet<some_entity>(oDataClient, _metadataProviderMock);
         var selection = set.Select(e => new { Content = Convert.FromBase64String(e.name), });
         var exec = selection.FirstOrDefaultAsync;
         await exec.Should().ThrowAsync<FormatException>();
@@ -293,7 +286,7 @@ public class Tests
         var messageHandler = new MockHttpMessageHandler(json);
         var httpClient = new HttpClient(messageHandler) { BaseAddress = new Uri("http://localhost") };
         var oDataClient = new ODataClient(httpClient);
-        var set = new ODataSet<TblEntity>(oDataClient, "some_entities");
+        var set = new ODataSet<TblEntity>(oDataClient, _metadataProviderMock);
         var items = await set.Select(e => new
         {
             Children = e.Children.Select(e => e.Id)
@@ -319,7 +312,7 @@ public class Tests
         var messageHandler = new MockHttpMessageHandler(json);
         var httpClient = new HttpClient(messageHandler) { BaseAddress = new Uri("http://localhost") };
         var oDataClient = new ODataClient(httpClient);
-        var set = new ODataSet<some_entity>(oDataClient, "some_entities");
+        var set = new ODataSet<some_entity>(oDataClient, _metadataProviderMock);
         var selection = set.Select(e => new { Condition = e.id == instance.Id });
         var item = await selection.FirstOrDefaultAsync();
         var odata = selection.ToString();
@@ -346,11 +339,11 @@ public class Tests
         var messageHandler = new MockHttpMessageHandler(json);
         var httpClient = new HttpClient(messageHandler) { BaseAddress = new Uri("http://localhost") };
         var oDataClient = new ODataClient(httpClient);
-        var set = new ODataSet<TbMemberOfTbMemberInSelectionMustWork>(oDataClient, "x");
+        var set = new ODataSet<TbMemberOfTbMemberInSelectionMustWork>(oDataClient, _metadataProviderMock);
         var selection = set.Select(e => new { Val = e.At.HasValue });
         var item = await selection.FirstOrDefaultAsync();
         var odata = selection.ToString();
-        odata.Should().Be("x?$select=At");
+        odata.Should().Be("TbMemberOfTbMemberInSelectionMustWorks?$select=At");
         item.Val.Should().BeFalse();
     }
 
@@ -373,7 +366,7 @@ public class Tests
         var messageHandler = new MockHttpMessageHandler(json);
         var httpClient = new HttpClient(messageHandler) { BaseAddress = new Uri("http://localhost") };
         var oDataClient = new ODataClient(httpClient);
-        var set = new ODataSet<some_entity>(oDataClient, "some_entities");
+        var set = new ODataSet<some_entity>(oDataClient, _metadataProviderMock);
         var selection = set.Select(e => new { Condition = e.id == StaticClass.Id });
         var item = await selection.FirstOrDefaultAsync();
         var odata = selection.ToString();
@@ -398,7 +391,7 @@ public class Tests
         var messageHandler = new MockHttpMessageHandler(json);
         var httpClient = new HttpClient(messageHandler) { BaseAddress = new Uri("http://localhost") };
         var oDataClient = new ODataClient(httpClient);
-        var set = new ODataSet<some_entity>(oDataClient, "some_entities");
+        var set = new ODataSet<some_entity>(oDataClient, _metadataProviderMock);
         var items = await set.Select(e => new SomeEntity { Id = e.id }).ToArrayAsync();
         items.Should().HaveCount(2);
         items.ElementAt(0).Id.Should().Be(data.value[0].id);
@@ -421,7 +414,7 @@ public class Tests
         var messageHandler = new MockHttpMessageHandler(json);
         var httpClient = new HttpClient(messageHandler) { BaseAddress = new Uri("http://localhost") };
         var oDataClient = new ODataClient(httpClient);
-        var set = new ODataSet<some_entity>(oDataClient, "some_entities");
+        var set = new ODataSet<some_entity>(oDataClient, _metadataProviderMock);
 
         var selection = set.Select(e => new
         {
@@ -450,7 +443,7 @@ public class Tests
         var messageHandler = new MockHttpMessageHandler(json);
         var httpClient = new HttpClient(messageHandler) { BaseAddress = new Uri("http://localhost") };
         var oDataClient = new ODataClient(httpClient);
-        var set = new ODataSet<some_entity>(oDataClient, "some_entities");
+        var set = new ODataSet<some_entity>(oDataClient, _metadataProviderMock);
 
         var selection = set.Select(e => new
         {
@@ -479,7 +472,7 @@ public class Tests
         var messageHandler = new MockHttpMessageHandler(json);
         var httpClient = new HttpClient(messageHandler) { BaseAddress = new Uri("http://localhost") };
         var oDataClient = new ODataClient(httpClient);
-        var set = new ODataSet<some_entity>(oDataClient, "some_entities");
+        var set = new ODataSet<some_entity>(oDataClient, _metadataProviderMock);
 
         var selection = set.Select(e => e.name);
         var item = await selection.FirstOrDefaultAsync();
@@ -504,7 +497,7 @@ public class Tests
         var messageHandler = new MockHttpMessageHandler(json);
         var httpClient = new HttpClient(messageHandler) { BaseAddress = new Uri("http://localhost") };
         var oDataClient = new ODataClient(httpClient);
-        var set = new ODataSet<some_entity>(oDataClient, "some_entities");
+        var set = new ODataSet<some_entity>(oDataClient, _metadataProviderMock);
 
         var selection = set.Select(e => SomeMethod(e.name));
         var item = await selection.FirstOrDefaultAsync();
@@ -529,7 +522,7 @@ public class Tests
         var messageHandler = new MockHttpMessageHandler(json);
         var httpClient = new HttpClient(messageHandler) { BaseAddress = new Uri("http://localhost") };
         var oDataClient = new ODataClient(httpClient);
-        var set = new ODataSet<some_entity>(oDataClient, "some_entities");
+        var set = new ODataSet<some_entity>(oDataClient, _metadataProviderMock);
 
         var selection = set.Select(e => e.age.ToString("#"));
         var item = await selection.FirstOrDefaultAsync();
@@ -554,7 +547,7 @@ public class Tests
         var messageHandler = new MockHttpMessageHandler(json);
         var httpClient = new HttpClient(messageHandler) { BaseAddress = new Uri("http://localhost") };
         var oDataClient = new ODataClient(httpClient);
-        var set = new ODataSet<some_entity>(oDataClient, "some_entities");
+        var set = new ODataSet<some_entity>(oDataClient, _metadataProviderMock);
 
         var selection = set.Select(e => e.name ?? "yep");
         var item = await selection.FirstOrDefaultAsync();
@@ -579,7 +572,7 @@ public class Tests
         var messageHandler = new MockHttpMessageHandler(json);
         var httpClient = new HttpClient(messageHandler) { BaseAddress = new Uri("http://localhost") };
         var oDataClient = new ODataClient(httpClient);
-        var set = new ODataSet<some_entity>(oDataClient, "some_entities");
+        var set = new ODataSet<some_entity>(oDataClient, _metadataProviderMock);
 
         var selection = set.Select(e => new
         {
@@ -607,7 +600,7 @@ public class Tests
         var messageHandler = new MockHttpMessageHandler(json);
         var httpClient = new HttpClient(messageHandler) { BaseAddress = new Uri("http://localhost") };
         var oDataClient = new ODataClient(httpClient);
-        var set = new ODataSet<some_entity>(oDataClient, "some_entities");
+        var set = new ODataSet<some_entity>(oDataClient, _metadataProviderMock);
 
 
         var item = await set.Select(e => new SomeEntity
@@ -666,7 +659,7 @@ public class Tests
         {
             BaseAddress = new Uri("http://localhost")
         }),
-            "some_entities");
+            _metadataProviderMock);
 
         var eAux = new SomeEntity();
         eAux.Id = Guid.Empty;
@@ -757,7 +750,7 @@ public class Tests
         {
             BaseAddress = new Uri("http://localhost")
         }),
-            "some_entities");
+            _metadataProviderMock);
 
         var eAux = new SomeEntity();
         eAux.Id = Guid.Empty;
@@ -805,7 +798,7 @@ public class Tests
     [Fact]
     public void FindWhenJsonPropertyNameAttributesAreUseBothSides()
     {
-        var set = new ODataSet<TbFind>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<TbFind>(new(new HttpClient()), _metadataProviderMock);
         string str = set.CreateFindString<EntityFind>(Guid.Empty);
         str.Should().Be("some_entities(00000000-0000-0000-0000-000000000000)?$select=specificId&$expand=specificChild($select=specificId)");
     }
@@ -844,7 +837,7 @@ public class Tests
     [Fact]
     public void MustBeAbleToFilterByStronglyTypedId()
     {
-        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<TblEntity>(new(new HttpClient()),  _metadataProviderMock);
         var id = StronglyTipedId.NewId();
         string str = set.Filter(e => e.Id == id).ToString(e => e.Id);
         Assert.Equal($"some_entities?$select=id&$filter=id eq {id}", str);
@@ -853,7 +846,7 @@ public class Tests
     [Fact]
     public void ShouldNeverExpandStronglyTypedId()
     {
-        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<TblEntity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set.ToString(e => e.Id.Guid);
         Assert.Equal($"some_entities?$select=id", str);
     }
@@ -861,7 +854,7 @@ public class Tests
     [Fact]
     public void MustBeAbleToFilterByStronglyTypedIdGuid()
     {
-        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<TblEntity>(new(new HttpClient()),  _metadataProviderMock);
         var id = new StronglyId(Guid.NewGuid());
         string str = set.Filter(e => e.Id == id.Guid).ToString(e => e.Id);
         Assert.Equal($"some_entities?$select=id&$filter=id eq {id.Guid}", str);
@@ -870,7 +863,7 @@ public class Tests
     [Fact]
     public void TblTestFilters()
     {
-        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<TblEntity>(new(new HttpClient()), _metadataProviderMock);
         var eAux = new SomeEntity();
         eAux.Id = Guid.Empty;
         string str = set
@@ -897,7 +890,7 @@ public class Tests
     [Fact]
     public void SelectStronglyId()
     {
-        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<TblEntity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set
             .ToString(e => new
             {
@@ -910,7 +903,7 @@ public class Tests
     [Fact]
     public void ExpandOtherTypeChildTest()
     {
-        var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<some_entity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set.ToString(e => new SomeEntity
         {
             Name = e.otherChild.name
@@ -921,7 +914,7 @@ public class Tests
     [Fact]
     public void TblExpandOtherTypeChildTest()
     {
-        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<TblEntity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set.ToString(e => new SomeEntity
         {
             Name = e.OtherChild.Name
@@ -932,7 +925,7 @@ public class Tests
     [Fact]
     public void SubExpandCollectionsTest()
     {
-        var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<some_entity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set.ToString(e => new SomeEntity
         {
             Children = e.children.Select(c => new SomeEntity
@@ -950,7 +943,7 @@ public class Tests
     [Fact]
     public void ExpandTwiceTest()
     {
-        var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<some_entity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set.ToString(e => new
         {
             Ages = e.children.Select(c => c.age),
@@ -962,7 +955,7 @@ public class Tests
     [Fact]
     public void TblSubExpandCollectionsTest()
     {
-        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<TblEntity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set.ToString(e => new SomeEntity
         {
             Children = e.Children.Select(c => new SomeEntity
@@ -980,7 +973,7 @@ public class Tests
     [Fact]
     public void TblSubExpandCollectionsWithOrderByAndTakeTest()
     {
-        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<TblEntity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set.ToString(e => new SomeEntity
         {
             Children = e.Children
@@ -1004,7 +997,7 @@ public class Tests
     [Fact]
     public void AnnotationTest()
     {
-        var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<some_entity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set.ToString(e => new
         {
             AtAnnotation = e.at__annotation,
@@ -1016,7 +1009,7 @@ public class Tests
     [Fact]
     public void ExpandArrayTest()
     {
-        var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<some_entity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set.ToString(e => new SomeEntity
         {
             Children = e.children.Select(c => new SomeEntity
@@ -1031,7 +1024,7 @@ public class Tests
     [Fact]
     public void TblExpandArrayTest()
     {
-        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<TblEntity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set.ToString(e => new SomeEntity
         {
             Children = e.Children.Select(c => new SomeEntity
@@ -1046,7 +1039,7 @@ public class Tests
     [Fact]
     public void ClientMethodTest()
     {
-        var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<some_entity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set.ToString(e => new SomeEntity
         {
             Name = e.name.ToLower()
@@ -1057,7 +1050,7 @@ public class Tests
     [Fact]
     public void TblClientMethodTest()
     {
-        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<TblEntity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set.ToString(e => new SomeEntity
         {
             Name = e.Name.ToLower()
@@ -1068,7 +1061,7 @@ public class Tests
     [Fact]
     public void ClientExtensionMethodTest()
     {
-        var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<some_entity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set.ToString(e => new SomeEntity
         {
             Name = e.name.Ext()
@@ -1079,7 +1072,7 @@ public class Tests
     [Fact]
     public void TblClientExtensionMethodTest()
     {
-        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<TblEntity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set.ToString(e => new SomeEntity
         {
             Name = e.Name.Ext()
@@ -1090,7 +1083,7 @@ public class Tests
     [Fact]
     public void TestFilterWithMethodCall()
     {
-        var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<some_entity>(new(new HttpClient()),  _metadataProviderMock);
         int i = 123;
         string str = set
             .Filter(e => e.name == i.ToString())
@@ -1104,7 +1097,7 @@ public class Tests
     [Fact]
     public void DynamicsContainValuesFilterMustBeSupported()
     {
-        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<TblEntity>(new(new HttpClient()),  _metadataProviderMock);
         var values = new string[] { "a", "b" };
         string str = set
             .Filter(e => DynFunctions.ContainValues(e.Name, values))
@@ -1115,7 +1108,7 @@ public class Tests
     [Fact]
     public void DynamicsThisMonthFunctionMustBeSupported()
     {
-        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<TblEntity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set.Filter(e => DynFunctions.ThisMonth(e.At)).ToString(e => e.Id);
         str.Should().Be("some_entities?$select=id&$filter=Microsoft.Dynamics.CRM.ThisMonth(PropertyName='at')");
     }
@@ -1124,7 +1117,7 @@ public class Tests
     [Fact]
     public void DynamicsContainValuesFilterInlineMustBeSupported()
     {
-        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<TblEntity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set
             .Filter(e => DynFunctions.ContainValues(e.Name, new string[] { "a", "b" }))
             .ToString(e => e.Id);
@@ -1134,7 +1127,7 @@ public class Tests
     [Fact]
     public void DynamicsDoesNotContainValuesFilterMustBeSupported()
     {
-        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<TblEntity>(new(new HttpClient()),  _metadataProviderMock);
         var values = new string[] { "a", "b" };
         string str = set
             .Filter(e => DynFunctions.DoesNotContainValues(e.Name, values))
@@ -1146,7 +1139,7 @@ public class Tests
     [Fact]
     public void DynamicsDoesNotContainValuesFilterInlineMustBeSupported()
     {
-        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<TblEntity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set
             .Filter(e => DynFunctions.DoesNotContainValues(e.Name, new string[] { "a", "b" }))
             .ToString(e => e.Id);
@@ -1156,7 +1149,7 @@ public class Tests
     [Fact]
     public void TblTestFilterWithMethodCall()
     {
-        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<TblEntity>(new(new HttpClient()),  _metadataProviderMock);
         int i = 123;
         string str = set
             .Filter(e => e.Name == i.ToString())
@@ -1167,7 +1160,7 @@ public class Tests
     [Fact]
     public void FitlerByChildPropTest()
     {
-        var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<some_entity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set
             .Filter(e => e.child.child.name == "123")
             .ToString(e => new SomeEntity
@@ -1180,7 +1173,7 @@ public class Tests
     [Fact]
     public void TblFitlerByChildPropTest()
     {
-        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<TblEntity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set
             .Filter(e => e.Child.Child.Name == "123")
             .ToString(e => new SomeEntity
@@ -1193,7 +1186,7 @@ public class Tests
     [Fact]
     public void NullComparisonTest()
     {
-        var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<some_entity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set
             .Filter(e => e.name == null)
             .ToString(e => new SomeEntity
@@ -1206,7 +1199,7 @@ public class Tests
     [Fact]
     public void TblNullComparisonTest()
     {
-        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<TblEntity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set
             .Filter(e => e.Name == null)
             .ToString(e => new SomeEntity
@@ -1219,7 +1212,7 @@ public class Tests
     [Fact]
     public void HasValueInProjectionTest()
     {
-        var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<some_entity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set
             .ToString(e => new SomeEntity
             {
@@ -1232,7 +1225,7 @@ public class Tests
     [Fact]
     public void TblHasValueInProjectionTest()
     {
-        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<TblEntity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set
             .ToString(e => new SomeEntity
             {
@@ -1244,7 +1237,7 @@ public class Tests
     [Fact]
     public void OrderByTest()
     {
-        var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<some_entity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set
             .OrderBy(e => e.name)
             .ToString(e => new SomeEntity
@@ -1257,7 +1250,7 @@ public class Tests
     [Fact]
     public void TblOrderByTest()
     {
-        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<TblEntity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set
             .OrderBy(e => e.Name)
             .ToString(e => new SomeEntity
@@ -1270,7 +1263,7 @@ public class Tests
     [Fact]
     public void OrderByNestedTest()
     {
-        var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<some_entity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set
             .OrderBy(e => e.child.name)
             .ToString(e => new SomeEntity
@@ -1283,7 +1276,7 @@ public class Tests
     [Fact]
     public void TblOrderByNestedTest()
     {
-        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<TblEntity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set
             .OrderBy(e => e.Child.Name)
             .ToString(e => new SomeEntity
@@ -1296,7 +1289,7 @@ public class Tests
     [Fact]
     public void OrderByDescendingTest()
     {
-        var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<some_entity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set
             .OrderByDescending(e => e.partyDay)
             .ToString(e => new SomeEntity
@@ -1309,7 +1302,7 @@ public class Tests
     [Fact]
     public void TblOrderByDescendingTest()
     {
-        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<TblEntity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set
             .OrderByDescending(e => e.PartyDay)
             .ToString(e => new SomeEntity
@@ -1322,7 +1315,7 @@ public class Tests
     [Fact]
     public void ContainsTest()
     {
-        var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<some_entity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set
             .Filter(e => e.name.Contains("123"))
             .ToString(e => new SomeEntity
@@ -1335,7 +1328,7 @@ public class Tests
     [Fact]
     public void NotContainsTest()
     {
-        var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<some_entity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set
             .Filter(e => !e.name.Contains("123"))
             .ToString(e => new SomeEntity
@@ -1348,7 +1341,7 @@ public class Tests
     [Fact]
     public void TblContainsTest()
     {
-        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<TblEntity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set
             .Filter(e => e.Name.Contains("123"))
             .ToString(e => new SomeEntity
@@ -1361,7 +1354,7 @@ public class Tests
     [Fact]
     public void ContainsNestedTest()
     {
-        var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<some_entity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set
             .Filter(e => e.child.name.Contains("123"))
             .ToString(e => new SomeEntity
@@ -1374,7 +1367,7 @@ public class Tests
     [Fact]
     public void TblContainsNestedTest()
     {
-        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<TblEntity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set
             .Filter(e => e.Child.Name.Contains("123"))
             .ToString(e => new SomeEntity
@@ -1387,7 +1380,7 @@ public class Tests
     [Fact]
     public void CompareBooleanTest()
     {
-        var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<some_entity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set
             .Filter(e => e.active == true)
             .ToString(e => new SomeEntity
@@ -1400,7 +1393,7 @@ public class Tests
     [Fact]
     public void TblCompareBooleanTest()
     {
-        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<TblEntity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set
             .Filter(e => e.Active == true)
             .ToString(e => new SomeEntity
@@ -1413,7 +1406,7 @@ public class Tests
     [Fact]
     public void CompareIntTest()
     {
-        var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<some_entity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set
             .Filter(e => e.age == 123)
             .ToString(e => new SomeEntity
@@ -1426,7 +1419,7 @@ public class Tests
     [Fact]
     public void TblCompareIntTest()
     {
-        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<TblEntity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set
             .Filter(e => e.Age == 123)
             .ToString(e => new SomeEntity
@@ -1439,7 +1432,7 @@ public class Tests
     [Fact]
     public void CompareDateTimeOffsetTest()
     {
-        var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<some_entity>(new(new HttpClient()),  _metadataProviderMock);
         var dt = new DateTimeOffset(2020, 12, 1, 0, 0, 0, TimeSpan.Zero);
         string str = set
             .Filter(e => e.at == dt)
@@ -1453,7 +1446,7 @@ public class Tests
     [Fact]
     public void TblCompareDateTimeOffsetTest()
     {
-        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<TblEntity>(new(new HttpClient()),  _metadataProviderMock);
         var dt = new DateTimeOffset(2020, 12, 1, 0, 0, 0, TimeSpan.Zero);
         string str = set
             .Filter(e => e.At == dt)
@@ -1467,7 +1460,7 @@ public class Tests
     [Fact]
     public void CompareDateTimeTest()
     {
-        var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<some_entity>(new(new HttpClient()),  _metadataProviderMock);
         var dt = new DateTime(2020, 12, 1, 0, 0, 0);
         string str = set
             .Filter(e => e.partyDay == dt)
@@ -1481,7 +1474,7 @@ public class Tests
     [Fact]
     public void TblCompareDateTimeTest()
     {
-        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<TblEntity>(new(new HttpClient()),  _metadataProviderMock);
         var dt = new DateTime(2020, 12, 1, 0, 0, 0);
         string str = set
             .Filter(e => e.PartyDay == dt)
@@ -1495,7 +1488,7 @@ public class Tests
     [Fact]
     public void OrTest()
     {
-        var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<some_entity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set
             .Filter(e => e.age == 123 || e.age == 321)
             .ToString(e => new SomeEntity
@@ -1508,7 +1501,7 @@ public class Tests
     [Fact]
     public void TblOrTest()
     {
-        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<TblEntity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set
             .Filter(e => e.Age == 123 || e.Age == 321)
             .ToString(e => new SomeEntity
@@ -1521,7 +1514,7 @@ public class Tests
     [Fact]
     public void MultiOrTest()
     {
-        var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<some_entity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set
             .Filter(e => e.age == 123 || e.age == 321)
             .Filter(e => e.age == 456 || e.age == 789)
@@ -1535,7 +1528,7 @@ public class Tests
     [Fact]
     public void TblMultiOrTest()
     {
-        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<TblEntity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set
             .Filter(e => e.Age == 123 || e.Age == 321)
             .Filter(e => e.Age == 456 || e.Age == 789)
@@ -1549,7 +1542,7 @@ public class Tests
     [Fact]
     public void AndAndOrsTest2()
     {
-        var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<some_entity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set
             .Filter(e => (e.age == 123 || e.age == 321 || e.age == 890) && (e.age == 456 || e.age == 789))
             .ToString(e => new SomeEntity
@@ -1562,7 +1555,7 @@ public class Tests
     [Fact]
     public void TblAndAndOrsTest2()
     {
-        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<TblEntity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set
             .Filter(e => (e.Age == 123 || e.Age == 321 || e.Age == 890) && (e.Age == 456 || e.Age == 789))
             .ToString(e => new SomeEntity
@@ -1575,7 +1568,7 @@ public class Tests
     [Fact]
     public void FilteredExpandTest()
     {
-        var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<some_entity>(new(new HttpClient()),  _metadataProviderMock);
         var guidEmpty = Guid.Empty;
         string str = set.ToString(e => new SomeEntity
         {
@@ -1587,7 +1580,7 @@ public class Tests
     [Fact]
     public void OrderedExpandTest()
     {
-        var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<some_entity>(new(new HttpClient()),  _metadataProviderMock);
         var guidEmpty = Guid.Empty;
         string str = set.ToString(e => new SomeEntity
         {
@@ -1599,7 +1592,7 @@ public class Tests
     [Fact]
     public void OrderedDescendingExpandTest()
     {
-        var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<some_entity>(new(new HttpClient()),  _metadataProviderMock);
         var guidEmpty = Guid.Empty;
         string str = set.ToString(e => new SomeEntity
         {
@@ -1611,7 +1604,7 @@ public class Tests
     [Fact]
     public void TblFilteredExpandTest()
     {
-        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<TblEntity>(new(new HttpClient()),  _metadataProviderMock);
         var guidEmpty = Guid.Empty;
         string str = set.ToString(e => new SomeEntity
         {
@@ -1623,7 +1616,7 @@ public class Tests
     [Fact]
     public void AnyTest()
     {
-        var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<some_entity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set
             .Filter(e => e.children.Any())
             .ToString(e => new SomeEntity
@@ -1637,7 +1630,7 @@ public class Tests
     [Fact]
     public void NotAnyTest()
     {
-        var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<some_entity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set
             .Filter(e => !e.children.Any())
             .ToString(e => new SomeEntity
@@ -1650,7 +1643,7 @@ public class Tests
     [Fact]
     public void AnyWithFilterTest()
     {
-        var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<some_entity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set
             .Filter(e => e.children.Any(c => c.name == "hey" || c.name == "ho"))
             .ToString(e => new SomeEntity
@@ -1663,7 +1656,7 @@ public class Tests
     [Fact]
     public void TblAnyWithFilterTest()
     {
-        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<TblEntity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set
             .Filter(e => e.Children.Any(c => c.Name == "hey" || c.Name == "ho"))
             .ToString(e => new SomeEntity
@@ -1676,7 +1669,7 @@ public class Tests
     [Fact]
     public void FilterByNewGuidTest()
     {
-        var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<some_entity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set
             .Filter(e => e.id == new Guid("00000000-0000-0000-0000-000000000000"))
             .ToString(e => new SomeEntity
@@ -1689,7 +1682,7 @@ public class Tests
     [Fact]
     public void TblFilterByNewGuidTest()
     {
-        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<TblEntity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set
             .Filter(e => e.Id == new Guid("00000000-0000-0000-0000-000000000000"))
             .ToString(e => new SomeEntity
@@ -1702,7 +1695,7 @@ public class Tests
     [Fact]
     public void FilterByStaticTest()
     {
-        var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<some_entity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set
             .Filter(e => e.id == Guid.Empty)
             .ToString(e => new SomeEntity
@@ -1715,7 +1708,7 @@ public class Tests
     [Fact]
     public void TblFilterByStaticTest()
     {
-        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<TblEntity>(new(new HttpClient()),  _metadataProviderMock);
         string str = set
             .Filter(e => e.Id == Guid.Empty)
             .ToString(e => new SomeEntity
@@ -1728,7 +1721,7 @@ public class Tests
     [Fact]
     public void FilterByMemberTest()
     {
-        var set = new ODataSet<some_entity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<some_entity>(new(new HttpClient()),  _metadataProviderMock);
         Guid? guid = Guid.Empty;
         string str = set
             .Filter(e => e.id == guid.Value)
@@ -1742,7 +1735,7 @@ public class Tests
     [Fact]
     public void TblFilterByMemberTest()
     {
-        var set = new ODataSet<TblEntity>(new(new HttpClient()), "some_entities");
+        var set = new ODataSet<TblEntity>(new(new HttpClient()),  _metadataProviderMock);
         Guid? guid = Guid.Empty;
         string str = set
             .Filter(e => e.Id == guid.Value)
@@ -1770,7 +1763,7 @@ public class Tests
         {
             BaseAddress = new Uri("http://localhost")
         }),
-           "some_entities");
+           _metadataProviderMock);
 
         Func<Task> a = () => set.ToListAsync();
         await a.Should().ThrowAsync<ODataErrorException>();
@@ -1816,7 +1809,7 @@ public class Tests
         {
             BaseAddress = new Uri("http://localhost")
         }),
-            "some_entities");
+            _metadataProviderMock);
         ODataResult<SomeEntity> result = await set
             .SelectResultAsync(e => new SomeEntity
             {
@@ -1854,7 +1847,7 @@ public class Tests
         {
             BaseAddress = new Uri("http://localhost")
         }),
-            "some_entities");
+            _metadataProviderMock);
 
         var picklistOptions = await set.GetPicklistOptionsAsync<int>(e => e.Age);
         picklistOptions.Should().HaveCount(18);
@@ -1872,7 +1865,7 @@ public class Tests
         {
             BaseAddress = new Uri("http://localhost")
         }),
-            "some_entities");
+            _metadataProviderMock);
 
         var picklistOptions = await set.GetPicklistOptionsAsync<SomeOptions>(e => e.MyOption);
         picklistOptions.Should().HaveCount(18);
@@ -1907,7 +1900,7 @@ public class Tests
         {
             BaseAddress = new Uri("http://localhost")
         }),
-            "some_entities");
+            _metadataProviderMock);
 
         var picklistOptions = await set.GetPicklistOptionsAsync<int>(e => e.StatusCode);
         picklistOptions.Should().HaveCount(43);
@@ -1928,7 +1921,7 @@ public class Tests
         {
             BaseAddress = new Uri("http://localhost")
         }),
-            "some_entities");
+            _metadataProviderMock);
 
         var picklistOptions = await set.GetPicklistOptionsAsync<int>(e => e.StateCode);
         picklistOptions.Should().HaveCount(43);

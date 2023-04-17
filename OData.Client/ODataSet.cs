@@ -6,6 +6,7 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Cblx.Dynamics;
 using Cblx.Dynamics.OData.Linq;
+using Cblx.OData.Client.Abstractions;
 using OData.Client.Abstractions;
 
 namespace OData.Client;
@@ -15,13 +16,15 @@ public class ODataSet<TSource> : IODataSet<TSource>
 {
     private readonly string _endpoint;
     private readonly ODataClient _client;
+    private readonly IDynamicsMetadataProvider _metadataProvider;
     private readonly ODataOptions _options = new();
     private Action<HttpRequestMessage>? _requestMessageConfiguration;
 
-    public ODataSet(ODataClient client, string endpoint)
+    public ODataSet(ODataClient client, IDynamicsMetadataProvider metadataProvider)
     {
         this._client = client;
-        _endpoint = endpoint;
+        _metadataProvider = metadataProvider;
+        _endpoint = metadataProvider.GetEndpoint<TSource>();
     }
 
     private ODataSet(
@@ -31,6 +34,7 @@ public class ODataSet<TSource> : IODataSet<TSource>
     {
         _client = originalODataSet._client;
         _endpoint = originalODataSet._endpoint;
+        _metadataProvider = originalODataSet._metadataProvider;
         _requestMessageConfiguration = originalODataSet._requestMessageConfiguration;
         this._options = options;
     }
@@ -292,11 +296,7 @@ public class ODataSet<TSource> : IODataSet<TSource>
 
     private async Task<JsonArray> GetPicklistOptionsJsonArray<T>(Expression<Func<TSource, T?>> propertyExpression)
     {
-        string? entityLogicalName = typeof(TSource).GetCustomAttribute<DynamicsEntityAttribute>()?.Name;
-        if (entityLogicalName is null)
-        {
-            throw new InvalidOperationException("You must annotate source class with [DynamicsEntity] to use this method");
-        }
+        var entityLogicalName = _metadataProvider.GetTableName<TSource>();
         Expression memberExpression = propertyExpression.Body;
         if (memberExpression is UnaryExpression unaryExpression)
         {
@@ -329,11 +329,7 @@ public class ODataSet<TSource> : IODataSet<TSource>
 
     private async Task<JsonArray> GetMultiSelectPicklistOptionsJsonArray(Expression<Func<TSource, string?>> propertyExpression)
     {
-        string? entityLogicalName = typeof(TSource).GetCustomAttribute<DynamicsEntityAttribute>()?.Name;
-        if (entityLogicalName is null)
-        {
-            throw new InvalidOperationException("You must annotate source class with [DynamicsEntity] to use this method");
-        }
+        var entityLogicalName = _metadataProvider.GetTableName<TSource>();
         Expression memberExpression = propertyExpression.Body;
         if (memberExpression is UnaryExpression unaryExpression)
         {

@@ -135,14 +135,7 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
         XElement? entityElement = fetchXml.Descendants().FirstOrDefault(el => el.Name == "entity");
         if (entityElement is null)
         {
-            entityElement = new XElement(
-                "entity",
-                new XAttribute(
-                    "name",
-                    entityType.GetCustomAttribute<DynamicsEntityAttribute>()?.Name ??
-                    entityType.Name
-                )
-            );
+            entityElement = new XElement("entity", new XAttribute("name", _metadataProvider.GetTableName(entityType)));
             Endpoint = _metadataProvider.GetEndpoint(entityType);
             fetchXml.Add(entityElement);
         }
@@ -219,7 +212,7 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
         if (node.Arguments.Count > 1)
         {
             LambdaExpression filterExpression = ((node.Arguments[1] as UnaryExpression)!.Operand as LambdaExpression)!;
-            var whereVisitor = new FetchXmlWhereVisitor(this);
+            var whereVisitor = new FetchXmlWhereVisitor(this, _metadataProvider);
             whereVisitor.Visit(filterExpression);
             if (!whereVisitor.IsEmpty)
             {
@@ -298,11 +291,7 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
             string entityAlias = parameterExpression.Name!;
             var entityElement = new XElement(
                 "entity",
-                new XAttribute(
-                    "name",
-                    parameterExpression.Type.GetCustomAttribute<DynamicsEntityAttribute>()?.Name ??
-                    parameterExpression.Type.Name
-                ),
+                new XAttribute("name", _metadataProvider.GetTableName(parameterExpression.Type)),
                 new XAttribute(
                     "alias",
                     entityAlias
@@ -447,7 +436,7 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
         }
 
         LambdaExpression filterExpression = ((node.Arguments[1] as UnaryExpression)!.Operand as LambdaExpression)!;
-        var whereVisitor = new FetchXmlWhereVisitor(this);
+        var whereVisitor = new FetchXmlWhereVisitor(this, _metadataProvider);
         whereVisitor.Visit(filterExpression);
         if (!whereVisitor.IsEmpty)
         {
@@ -475,11 +464,7 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
         Type entityType = constantExpression.Value!.GetType().GetGenericArguments()[0];
         var entityElement = new XElement(
             "entity",
-            new XAttribute(
-                "name",
-                entityType.GetCustomAttribute<DynamicsEntityAttribute>()?.Name ??
-                entityType.Name
-            )
+            new XAttribute("name", _metadataProvider.GetTableName(entityType))
         );
         FetchElement.Add(entityElement);
         Endpoint = _metadataProvider.GetEndpoint(entityType);
@@ -525,8 +510,7 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
                 "entity",
                 new XAttribute(
                     "name",
-                    parameterExpression.Type.GetCustomAttribute<DynamicsEntityAttribute>()?.Name ??
-                    parameterExpression.Type.Name
+                    _metadataProvider.GetTableName(parameterExpression.Type)
                 ),
                 new XAttribute(
                     "alias",
@@ -560,7 +544,7 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
         }
         else
         {
-            var visitor = new FetchXmlSelectProjectionVisitor(fetchXmlElement, groupBy);
+            var visitor = new FetchXmlSelectProjectionVisitor(fetchXmlElement, _metadataProvider, groupBy);
             visitor.Visit(projectionExpression);
             if (visitor.HasFormattedValues)
             {
@@ -622,19 +606,11 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
 
         var entityElement = new XElement(
             isRootEntity ? "entity" : "link-entity",
-            new XAttribute(
-                "name",
-                entityType.GetCustomAttribute<DynamicsEntityAttribute>()?.Name ?? entityType.Name
-            )
+            new XAttribute("name", _metadataProvider.GetTableName(entityType))
         );
         if (isRootEntity is false)
         {
-            entityElement.Add(
-                new XAttribute(
-                    "alias",
-                    entityAlias
-                )
-            );
+            entityElement.Add(new XAttribute("alias", entityAlias));
             LambdaExpression leftLambda = ((leftExpression as UnaryExpression)!.Operand as LambdaExpression)!;
             MemberExpression leftMemberExpression = (leftLambda.Body as MemberExpression)!;
 
@@ -731,7 +707,7 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
                 isRoot ? "entity" : "link-entity",
                 new XAttribute(
                     "name",
-                    entityType.GetCustomAttribute<DynamicsEntityAttribute>()?.Name ?? entityType.Name
+                    _mainVisitor._metadataProvider.GetTableName(entityType)
                 ),
                 new XAttribute(
                     "alias",

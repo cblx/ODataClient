@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+﻿using Cblx.OData.Client.Abstractions;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.Json.Serialization;
 using System.Xml.Linq;
@@ -16,7 +17,10 @@ static class FindOrCreateElementForMemberExpressionExtension
                 element.Attribute("alias")?.Value == alias);
     }
     
-    public static XElement? FindOrCreateElementForMemberExpression(this XElement fetchXml, MemberExpression memberExpression)
+   
+    private static bool IsMarkedAsNullable(PropertyInfo p) => new NullabilityInfoContext().Create(p).WriteState is NullabilityState.Nullable;
+
+    public static XElement? FindOrCreateElementForMemberExpression(this XElement fetchXml, MemberExpression memberExpression, IDynamicsMetadataProvider metadataProvider)
     {
         XElement? currentEntityElement = null;
         if (memberExpression.Member?.DeclaringType?.IsDynamicsEntity() is true)
@@ -55,7 +59,7 @@ static class FindOrCreateElementForMemberExpressionExtension
                 {
                     var linkEntityElement = new XElement("link-entity");
                     var entityType = (linkEntityMemberExpression.Member as PropertyInfo)!.PropertyType;
-                    linkEntityElement.SetAttributeValue("name", entityType.GetTableName());
+                    linkEntityElement.SetAttributeValue("name", metadataProvider.GetTableName(entityType));
                     var referentialConstraintAttribute = linkEntityMemberExpression.Member.GetCustomAttribute<ReferentialConstraintAttribute>();
                     if (referentialConstraintAttribute == null)
                     {
@@ -66,7 +70,7 @@ static class FindOrCreateElementForMemberExpressionExtension
                     var fkProp = linkEntityMemberExpression.Expression?.Type
                         .GetProperties()
                         .FirstOrDefault(prop => prop.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name == referentialConstraintAttribute.Property);
-                    if(fkProp != null && IsMarkedAsNullable(fkProp))
+                    if (fkProp != null && IsMarkedAsNullable(fkProp))
                     {
                         linkEntityElement.SetAttributeValue("link-type", "outer");
                     }
@@ -78,9 +82,8 @@ static class FindOrCreateElementForMemberExpressionExtension
         return currentEntityElement;
     }
 
-    private static bool IsMarkedAsNullable(PropertyInfo p) => new NullabilityInfoContext().Create(p).WriteState is NullabilityState.Nullable;
 
-    public static XElement? FindOrCreateElementForMemberExpression(this FetchXmlExpressionVisitor mainVisitor, MemberExpression memberExpression)
+    public static XElement? FindOrCreateElementForMemberExpression(this FetchXmlExpressionVisitor mainVisitor, MemberExpression memberExpression, IDynamicsMetadataProvider metadataProvider)
     {
         XElement? currentEntityElement = null;
         if (memberExpression.Member?.DeclaringType?.IsDynamicsEntity() is true)
@@ -93,15 +96,7 @@ static class FindOrCreateElementForMemberExpressionExtension
                 currentMemberExpression = parentMemberExpression;
                 entityExpressions.Push(currentMemberExpression);
             }
-            // if (currentMemberExpression!.Expression!.Type.IsDynamicsEntity())
-            // {
-            //     entityExpressions.Push(currentMemberExpression.Expression);
-            // }
-
-            //Expression rootEntityExpression = entityExpressions.Pop();
-            // string rootEntityAlias = (rootEntityExpression as MemberExpression)?.Member.Name
-            //     ?? (rootEntityExpression as ParameterExpression)?.Name!;
-
+          
             XElement? rootEntityElement = mainVisitor.FetchElement.Descendants().FirstOrDefault(el => el.Name == "entity");
             if(rootEntityElement is null){ return null; }
             currentEntityElement = rootEntityElement;
@@ -117,7 +112,7 @@ static class FindOrCreateElementForMemberExpressionExtension
                 {
                     var linkEntityElement = new XElement("link-entity");
                     var linkEntityMemberExpression = (linkedEntityExpression as MemberExpression)!;
-                    linkEntityElement.SetAttributeValue("name", (linkEntityMemberExpression.Member as PropertyInfo)!.PropertyType.GetTableName());
+                    linkEntityElement.SetAttributeValue("name", metadataProvider.GetTableName((linkEntityMemberExpression.Member as PropertyInfo)!.PropertyType));
                     var referentialConstraintAttribute = linkEntityMemberExpression.Member.GetCustomAttribute<ReferentialConstraintAttribute>();
                     if (referentialConstraintAttribute == null)
                     {

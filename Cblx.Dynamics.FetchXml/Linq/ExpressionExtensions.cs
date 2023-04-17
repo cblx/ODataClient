@@ -51,25 +51,6 @@ public static class ExpressionExtensions
             currentExpression = info.Expression;
         }
         return string.Join(".", names);
-        //if (memberExpression.Expression is ParameterExpression parameterExpression)
-        //{
-        //    return parameterExpression.Name!;
-        //}
-        //else if (memberExpression.Expression is MemberExpression resultMemberExpression)
-        //{
-        //    MemberExpression? currentMemberExpression = resultMemberExpression;
-        //    Stack<string> names = new();
-        //    while (currentMemberExpression?.Type.IsDynamicsEntity() is true)
-        //    {
-        //        names.Push(currentMemberExpression.Member.Name);
-        //        currentMemberExpression = resultMemberExpression.Expression as MemberExpression;
-        //    }
-        //    return string.Join(".", names);
-        //}
-        //else
-        //{
-        //    throw new Exception("Expression not valid for getting entity alias");
-        //}
     }
 
     public static string GetColName(this MemberExpression memberExpression) => memberExpression.Member.GetColName();

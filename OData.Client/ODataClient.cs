@@ -8,6 +8,8 @@ public class ODataClient : IODataClient
 {
     public DynamicsOptions Options { get; private set; }
     public HttpMessageInvoker Invoker { get; private set; }
+    // Currently letting this public for using in new Body<T>(client.MetadataProvider).
+    // In the future, it can be set to private and provide something like client.Body<T>()
     public IDynamicsMetadataProvider MetadataProvider { get; private set; }
 
     public ODataClient(
@@ -22,7 +24,7 @@ public class ODataClient : IODataClient
     }
 
     public IODataSet<T> From<T>() where T : class
-        => new ODataSet<T>(this, MetadataProvider.GetEndpoint<T>());
+        => new ODataSet<T>(this, MetadataProvider);
 
     public Task Post<T>(Body<T> body, Action<HttpRequestMessage>? requestMessageConfiguration = null) where T : class
         => HttpHelpers.Post(

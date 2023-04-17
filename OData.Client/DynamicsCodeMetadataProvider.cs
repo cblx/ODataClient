@@ -41,7 +41,11 @@ public class DynamicsCodeMetadataProvider : IDynamicsMetadataProvider
         var endpointName = entityType.GetCustomAttribute<ODataEndpointAttribute>()?.Endpoint;
         if (endpointName != null) { return endpointName; }
         endpointName = entityType.Name;
-        if (endpointName.EndsWith("s"))
+        if (endpointName.EndsWith("y"))
+        {
+            endpointName = endpointName[..^1] + "ies";
+        }
+        else if (endpointName.EndsWith("s"))
         {
             endpointName += "es";
         }
@@ -51,4 +55,7 @@ public class DynamicsCodeMetadataProvider : IDynamicsMetadataProvider
         }
         return endpointName;
     }
+
+    public string GetTableName<TEntity>() => GetTableName(typeof(TEntity));
+    public string GetTableName(Type type) => type.GetCustomAttribute<DynamicsEntityAttribute>()?.Name ?? type.Name;
 }

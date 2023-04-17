@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Linq.Expressions;
 using System.Xml.Linq;
+using Cblx.OData.Client.Abstractions;
 using Cblx.OData.Client.Abstractions.Ids;
 
 namespace Cblx.Dynamics.FetchXml.Linq;
@@ -11,10 +12,12 @@ public class FetchXmlWhereVisitor : ExpressionVisitor
     public XElement FilterElement { get; } = new XElement("filter");
     public bool IsEmpty => !FilterElement.HasElements;
     private readonly FetchXmlExpressionVisitor _mainVisitor;
+    private readonly IDynamicsMetadataProvider _metadataProvider;
 
-    public FetchXmlWhereVisitor(FetchXmlExpressionVisitor mainVisitor)
+    public FetchXmlWhereVisitor(FetchXmlExpressionVisitor mainVisitor, IDynamicsMetadataProvider metadataProvider)
     {
         _mainVisitor = mainVisitor;
+        _metadataProvider = metadataProvider;
     }
 
     protected override Expression VisitBinary(BinaryExpression node)
@@ -113,7 +116,7 @@ public class FetchXmlWhereVisitor : ExpressionVisitor
             throw new InvalidOperationException("Left side of where caluses must be a member accessor");
         }
 
-        _mainVisitor.FindOrCreateElementForMemberExpression(memberExpression);
+        _mainVisitor.FindOrCreateElementForMemberExpression(memberExpression, _metadataProvider);
         var conditionElement = new XElement("condition");
         string entityAlias = memberExpression.GetEntityAlias();
         SetEntityNameForLinkedEntity(entityAlias, conditionElement);
@@ -133,7 +136,7 @@ public class FetchXmlWhereVisitor : ExpressionVisitor
         {
             case { Name: nameof(DynFunctions.In) } m when m.DeclaringType == typeof(DynFunctions) && node.Arguments[0] is MemberExpression memberExpression:
                 {
-                    _mainVisitor.FindOrCreateElementForMemberExpression(memberExpression);
+                    _mainVisitor.FindOrCreateElementForMemberExpression(memberExpression, _metadataProvider);
                     var conditionElement = new XElement("condition");
                     string entityAlias = memberExpression.GetEntityAlias();
                     SetEntityNameForLinkedEntity(entityAlias, conditionElement);
@@ -151,7 +154,7 @@ public class FetchXmlWhereVisitor : ExpressionVisitor
                 }
             case { Name: nameof(string.Contains) } m when m.DeclaringType == typeof(string) && node.Object is MemberExpression memberExpression:
                 {
-                    _mainVisitor.FindOrCreateElementForMemberExpression(memberExpression);
+                    _mainVisitor.FindOrCreateElementForMemberExpression(memberExpression, _metadataProvider);
                     var conditionElement = new XElement("condition");
                     string entityAlias = memberExpression.GetEntityAlias();
                     SetEntityNameForLinkedEntity(entityAlias, conditionElement);

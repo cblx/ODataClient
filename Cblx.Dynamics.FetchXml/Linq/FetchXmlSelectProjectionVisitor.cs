@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+﻿using Cblx.OData.Client.Abstractions;
+using System.Linq.Expressions;
 using System.Xml.Linq;
 
 namespace Cblx.Dynamics.FetchXml.Linq;
@@ -7,10 +8,13 @@ public class FetchXmlSelectProjectionVisitor : ExpressionVisitor
 {
     private readonly bool _isGroupBy;
     private readonly XElement _fetchXmlElement;
+    private readonly IDynamicsMetadataProvider _metadataProvider;
+
     public bool HasFormattedValues { get; private set; }
-    public FetchXmlSelectProjectionVisitor(XElement fetchXml, bool isGroupBy = false)
+    public FetchXmlSelectProjectionVisitor(XElement fetchXml, IDynamicsMetadataProvider metadataProvider, bool isGroupBy = false)
     {
         _fetchXmlElement = fetchXml;
+        _metadataProvider = metadataProvider;
         _isGroupBy = isGroupBy;
     }
 
@@ -40,7 +44,7 @@ public class FetchXmlSelectProjectionVisitor : ExpressionVisitor
 
     protected override Expression VisitMember(MemberExpression? node)
     {
-        XElement? linkedNavigationEntityElement = _fetchXmlElement.FindOrCreateElementForMemberExpression(node);
+        XElement? linkedNavigationEntityElement = _fetchXmlElement.FindOrCreateElementForMemberExpression(node, _metadataProvider);
         if (linkedNavigationEntityElement == null) { return node; }
         string attributeAlias = node.ToProjectionAttributeAlias();
         var attributeElement = new XElement(

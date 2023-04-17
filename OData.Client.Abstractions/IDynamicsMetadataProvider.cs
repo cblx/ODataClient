@@ -5,4 +5,6 @@ public interface IDynamicsMetadataProvider
     bool IsEdmDate<TEntity>(string columnName) where TEntity : class;
     string GetEndpoint<TEntity>() where TEntity : class;
     string GetEndpoint(Type entityType);
+    string GetTableName<TEntity>();
+    string GetTableName(Type type);
 }
