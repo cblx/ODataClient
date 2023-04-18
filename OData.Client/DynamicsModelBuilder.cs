@@ -20,5 +20,10 @@ public class DynamicsModelBuilder
         return builder;
     }
 
-    private void InitEntity(Type type) => Model.Entities[type] = Model.Entities[type] ?? new DynamicsEntityType { ClrType = type };
+    private void InitEntity(Type type)
+    {
+        if(Model.Entities.ContainsKey(type)) { return; }
+        Model.Entities[type] = new DynamicsEntityType { ClrType = type };
+    }
+        
 }

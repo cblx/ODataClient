@@ -11,6 +11,7 @@
   <ItemGroup>
 	  <PackageReference Include="FluentAssertions" Version="6.10.0" />
     <PackageReference Include="Microsoft.AspNet.WebApi.Client" Version="5.2.9" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.5.0" />
     <PackageReference Include="Moq" Version="4.18.4" />
     <PackageReference Include="xunit" Version="2.4.2" />
@@ -25,6 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Cblx.Dynamics.AspNetCore\Cblx.Dynamics.AspNetCore.csproj" />
     <ProjectReference Include="..\Cblx.Dynamics\Cblx.Dynamics.csproj" />
   </ItemGroup>
 
