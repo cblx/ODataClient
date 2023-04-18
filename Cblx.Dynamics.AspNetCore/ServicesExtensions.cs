@@ -10,8 +10,14 @@ namespace Cblx.Dynamics.AspNetCore;
 
 public static class ServicesExtensions
 {
-    public static void AddDynamics(this IServiceCollection services, Action<DynamicsOptions>? setup = null) => AddDynamics(services, (Delegate?)setup);
-    private static void AddDynamics(this IServiceCollection services, Delegate? setup = null)
+    public static void AddDynamics<TModelConfiguration>(this IServiceCollection services, Action<DynamicsOptions>? setup = null) where TModelConfiguration : DynamicsModelConfiguration
+    {
+        AddDynamics(services, setup);
+        services.AddSingleton<DynamicsModelConfiguration, TModelConfiguration>();
+        services.AddSingleton<IDynamicsMetadataProvider, DynamicsMetadataProvider>();
+    }
+
+    public static void AddDynamics(this IServiceCollection services, Action<DynamicsOptions>? setup = null)
     {
         // Options configuration
         services.AddSingleton(sp =>
@@ -37,7 +43,7 @@ public static class ServicesExtensions
         });
         
         services.AddSingleton<IDynamicsAuthenticator, DynamicsAuthenticator>();
-        services.AddSingleton<IDynamicsMetadataProvider, DynamicsMetadataProvider>();
+        services.AddSingleton<IDynamicsMetadataProvider, DynamicsCodeMetadataProvider>();
         // Default Config, binding from "Dynamics" section
         services
             .AddOptions<DynamicsConfig>()

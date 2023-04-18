@@ -1,32 +1,29 @@
-﻿using OData.Client;
+﻿using Cblx.OData.Client.Abstractions;
+using OData.Client;
 
 namespace Cblx.Dynamics;
 
 /// <summary>
-/// Infer types from a Dynamics Schema, and fallback to C# annotations and typings
+/// Configuration provider
 /// </summary>
-public class DynamicsMetadataProvider : DynamicsCodeMetadataProvider
+public class DynamicsMetadataProvider : IDynamicsMetadataProvider
 {
-    //private static IHttpClientFactory _httpClientFactory;
-    //private static readonly Lazy<ResourceMetadata> _metadata = new Lazy<ResourceMetadata>(async () =>
-    //{
-    //    await Task.CompletedTask;
-    //    return new ResourceMetadata();
-    //});
+    private readonly DynamicsModel _model;
 
-    public DynamicsMetadataProvider(IHttpClientFactory httpClientFactory, DynamicsOptions options)
+    public DynamicsMetadataProvider(DynamicsModelConfiguration configuration)
     {
-        //_httpClientFactory = httpClientFactory;
-        if (options.DownloadMetadataAndConfigure)
-        {
-            httpClientFactory.CreateClient(options.HttpClientName!);
-        }
+        var builder = new DynamicsModelBuilder();
+        configuration.OnModelCreating(builder);
+        _model = builder.Model;    
     }
 
-    //public string GetColumnName<TEntity>(string propertyName) => typeof(TEntity).GetProperties().FirstOrDefault(p => p.Name == propertyName || p.Get)
+    public string GetEndpoint<TEntity>() where TEntity : class => _model.Entities[typeof(TEntity)].GetEndpointName();
 
-    public override bool IsEdmDate<TEntity>(string columnName) where TEntity : class
-    {
-        return base.IsEdmDate<TEntity>(columnName);
-    }
+    public string GetEndpoint(Type type) => _model.Entities[type].GetEndpointName();
+
+    public string GetTableName<TEntity>() => _model.Entities[typeof(TEntity)].GetTableName();
+
+    public string GetTableName(Type type) => _model.Entities[type].GetTableName();
+
+    public bool IsEdmDate<TEntity>(string columnName) where TEntity : class => _model.Entities[typeof(TEntity)].IsEdmDate(columnName);
 }

@@ -3,7 +3,6 @@
 namespace OData.Client;
 public class DynamicsOptions
 {
-    public bool DownloadMetadataAndConfigure { get; set; } = false;
     public string HttpClientName { get; set; } = nameof(IODataClient);
     public bool ShowLog { get; set; } = false;
     public bool ReadResponsesAsString { get; set; } = false;

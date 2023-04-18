@@ -16,7 +16,7 @@ public class ODataRepositoryTests
     public async Task Test()
     {
         var httpClient = new HttpClient();
-        var oDataClient = new ODataClient(httpClient, new DynamicsMetadataProvider(Mock.Of<IHttpClientFactory>(), new DynamicsOptions { DownloadMetadataAndConfigure = false }));
+        var oDataClient = new ODataClient(httpClient, new DynamicsCodeMetadataProvider());
         var repository = new Repo(oDataClient);
         repository.Add(new SaveEntity() { 
             RelId = Guid.NewGuid(),
