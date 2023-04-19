@@ -20,20 +20,27 @@ static class FindOrCreateElementForMemberExpressionExtension
    
     private static bool IsMarkedAsNullable(PropertyInfo p) => new NullabilityInfoContext().Create(p).WriteState is NullabilityState.Nullable;
 
-    public static XElement? FindOrCreateElementForMemberExpression(this XElement fetchXml, MemberExpression memberExpression, IDynamicsMetadataProvider metadataProvider)
+    public static XElement? FindOrCreateElementForMemberExpression(this XElement fetchXml, 
+        MemberExpression memberExpression, 
+        IDynamicsMetadataProvider metadataProvider)
     {
         XElement? currentEntityElement = null;
-        if (memberExpression.Member?.DeclaringType?.IsDynamicsEntity() is true)
+        if (memberExpression.Member.DeclaringType is not null
+            &&
+            metadataProvider.IsEntity(memberExpression.Member.DeclaringType))
         {
             MemberExpression currentMemberExpression = memberExpression;
             Stack<Expression> entityExpressions = new();
             while (currentMemberExpression.Expression is MemberExpression parentMemberExpression
-                && parentMemberExpression.Member.DeclaringType?.IsDynamicsEntity() is true)
+                &&
+                parentMemberExpression.Member.DeclaringType != null
+                &&
+                metadataProvider.IsEntity(parentMemberExpression.Member.DeclaringType))
             {
                 currentMemberExpression = parentMemberExpression;
                 entityExpressions.Push(currentMemberExpression);
             }
-            if (currentMemberExpression!.Expression!.Type.IsDynamicsEntity())
+            if (metadataProvider.IsEntity(currentMemberExpression!.Expression!.Type))
             {
                 entityExpressions.Push(currentMemberExpression.Expression);
             }
@@ -86,12 +93,15 @@ static class FindOrCreateElementForMemberExpressionExtension
     public static XElement? FindOrCreateElementForMemberExpression(this FetchXmlExpressionVisitor mainVisitor, MemberExpression memberExpression, IDynamicsMetadataProvider metadataProvider)
     {
         XElement? currentEntityElement = null;
-        if (memberExpression.Member?.DeclaringType?.IsDynamicsEntity() is true)
+        if (memberExpression.Member.DeclaringType != null && metadataProvider.IsEntity(memberExpression.Member.DeclaringType))
         {
             MemberExpression currentMemberExpression = memberExpression;
             Stack<Expression> entityExpressions = new();
             while (currentMemberExpression.Expression is MemberExpression parentMemberExpression
-                && parentMemberExpression.Member.DeclaringType?.IsDynamicsEntity() is true)
+                &&
+                parentMemberExpression.Member.DeclaringType != null
+                &&
+                metadataProvider.IsEntity(parentMemberExpression.Member.DeclaringType))
             {
                 currentMemberExpression = parentMemberExpression;
                 entityExpressions.Push(currentMemberExpression);

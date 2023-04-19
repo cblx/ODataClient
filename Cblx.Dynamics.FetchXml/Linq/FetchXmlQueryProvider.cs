@@ -107,7 +107,7 @@ public class FetchXmlQueryProvider : IAsyncQueryProvider
 
         var visitor = new FetchXmlExpressionVisitor(MetadataProvider);
         visitor.Visit(expression);
-        Delegate projectionFunc = GetProjectionFunc(expression, visitor);
+        Delegate projectionFunc = GetProjectionFunc(expression, visitor, MetadataProvider);
         var fetchXmlElement = visitor.ToFetchXmlElement();
         var (responseMessage, _) = await ExecuteRequestAsync(visitor, fetchXmlElement, cancellationToken);
 
@@ -144,15 +144,16 @@ public class FetchXmlQueryProvider : IAsyncQueryProvider
         }
     }
 
-    private static Delegate GetProjectionFunc(Expression expression, FetchXmlExpressionVisitor visitor)
+    private static Delegate GetProjectionFunc(Expression expression, FetchXmlExpressionVisitor visitor, IDynamicsMetadataProvider metadataProvider)
     {
         LambdaExpression projectionExpression =
         visitor.IsGroupBy
             ? new FetchXmlGroupProjectionRewriter(
                 visitor.GroupExpression,
-                visitor.GroupByExpression
+                visitor.GroupByExpression,
+                metadataProvider
             ).Rewrite(expression)
-            : new FetchXmlProjectionRewriter().Rewrite(expression);
+            : new FetchXmlProjectionRewriter(metadataProvider).Rewrite(expression);
         return projectionExpression.Compile();
     }
 

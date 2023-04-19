@@ -1,6 +1,7 @@
 ﻿using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.Json.Serialization;
+using Cblx.OData.Client.Abstractions;
 using Cblx.OData.Client.Abstractions.Ids;
 
 namespace Cblx.Dynamics.FetchXml.Linq;
@@ -32,7 +33,7 @@ public static class ExpressionExtensions
         return propAlias;
     }
 
-    public static string GetEntityAlias(this MemberExpression memberExpression)
+    public static string GetEntityAlias(this MemberExpression memberExpression, IDynamicsMetadataProvider metadataProvider)
     {
         Expression? currentExpression = memberExpression.Expression;
         Stack<string> names = new();
@@ -46,7 +47,7 @@ public static class ExpressionExtensions
                                 (parameterExpression.Type, parameterExpression.Name, null)
                                     : (null, null, null);
             if(info.Type is null) { break; }
-            if (!info.Type.IsDynamicsEntity()) { break; }
+            if (!metadataProvider.IsEntity(info.Type)) { break; }
             names.Push(info.Name);
             currentExpression = info.Expression;
         }

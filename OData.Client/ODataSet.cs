@@ -92,7 +92,7 @@ public class ODataSet<TSource> : IODataSet<TSource>
     )
     {
         var url = ToString(selectExpression);
-        var rewriter = new ODataProjectionRewriter();
+        var rewriter = new ODataProjectionRewriter(_metadataProvider);
         var projectionExpression = rewriter.Rewrite(selectExpression);
         if (rewriter.HasFormattedValues)
         {

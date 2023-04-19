@@ -1,10 +1,8 @@
-﻿using System.Linq;
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Reflection;
 using System.Xml.Linq;
 using Cblx.Dynamics.Linq;
 using Cblx.OData.Client.Abstractions;
-using OData.Client.Abstractions;
 
 namespace Cblx.Dynamics.FetchXml.Linq;
 
@@ -264,7 +262,7 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
         LambdaExpression orderByLambdaExpression = (node.Arguments[1].UnBox() as LambdaExpression)!;
         MemberExpression memberExpression = (orderByLambdaExpression.Body as MemberExpression)!;
 
-        XElement entityElement = FetchElement.FindEntityElementByAlias(memberExpression.GetEntityAlias()) ??
+        XElement entityElement = FetchElement.FindEntityElementByAlias(memberExpression.GetEntityAlias(_metadataProvider)) ??
                                  FetchElement.Descendants().First();
         var orderElement = new XElement("order");
         orderElement.SetAttributeValue("attribute", memberExpression.GetColName());
@@ -407,7 +405,7 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
         {
             var paramName = (currentExpression as ParameterExpression)?.Name ?? (currentExpression as MemberExpression)?.Member?.Name;
             var member = newMemberInfo as PropertyInfo;
-            if (!member!.PropertyType.IsDynamicsEntity()) { return; }
+            if (!_metadataProvider.IsEntity(member!.PropertyType)) { return; }
             if (paramName != member.Name)
             {
                 EntityParametersElements[paramName!].Attribute("alias")!.SetValue(member.Name);
@@ -539,7 +537,7 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
                               && parameterExpression.Type.GetGenericTypeDefinition() == typeof(IGrouping<,>);
         if (isGroupByQuery)
         {
-            var visitor = new FetchXmlGroupByProjectionVisitor(fetchXmlElement, GroupExpression!);
+            var visitor = new FetchXmlGroupByProjectionVisitor(fetchXmlElement, GroupExpression!, _metadataProvider);
             visitor.Visit(projectionExpression);
         }
         else

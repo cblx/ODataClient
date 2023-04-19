@@ -1,6 +1,7 @@
 ﻿using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.Json.Nodes;
+using Cblx.OData.Client.Abstractions;
 using Cblx.OData.Client.Abstractions.Ids;
 
 namespace Cblx.Dynamics.FetchXml.Linq;
@@ -13,13 +14,15 @@ public class FetchXmlGroupProjectionRewriter : ExpressionVisitor
 
     private FetchXmlGroupMemberDictionaryVisitor groupMemberDictionaryVisitor = new();
     private FetchXmlGroupMemberDictionaryVisitor groupByMemberDictionaryVisitor = new();
+    private readonly IDynamicsMetadataProvider _metadataProvider;
 
-    public FetchXmlGroupProjectionRewriter(LambdaExpression? groupExpression, LambdaExpression? groupByExpression)
+    public FetchXmlGroupProjectionRewriter(LambdaExpression? groupExpression, LambdaExpression? groupByExpression, IDynamicsMetadataProvider metadataProvider)
     {
         this.groupExpression = groupExpression;
         this.groupByExpression = groupByExpression;
         groupMemberDictionaryVisitor.Visit(this.groupExpression);
         groupByMemberDictionaryVisitor.Visit(this.groupByExpression);
+        _metadataProvider = metadataProvider;
     }
 
     public LambdaExpression Rewrite(Expression expression)
@@ -53,7 +56,7 @@ public class FetchXmlGroupProjectionRewriter : ExpressionVisitor
             LambdaExpression lambda = (methodCallExpression.Arguments[1] as LambdaExpression)!;
             MemberExpression memberExpression = (lambda.Body as MemberExpression)!;
             memberExpression = groupMemberDictionaryVisitor.MemberDictionary[memberExpression.Member.Name];
-            string entityAlias = memberExpression.GetEntityAlias();
+            string entityAlias = memberExpression.GetEntityAlias(_metadataProvider);
             string attributeAlias =
                 distinct ?
                 $"{entityAlias}.{memberExpression.Member.Name}.Distinct.{aggregation}"

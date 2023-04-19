@@ -118,7 +118,7 @@ public class FetchXmlWhereVisitor : ExpressionVisitor
 
         _mainVisitor.FindOrCreateElementForMemberExpression(memberExpression, _metadataProvider);
         var conditionElement = new XElement("condition");
-        string entityAlias = memberExpression.GetEntityAlias();
+        string entityAlias = memberExpression.GetEntityAlias(_metadataProvider);
         SetEntityNameForLinkedEntity(entityAlias, conditionElement);
         
         conditionElement.SetAttributeValue("attribute", memberExpression.GetColName());
@@ -138,7 +138,7 @@ public class FetchXmlWhereVisitor : ExpressionVisitor
                 {
                     _mainVisitor.FindOrCreateElementForMemberExpression(memberExpression, _metadataProvider);
                     var conditionElement = new XElement("condition");
-                    string entityAlias = memberExpression.GetEntityAlias();
+                    string entityAlias = memberExpression.GetEntityAlias(_metadataProvider);
                     SetEntityNameForLinkedEntity(entityAlias, conditionElement);
                     conditionElement.SetAttributeValue("attribute", memberExpression.GetColName());
                     conditionElement.SetAttributeValue("operator", "in");
@@ -156,7 +156,7 @@ public class FetchXmlWhereVisitor : ExpressionVisitor
                 {
                     _mainVisitor.FindOrCreateElementForMemberExpression(memberExpression, _metadataProvider);
                     var conditionElement = new XElement("condition");
-                    string entityAlias = memberExpression.GetEntityAlias();
+                    string entityAlias = memberExpression.GetEntityAlias(_metadataProvider);
                     SetEntityNameForLinkedEntity(entityAlias, conditionElement);
                     conditionElement.SetAttributeValue("attribute", memberExpression.GetColName());
                     conditionElement.SetAttributeValue("operator", "like");

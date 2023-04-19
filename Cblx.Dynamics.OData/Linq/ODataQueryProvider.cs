@@ -88,7 +88,7 @@ public class ODataQueryProvider : IAsyncQueryProvider
         {
             throw new InvalidOperationException("Unexpected behavior: Desserialization result is null");
         }
-        LambdaExpression projectionExpression = new ODataProjectionRewriter().Rewrite(expression);
+        LambdaExpression projectionExpression = new ODataProjectionRewriter(_metadataProvider).Rewrite(expression);
         Delegate del = projectionExpression.Compile();
         JsonArray jsonArray = jsonObject["value"]!.AsArray();
         if (typeof(TResult).IsGenericType && typeof(TResult).IsAssignableTo(typeof(IEnumerable)))

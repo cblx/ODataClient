@@ -1,4 +1,5 @@
 ﻿using Cblx.Dynamics.Linq;
+using Cblx.OData.Client.Abstractions;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.Json.Nodes;
@@ -7,6 +8,13 @@ namespace Cblx.Dynamics.FetchXml.Linq;
 
 public class FetchXmlProjectionRewriter : ExpressionVisitor
 {
+    private readonly IDynamicsMetadataProvider _metadataProvider;
+
+    public FetchXmlProjectionRewriter(IDynamicsMetadataProvider metadataProvider)
+    {
+        _metadataProvider = metadataProvider;
+    }
+
     private readonly ParameterExpression _jsonParameterExpression =
         Expression.Parameter(typeof(JsonObject), "jsonObject");
     public LambdaExpression Rewrite(Expression expression)
@@ -45,7 +53,7 @@ public class FetchXmlProjectionRewriter : ExpressionVisitor
                     case MemberExpression or MemberInitExpression or NewExpression:
                         return Expression.Lambda(Visit(body), _jsonParameterExpression);
                     case ParameterExpression parameterExpression
-                        when parameterExpression.Type.IsDynamicsEntity():
+                        when _metadataProvider.IsEntity(parameterExpression.Type):
                         {
                             MethodInfo createEntityMethod =
                                 RewriterHelpers.CreateEntityMethod.MakeGenericMethod(parameterExpression.Type);
@@ -124,7 +132,7 @@ public class FetchXmlProjectionRewriter : ExpressionVisitor
 
     Expression VisitMember(MemberExpression node, string? applyAnnotation, Type? overrideType)
     {
-        if (node.Expression?.Type.IsDynamicsEntity() is false) { return node; }
+        if (node.Expression is null || !_metadataProvider.IsEntity(node.Expression.Type)) { return node; }
 
         MemberInfo memberInfo = node.Member;
         string propAlias = $"{node.ToProjectionAttributeAlias()}{applyAnnotation}";

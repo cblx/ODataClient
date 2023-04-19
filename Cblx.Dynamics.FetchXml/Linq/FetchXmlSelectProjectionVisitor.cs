@@ -25,7 +25,7 @@ public class FetchXmlSelectProjectionVisitor : ExpressionVisitor
 
     protected override Expression VisitParameter(ParameterExpression node)
     {
-        if (node.Type.IsDynamicsEntity())
+        if (_metadataProvider.IsEntity(node.Type))
         {
             XElement element = _fetchXmlElement
                 .Descendants()

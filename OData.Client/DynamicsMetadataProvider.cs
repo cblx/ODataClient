@@ -26,4 +26,6 @@ public class DynamicsMetadataProvider : IDynamicsMetadataProvider
     public string GetTableName(Type type) => _model.Entities[type].GetTableName();
 
     public bool IsEdmDate<TEntity>(string columnName) where TEntity : class => _model.Entities[typeof(TEntity)].IsEdmDate(columnName);
+
+    public bool IsEntity(Type type) => _model.Entities.ContainsKey(type);
 }

@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+﻿using Cblx.OData.Client.Abstractions;
+using System.Linq.Expressions;
 using System.Xml.Linq;
 
 namespace Cblx.Dynamics.FetchXml.Linq;
@@ -18,14 +19,16 @@ public class FetchXmlGroupByProjectionVisitor : ExpressionVisitor
 {
     private readonly FetchXmlGroupMemberDictionaryVisitor _memberDictionaryVisitor = new();
     private readonly XElement _fetchXmlElement;
+    private readonly IDynamicsMetadataProvider _metadataProvider;
 
     public FetchXmlGroupByProjectionVisitor(
         XElement fetchXmlElement,
-        LambdaExpression groupExpression
-    )
+        LambdaExpression groupExpression,
+        IDynamicsMetadataProvider metadataProvider)
     {
         _memberDictionaryVisitor.Visit(groupExpression);
         _fetchXmlElement = fetchXmlElement;
+        _metadataProvider = metadataProvider;
     }
 
     protected override Expression VisitMethodCall(MethodCallExpression node)
@@ -40,7 +43,7 @@ public class FetchXmlGroupByProjectionVisitor : ExpressionVisitor
             LambdaExpression lambda = (methodCallExpression.Arguments[1] as LambdaExpression)!;
             MemberExpression memberExpression = (lambda.Body as MemberExpression)!;
             memberExpression = _memberDictionaryVisitor.MemberDictionary[memberExpression.Member.Name];
-            string entityAlias = memberExpression.GetEntityAlias();
+            string entityAlias = memberExpression.GetEntityAlias(_metadataProvider);
             string attributeAlias = 
                 distinct ?
                 $"{entityAlias}.{memberExpression.Member.Name}.Distinct.{aggregation}"

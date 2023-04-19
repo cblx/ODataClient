@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+﻿using Cblx.OData.Client.Abstractions;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.Json.Nodes;
 
@@ -7,6 +8,13 @@ namespace Cblx.Dynamics.OData.Linq;
 public class ODataProjectionRewriter : ExpressionVisitor
 {
     private readonly Dictionary<ParameterExpression, ParameterExpression> _jsonParameterExpressions = new();
+    private readonly IDynamicsMetadataProvider _metadataProvider;
+
+    public ODataProjectionRewriter(IDynamicsMetadataProvider metadataProvider)
+    {
+        _metadataProvider = metadataProvider;
+    }
+
     public bool HasFormattedValues { get; private set; }
 
     private ParameterExpression GetJsonParameterExpression(ParameterExpression parameterExpression)
@@ -38,7 +46,7 @@ public class ODataProjectionRewriter : ExpressionVisitor
                                 return Expression.Lambda(rewrittenExpression, jsonParameterExpression);
                             }
                         case ParameterExpression parameterExpression
-                            when parameterExpression.Type.IsDynamicsEntity():
+                            when _metadataProvider.IsEntity(parameterExpression.Type):
                             {
                                 MethodInfo createEntityMethod =
                                     RewriterHelpers.CreateEntityMethod.MakeGenericMethod(parameterExpression.Type);
@@ -117,7 +125,7 @@ public class ODataProjectionRewriter : ExpressionVisitor
                     if (
                         arg is MemberExpression memberExpression
                         && memberExpression.Expression is ParameterExpression parameterExpression
-                        && parameterExpression.Type.IsDynamicsEntity())
+                        && _metadataProvider.IsEntity(parameterExpression.Type))
                     {
                         // Get the path and the json parameter for rewriting
                         (var path, var jsonParameter) = GetMemberPathStack(memberExpression, null);
@@ -181,14 +189,14 @@ public class ODataProjectionRewriter : ExpressionVisitor
             node = parentMemberExpression;
         }
         var rootParameter = node.Expression as ParameterExpression;
-        if(rootParameter is null) { throw new InvalidOperationException($"The member expression {node} must be used with a valid entity parameter. Check if the entity class is annotated with DynamicsEntityAttribute."); }
+        if(rootParameter is null) { throw new InvalidOperationException($"The member expression {node} must be used with a valid entity parameter. Check if the entity is mapped."); }
         var jsonParameterExpression = GetJsonParameterExpression(rootParameter);
         return (fieldsStack, jsonParameterExpression);
     }
 
     Expression VisitMember(MemberExpression node, string? applyAnnotation, Type? overrideType)
     {
-        if(node.Expression?.Type.IsDynamicsEntity() is not true) {
+        if(node.Expression is null || !_metadataProvider.IsEntity(node.Expression.Type)) {
             return base.VisitMember(node); 
         }
         MemberInfo memberInfo = node.Member;

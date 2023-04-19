@@ -7,4 +7,5 @@ public interface IDynamicsMetadataProvider
     string GetEndpoint(Type type);
     string GetTableName<TEntity>();
     string GetTableName(Type type);
+    bool IsEntity(Type type);
 }
