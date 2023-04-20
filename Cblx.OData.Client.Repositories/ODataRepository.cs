@@ -1,4 +1,5 @@
-﻿using Cblx.OData.Client.Abstractions;
+﻿using Cblx.Dynamics;
+using Cblx.OData.Client.Abstractions;
 using Cblx.OData.Client.Abstractions.Ids;
 using OData.Client.Abstractions;
 using OData.Client.Abstractions.Write;
@@ -28,6 +29,7 @@ namespace Cblx.OData.Client
     {
         readonly protected ChangeTracker changeTracker = new();
         readonly protected IODataClient oDataClient;
+        private IDynamicsMetadataProvider MetadataProvider => oDataClient.MetadataProvider;
 
         public ODataRepository(IODataClient oDataClient)
         {
@@ -83,14 +85,27 @@ namespace Cblx.OData.Client
             }
             else
             {
-                var body = new Body<TTable>(oDataClient.MetadataProvider);
+                var body = new Body<TTable>(MetadataProvider);
                 foreach (ChangedProperty changedProperty in change.ChangedProperties)
                 {
-                    string? fieldName = changedProperty.PropertyInfo.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name;
-                    if (fieldName == null) { continue; }
-                    string? navName = changedProperty.PropertyInfo.GetCustomAttribute<ODataBindAttribute>()?.Name;
+                    string? fieldLogicalName = changedProperty.PropertyInfo.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name;
+                    if (fieldLogicalName == null) { continue; }
+                    string? navLogicalName =
+                        // Old mode: Gets ODataBindAttribute from the Repository Entity
+                        changedProperty.PropertyInfo.GetCustomAttribute<ODataBindAttribute>()?.Name
+                        // I think this fallback may lead to miss some configuration
+                        // when migrating to some kind of Context/Unit of Work model in the future.
+                        // If we have some kind of DynamicsContext in the future like a DbContext,
+                        // when migrating to the new form, the ODataBind or Fluent Config in the Entity will be necessary.
+                        //?? 
+                        //// New mode: Search in the related Table model definition
+                        //// Note: The current ODataRepository may be deprecated in the future.
+                        //// The idea of a Repository that is related to 2 types is somehow strange.
+                        //MetadataProvider.FindLogicalNavigationNameForLookup<TTable>(fieldLogicalName)
+                        ;
 
-                    if (!string.IsNullOrWhiteSpace(navName))
+
+                    if (!string.IsNullOrWhiteSpace(navLogicalName))
                     {
                         if (changedProperty.NewValue != null)
                         {
@@ -106,22 +121,22 @@ namespace Cblx.OData.Client
                             }
                             catch
                             {
-                                throw new ArgumentException($"The {fieldName} field must be able to be serialized as Guid. Value was {changedProperty.NewValue}");
+                                throw new ArgumentException($"The {fieldLogicalName} field must be able to be serialized as Guid. Value was {changedProperty.NewValue}");
                             }
-                            body.Bind(navName, guid);
+                            body.Bind(navLogicalName, guid);
                         }
                         else
                         {
                             if (changedProperty.OldValue != null)
                             {
-                                await oDataClient.Unbind<TTable>(id.Value, navName);
+                                await oDataClient.Unbind<TTable>(id.Value, navLogicalName);
                             }
                         }
 
                     }
                     else
                     {
-                        body.Set(fieldName, changedProperty.NewValue);
+                        body.Set(fieldLogicalName, changedProperty.NewValue);
                     }
                 }
                 if (change.ChangeType == ChangeType.Update)

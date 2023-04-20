@@ -1,4 +1,5 @@
-﻿using OData.Client.Abstractions;
+﻿using Cblx.Dynamics.OData.Linq;
+using OData.Client.Abstractions;
 using System.Reflection;
 using System.Text.Json.Serialization;
 
@@ -7,6 +8,7 @@ namespace Cblx.Dynamics;
 public class DynamicsEntityType
 {
     private readonly Lazy<string> _endpointNameLazy;
+    private readonly Dictionary<string, DynamicsEntityProperty> _properties = new();
 
     internal DynamicsEntityType() {
         _endpointNameLazy = new Lazy<string>(ResolveEndpointName);
@@ -39,7 +41,30 @@ public class DynamicsEntityType
         return endpointName;
     }
 
-    public virtual bool IsEdmDate(string columnName)
+    public DynamicsEntityProperty GetProperty(string name)
+    {
+        InitDefaultProperty(name);
+        return _properties[name];
+    }
+
+    private void InitDefaultProperty(string name)
+    {
+        if (_properties.ContainsKey(name)) { return; }
+        var thisPropInfo = ClrType.GetProperty(name) ?? throw new InvalidOperationException($"Property {name} does not exists in type {ClrType.Name}");
+        var logicalName = thisPropInfo.GetColName();
+        var relatedLogicalLookupName = thisPropInfo.GetCustomAttribute<ReferentialConstraintAttribute>()?.Property 
+                ?? 
+                ClrType
+                    .GetProperties()
+                    .FirstOrDefault(p => p.Name == $"{name}Id" || p.GetCustomAttribute<ODataBindAttribute>()?.Name == logicalName)?.GetColName();
+        _properties[name] = new DynamicsEntityProperty
+        {
+            LogicalName = logicalName,
+            RelatedLogicalLookupName = relatedLogicalLookupName
+        };
+    }
+
+    public bool IsEdmDate(string columnName)
     {
         var propertyInfo = ClrType
            .GetProperties()
@@ -62,4 +87,24 @@ public class DynamicsEntityType
         return type == typeof(DateTime)
             || type == typeof(DateOnly);
     }
+
+    //internal string? FindLogicalNavigationNameByConventionOrAnnotations(string lookupLogicalName)
+    //{
+    //    var mappedLookupPropertyInfo = ClrType.GetProperties().FirstOrDefault(p => p.GetColName() == lookupLogicalName);
+    //    if(mappedLookupPropertyInfo == null) { return null; }
+    //    // from ODataBind attribute
+    //    if(mappedLookupPropertyInfo.GetCustomAttribute<ODataBindAttribute>()?.Name is { } navLogicalName){ return navLogicalName; }
+        
+    //    // find the mapped nav property and use [ReferentialConstraint] or Naming Convention
+    //    var mappedNavigationPropertyInfo = ClrType.GetProperties().FirstOrDefault(
+    //        p =>
+    //            // ReferentialConstraint
+    //            p.GetCustomAttribute<ReferentialConstraintAttribute>()?.Property == lookupLogicalName
+    //            ||
+    //            // Naming convention
+    //            (mappedLookupPropertyInfo.Name.EndsWith("Id") && p.Name == mappedLookupPropertyInfo.Name[..^2])
+    //    );
+    //    if (mappedNavigationPropertyInfo == null) { return null; }
+    //    return mappedLookupPropertyInfo.GetColName();
+    //}
 }

@@ -1,5 +1,6 @@
 ﻿using Cblx.OData.Client.Abstractions;
 using OData.Client;
+using System.Reflection;
 
 namespace Cblx.Dynamics;
 
@@ -20,6 +21,12 @@ public class DynamicsMetadataProvider : IDynamicsMetadataProvider
     public string GetEndpoint<TEntity>() where TEntity : class => _model.Entities[typeof(TEntity)].GetEndpointName();
 
     public string GetEndpoint(Type type) => _model.Entities[type].GetEndpointName();
+
+    public string? GetLogicalLookupNameForMappedNavigationProperty(MemberInfo member) 
+        => _model.Entities[member.DeclaringType!].GetProperty(member.Name).RelatedLogicalLookupName;
+    
+    public string? GetLogicalLookupRawNameForMappedNavigationProperty(MemberInfo member)
+        => _model.Entities[member.DeclaringType!].GetProperty(member.Name).RelatedLogicalLookupRawName;
 
     public string GetTableName<TEntity>() => _model.Entities[typeof(TEntity)].GetTableName();
 

@@ -67,16 +67,18 @@ static class FindOrCreateElementForMemberExpressionExtension
                     var linkEntityElement = new XElement("link-entity");
                     var entityType = (linkEntityMemberExpression.Member as PropertyInfo)!.PropertyType;
                     linkEntityElement.SetAttributeValue("name", metadataProvider.GetTableName(entityType));
-                    var referentialConstraintAttribute = linkEntityMemberExpression.Member.GetCustomAttribute<ReferentialConstraintAttribute>();
-                    if (referentialConstraintAttribute == null)
-                    {
-                        throw new InvalidOperationException($"You must annotate the Navigation Property ({linkEntityMemberExpression.Member.Name}) with [ReferentialConstraint] to enable using of navigation members.");
-                    }
-                    linkEntityElement.SetAttributeValue("to", referentialConstraintAttribute.RawPropertyName);
+                    //var referentialConstraintAttribute = linkEntityMemberExpression.Member.GetCustomAttribute<ReferentialConstraintAttribute>();
+                    //if (referentialConstraintAttribute == null)
+                    //{
+                    //    throw new InvalidOperationException($"You must annotate the Navigation Property ({linkEntityMemberExpression.Member.Name}) with [ReferentialConstraint] to enable using of navigation members.");
+                    //}
+                    //linkEntityElement.SetAttributeValue("to", referentialConstraintAttribute.RawPropertyName);
+                    linkEntityElement.SetAttributeValue("to", metadataProvider.GetLogicalLookupRawNameForMappedNavigationProperty(linkEntityMemberExpression.Member));
                     linkEntityElement.SetAttributeValue("alias", alias);
                     var fkProp = linkEntityMemberExpression.Expression?.Type
                         .GetProperties()
-                        .FirstOrDefault(prop => prop.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name == referentialConstraintAttribute.Property);
+                        //.FirstOrDefault(prop => prop.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name == referentialConstraintAttribute.Property);
+                        .FirstOrDefault(prop => prop.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name == metadataProvider.GetLogicalLookupNameForMappedNavigationProperty(linkEntityMemberExpression.Member));
                     if (fkProp != null && IsMarkedAsNullable(fkProp))
                     {
                         linkEntityElement.SetAttributeValue("link-type", "outer");
@@ -123,16 +125,16 @@ static class FindOrCreateElementForMemberExpressionExtension
                     var linkEntityElement = new XElement("link-entity");
                     var linkEntityMemberExpression = (linkedEntityExpression as MemberExpression)!;
                     linkEntityElement.SetAttributeValue("name", metadataProvider.GetTableName((linkEntityMemberExpression.Member as PropertyInfo)!.PropertyType));
-                    var referentialConstraintAttribute = linkEntityMemberExpression.Member.GetCustomAttribute<ReferentialConstraintAttribute>();
-                    if (referentialConstraintAttribute == null)
-                    {
-                        throw new InvalidOperationException($"You must annotate the Navigation Property ({linkEntityMemberExpression.Member.Name}) with [ReferentialConstraint] to enable using of navigation members.");
-                    }
-                    linkEntityElement.SetAttributeValue("to", referentialConstraintAttribute.RawPropertyName);
+                    //var referentialConstraintAttribute = linkEntityMemberExpression.Member.GetCustomAttribute<ReferentialConstraintAttribute>();
+                    //if (referentialConstraintAttribute == null)
+                    //{
+                    //    throw new InvalidOperationException($"You must annotate the Navigation Property ({linkEntityMemberExpression.Member.Name}) with [ReferentialConstraint] to enable using of navigation members.");
+                    //}
+                    linkEntityElement.SetAttributeValue("to", metadataProvider.GetLogicalLookupRawNameForMappedNavigationProperty(linkEntityMemberExpression.Member));
                     linkEntityElement.SetAttributeValue("alias", alias);
                     var fkProp = linkEntityMemberExpression.Expression?.Type
                       .GetProperties()
-                      .FirstOrDefault(prop => prop.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name == referentialConstraintAttribute.Property);
+                      .FirstOrDefault(prop => prop.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name == metadataProvider.GetLogicalLookupNameForMappedNavigationProperty(linkEntityMemberExpression.Member));
                     if (fkProp != null && IsMarkedAsNullable(fkProp))
                     {
                         linkEntityElement.SetAttributeValue("link-type", "outer");
