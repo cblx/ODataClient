@@ -386,7 +386,10 @@ public class FetchXmlExpressionVisitor : ExpressionVisitor
         // When the query is splitted by intermediate select
         if (resultSelectorExpression.Body is NewExpression newExpression)
         {
-            if (newExpression.Arguments.Count != newExpression.Members?.Count) { throw new InvalidOperationException("Invalid expression for fetchXml"); }
+            // When splitting linq query, usually we do something like:
+            // entity => new { Join1 = join1, Join2 = join2 }
+            // Arguments and Member will have the same count
+            if (newExpression.Arguments.Count != newExpression.Members?.Count) { return; }
 
             for (int i = 0; i < newExpression.Arguments.Count; i++)
             {

@@ -30,6 +30,73 @@ public class FetchXmlQueryableExecuteTests
         return db;
     }
 
+    class SelectNewWithConstructorClass
+    {
+        public Guid Id { get; }
+        public string Member { get; set; }
+        public SelectNewWithConstructorClass(Guid id)
+        {
+            Id = id;
+        }
+    }
+    [Fact]
+    public async Task SelectNewWithConstructorTest()
+    {
+        var db = GetSimpleMockDb(new JsonArray
+        {
+            new JsonObject
+            {
+                {"s.Id", _exampleId}
+            }
+        });
+
+        var items = await (from s in db.SomeTables
+                           select new SelectNewWithConstructorClass(s.Id)).ToListAsync();
+
+        items
+            .Should()
+            .ContainSingle(s => s.Id == _exampleId);
+
+        db.Provider.LastUrl.Should().Be(
+            """
+            some_tables?fetchXml=<fetch mapping="logical">
+              <entity name="some_table" alias="s">
+                <attribute name="some_tableid" alias="s.Id" />
+              </entity>
+            </fetch>
+            """);
+    }
+
+    [Fact]
+    public async Task SelectNewWithConstructorAndMemberTest()
+    {
+        var db = GetSimpleMockDb(new JsonArray
+        {
+            new JsonObject
+            {
+                {"s.Id", _exampleId},
+                {"s.Name", "X" }
+            }
+        });
+
+        var items = await (from s in db.SomeTables
+                           select new SelectNewWithConstructorClass(s.Id) { Member = s.Name! }).ToListAsync();
+
+        items
+            .Should()
+            .ContainSingle(s => s.Id == _exampleId && s.Member == "X");
+
+        db.Provider.LastUrl.Should().Be(
+            """
+            some_tables?fetchXml=<fetch mapping="logical">
+              <entity name="some_table" alias="s">
+                <attribute name="some_tableid" alias="s.Id" />
+                <attribute name="some_name" alias="s.Name" />
+              </entity>
+            </fetch>
+            """);
+    }
+
     [Fact]
     public async Task SelectNewTest()
     {
