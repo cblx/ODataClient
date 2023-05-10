@@ -34,6 +34,24 @@ public class ChangeTrackerTests
     }
 
     [Fact]
+    public void AddingAndChangingInheritedEntity()
+    {
+        var changeTracker = new ChangeTracker();
+        var trackedClass = new TrackedInheritedClass();
+        changeTracker.Add(trackedClass);
+        trackedClass.Name = "João";
+        trackedClass.ChangePrivate();
+        Change change = changeTracker.GetChange(trackedClass.Id);
+        Assert.NotNull(change);
+        Assert.Equal(ChangeType.Add, change.ChangeType);
+        Assert.Collection(change.ChangedProperties,
+            cp => Assert.Equal("Id", cp.PropertyInfo.Name),
+            cp => Assert.Equal("Name", cp.PropertyInfo.Name),
+            cp => Assert.Equal("Private", cp.PropertyInfo.Name)
+        );
+    }
+
+    [Fact]
     public void AddingAndChangingEntityWithPrivateSetterAndPrivateConstructor()
     {
         var changeTracker = new ChangeTracker();
@@ -99,6 +117,11 @@ public class ChangeTrackerTests
     }
 }
 
+public class TrackedInheritedClass : TrackedClass
+{
+
+}
+
 public class TrackedClass
 {
     public Guid Id { get; set; } = Guid.NewGuid();
@@ -106,6 +129,11 @@ public class TrackedClass
     public string Name { get; set; }
 
     public string Description { get; set; }
+
+    public void ChangePrivate() => Private = "yep";
+
+    [Description("Bla")]
+    public string Private { get; private set; }
 }
 
 #pragma warning disable S3453 // Classes should not have only "private" constructors

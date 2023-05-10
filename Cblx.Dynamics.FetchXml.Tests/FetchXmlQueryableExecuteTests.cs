@@ -533,7 +533,7 @@ public class FetchXmlQueryableExecuteTests
                 {"t.Id", _exampleId},
             }
         });
-        string pagingCookie = "<cookie pagenumber=\"2\" pagingcookie=\"%253ccookie%2520page%253d%25221%2522%253e%253cincidentid%2520last%253d%2522%257b13D5CA4B-6F83-EC11-8D21-000D3AC18FE1%257d%2522%2520first%253d%2522%257bFABFE1B8-9F14-EC11-B6E7-000D3A885032%257d%2522%2520%252f%253e%253c%252fcookie%253e\" istracking=\"False\" />";
+        string pagingCookie = """<cookie pagenumber="2" pagingcookie="%253ccookie%2520page%253d%25221%2522%253e%253cincidentid%2520last%253d%2522%257b13D5CA4B-6F83-EC11-8D21-000D3AC18FE1%257d%2522%2520first%253d%2522%257bFABFE1B8-9F14-EC11-B6E7-000D3A885032%257d%2522%2520%252f%253e%253c%252fcookie%253e" istracking="False" />""";
         var items = await db.SomeTables
             .Select(t => t.Id)
             .WithPagingCookie(pagingCookie)
@@ -563,7 +563,7 @@ public class FetchXmlQueryableExecuteTests
                 {"t.Id", _exampleId},
             }
         });
-        string pagingCookie = "<cookie pagenumber=\"2\" pagingcookie=\"%253ccookie%2520page%253d%25221%2522%253e%253cincidentid%2520last%253d%2522%257b13D5CA4B-6F83-EC11-8D21-000D3AC18FE1%257d%2522%2520first%253d%2522%257bFABFE1B8-9F14-EC11-B6E7-000D3A885032%257d%2522%2520%252f%253e%253c%252fcookie%253e\" istracking=\"False\" />";
+        string pagingCookie = """<cookie pagenumber="2" pagingcookie="%253ccookie%2520page%253d%25221%2522%253e%253cincidentid%2520last%253d%2522%257b13D5CA4B-6F83-EC11-8D21-000D3AC18FE1%257d%2522%2520first%253d%2522%257bFABFE1B8-9F14-EC11-B6E7-000D3A885032%257d%2522%2520%252f%253e%253c%252fcookie%253e" istracking="False" />""";
         var items = await db.SomeTables
             .WithPagingCookie(pagingCookie)
             .Select(t => t.Id)

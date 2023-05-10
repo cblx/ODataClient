@@ -211,7 +211,7 @@ namespace Cblx.OData.Client
             {
                 return false;
             }
-            if (!prop.CanWrite)
+            if (prop.CanWrite is false && prop.DeclaringType?.GetProperty(prop.Name)?.CanWrite is false)
             {
                 return false;
             }
