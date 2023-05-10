@@ -351,6 +351,30 @@ public class ODataTests
     }
 
     [Fact]
+    public async Task InNonStringTest()
+    {
+        var db = GetSimpleMockDb(new JsonArray
+            {
+                new JsonObject
+                {
+                    {"some_tableid", _exampleId},
+                }
+            });
+
+        var items = await db.SomeTables
+              .Where(s => DynFunctions.In(s.Status, new SomeStatusEnum?[] { SomeStatusEnum.Active, SomeStatusEnum.Inactive }))
+              .Select(s => new { s.Id })
+              .ToListAsync();
+
+        items.Should().ContainSingle(s => s.Id == _exampleId);
+
+        db.Provider
+            .LastUrl
+            .Should()
+            .Be("some_tables?$select=some_tableid&$filter=Microsoft.Dynamics.CRM.In(PropertyName='status',PropertyValues=['1','2'])");
+    }
+
+    [Fact]
     public async Task QueryableToListAsyncTest()
     {
         var db = GetSimpleMockDb(new JsonArray
