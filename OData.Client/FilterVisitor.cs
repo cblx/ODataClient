@@ -84,7 +84,7 @@ internal class FilterVisitor : ExpressionVisitor
                 Visit(node.Arguments[0]);
                 Query += "',PropertyValues=[";
                 IEnumerable values = (Expression.Lambda(node.Arguments[1]).Compile().DynamicInvoke() as IEnumerable)!;
-                Query += string.Join(",", values.Cast<object>().Select(ODataHelpers.ParseValue));
+                Query += string.Join(",", values.Cast<object>().Select(ODataHelpers.ParseValueAsString));
                 Query += "])";
                 break;
             case 
