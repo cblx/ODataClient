@@ -6,6 +6,8 @@ namespace Cblx.OData.Client;
 
 internal static class ODataHelpers
 {
+    public static string? ParseValueAsString(object? o) => ParseValue(o, true);
+    
     public static string? ParseValue(object? o)
     {
         if(TryParseValue(o, out var value))
@@ -15,7 +17,16 @@ internal static class ODataHelpers
         throw new InvalidOperationException($"The value '{o}' could not be parsed in OData Expression");
     }
 
-    public static bool TryParseValue(object? o, out string? stringValue)
+    public static string? ParseValue(object? o, bool asString)
+    {
+        if (TryParseValue(o, out var value, asString))
+        {
+            return value;
+        }
+        throw new InvalidOperationException($"The value '{o}' could not be parsed in OData Expression");
+    }
+
+    public static bool TryParseValue(object? o, out string? stringValue, bool asString = false)
     {
         if (o == null)
         {
@@ -27,10 +38,14 @@ internal static class ODataHelpers
         {
             o = o.GetType().GetProperty("Value")!.GetValue(o, null);
         }
+        // Some functions
+        string AsString(string s){
+            return asString ? $"'{s}'" : s;
+        }
         switch (o)
         {
             case object v when v.GetType().IsEnum:
-                stringValue = Convert.ToInt32(v).ToString();
+                stringValue = AsString(Convert.ToInt32(v).ToString());
                 return true;
             case string str:
                 str = str.Replace("'", "''")
@@ -44,30 +59,30 @@ internal static class ODataHelpers
                 stringValue = $"'{str}'";
                 return true;
             case bool b:
-                stringValue = b.ToString().ToLower();
+                stringValue = AsString(b.ToString().ToLower());
                 return true;
             case DateTimeOffset dtoff:
                 string strDateTimeOffset = $"{dtoff:O}";
                 strDateTimeOffset = strDateTimeOffset
                     .Replace(":", "%3A")
                     .Replace("+", "%2B");
-                stringValue = strDateTimeOffset;
+                stringValue = AsString(strDateTimeOffset);
                 return true;
             case DateTime dt:
                 string strDateTime = $"{dt:O}";
                 strDateTime = strDateTime
                     .Replace(":", "%3A")
                     .Replace("+", "%2B");
-                stringValue = strDateTime;
+                stringValue = AsString(strDateTime);
                 return true;
             case Guid guid:
-                stringValue = $"{guid}";
+                stringValue = AsString($"{guid}");
                 return true;
             case int i:
-                stringValue = $"{i}";
+                stringValue = AsString($"{i}");
                 return true;
             case Id id:
-                stringValue = $"{id.Guid}";
+                stringValue = AsString($"{id.Guid}");
                 return true;
             case IEnumerable collection:
                 var sb = new StringBuilder("%5B");
@@ -76,9 +91,9 @@ internal static class ODataHelpers
                 {
                     if (shouldPlaceComma)
                     {
-                        sb.Append(",");
+                        sb.Append(',');
                     }
-                    TryParseValue(obj, out string? strItem);
+                    _ = TryParseValue(obj, out string? strItem, asString);
                     sb.Append(strItem);
                     shouldPlaceComma = true;
                 }
