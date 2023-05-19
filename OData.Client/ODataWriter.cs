@@ -8,15 +8,6 @@ internal static class ODataHelpers
 {
     public static string? ParseValueAsString(object? o) => ParseValue(o, true);
     
-    public static string? ParseValue(object? o)
-    {
-        if(TryParseValue(o, out var value))
-        {
-            return value;
-        }
-        throw new InvalidOperationException($"The value '{o}' could not be parsed in OData Expression");
-    }
-
     public static string? ParseValue(object? o, bool asString)
     {
         if (TryParseValue(o, out var value, asString))
