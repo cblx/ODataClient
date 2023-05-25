@@ -6,8 +6,8 @@ namespace Cblx.OData.Client
     {
         public PropertyInfo PropertyInfo { get; set; }
 
-        public object OldValue { get; set; }
+        public object? OldValue { get; set; }
 
-        public object NewValue { get; set; }
+        public object? NewValue { get; set; }
     }
 }

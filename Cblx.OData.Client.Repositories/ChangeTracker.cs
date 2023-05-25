@@ -1,13 +1,11 @@
 ﻿using Cblx.OData.Client.Abstractions.Ids;
 using Cblx.OData.Client.Abstractions.Json;
-using OData.Client;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace Cblx.OData.Client
 {
@@ -17,14 +15,14 @@ namespace Cblx.OData.Client
             type => type.BaseType == typeof(Id)
         };
 
-        readonly Dictionary<Guid, string> states = new ();
-        readonly Dictionary<Guid, object> entities = new ();
-        readonly HashSet<Guid> markedForRemove = new ();
-        readonly JsonSerializerOptions options = new ();
+        readonly Dictionary<Guid, string> _states = new ();
+        readonly Dictionary<Guid, object> _entities = new ();
+        readonly HashSet<Guid> _markedForRemove = new ();
+        readonly JsonSerializerOptions _options = new ();
 
         public ChangeTracker(){
-            options.TypeInfoResolver = JsonContractBuilder.CreateContract();
-            options.Converters.Add(new DateOnlyJsonConverter());
+            _options.TypeInfoResolver = JsonContractBuilder.CreateContract();
+            _options.Converters.Add(new DateOnlyJsonConverter());
         }
 
         public void Add(object o)
@@ -35,30 +33,22 @@ namespace Cblx.OData.Client
                 InitId(o);
                 id = GetId(o)!;
             }
-            entities.Add(id.Value, o);
+            _entities.Add(id.Value, o);
         }
 
         public void Remove(object o)
         {
-            Guid? id = GetId(o);
-            if (id is null)
-            {
-                throw new InvalidOperationException("Could not find Id for entity in remove");
-            }
-            markedForRemove.Add(id.Value);
+            Guid? id = GetId(o) ?? throw new InvalidOperationException("Could not find Id for entity in remove");
+            _markedForRemove.Add(id.Value);
         }
 
         public TEntity? AttachOrGetCurrent<TEntity>(TEntity? e)
         {
             if (e is null) { return e; }
-            Guid? id = GetId(e);
-            if (id is null)
-            {
-                throw new InvalidOperationException("Could not find Id for attached entity");
-            }
-            if (entities.TryGetValue(id.Value, out object? value)) { return (TEntity)value; }
-            states.Add(id.Value, JsonSerializer.Serialize(e, typeof(TEntity), options));
-            entities.Add(id.Value, e);
+            Guid? id = GetId(e) ?? throw new InvalidOperationException("Could not find Id for attached entity");
+            if (_entities.TryGetValue(id.Value, out object? value)) { return (TEntity)value; }
+            _states.Add(id.Value, JsonSerializer.Serialize(e, typeof(TEntity), _options));
+            _entities.Add(id.Value, e);
             return e;
         }
 
@@ -73,14 +63,13 @@ namespace Cblx.OData.Client
             return list.ToArray()!;
         }
 
-        internal PropertyInfo GetIdProp(object entity)
+        internal static PropertyInfo GetIdProp(object entity)
         {
             PropertyInfo? idProp = entity.GetType().GetProperty("Id");
-            if(idProp is null) { throw new InvalidOperationException("Entity class must have an 'Id' property"); }
-            return idProp;
+            return idProp is null ? throw new InvalidOperationException("Entity class must have an 'Id' property") : idProp;
         }
 
-        internal Guid? GetId(object entity)
+        internal static Guid? GetId(object entity)
         {
             object? val = GetIdProp(entity).GetValue(entity);
             if(val == null) { return null; }
@@ -88,7 +77,7 @@ namespace Cblx.OData.Client
             return JsonSerializer.Deserialize<Guid>(JsonSerializer.Serialize(val));
         }
 
-        internal void InitId(object entity)
+        internal static void InitId(object entity)
         {
             PropertyInfo idProp = GetIdProp(entity);
             if (idProp.PropertyType == typeof(Guid))
@@ -105,13 +94,13 @@ namespace Cblx.OData.Client
         {
             if (change.ChangeType == ChangeType.Remove)
             {
-                states.Remove(change.Id);
-                entities.Remove(change.Id);
-                markedForRemove.Remove(change.Id);
+                _states.Remove(change.Id);
+                _entities.Remove(change.Id);
+                _markedForRemove.Remove(change.Id);
             }
             else
             {
-                states[change.Id] = change.NewState;
+                _states[change.Id] = change.NewState;
             }
         }
 
@@ -124,15 +113,17 @@ namespace Cblx.OData.Client
 
         public IEnumerable<Change> GetChanges()
         {
-            List<Change> changes = new List<Change>();
-            foreach (var kvp in entities)
+            List<Change> changes = new();
+            foreach (var kvp in _entities)
             {
                 object currentVersion = kvp.Value;
-                Change change = new();
-                change.Id = kvp.Key;
-                change.Entity = currentVersion;
+                var change = new Change
+                {
+                    Id = kvp.Key,
+                    Entity = currentVersion
+                };
 
-                if (markedForRemove.Contains(change.Id))
+                if (_markedForRemove.Contains(change.Id))
                 {
                     change.ChangeType = ChangeType.Remove;
                     changes.Add(change);
@@ -140,16 +131,16 @@ namespace Cblx.OData.Client
                 }
 
                 Type type = currentVersion.GetType();
-                string currentState = JsonSerializer.Serialize(currentVersion, type, options);
+                string currentState = JsonSerializer.Serialize(currentVersion, type, _options);
                 change.NewState = currentState;
-                change.ChangeType = states.ContainsKey(change.Id) ? ChangeType.Update : ChangeType.Add;
+                change.ChangeType = _states.ContainsKey(change.Id) ? ChangeType.Update : ChangeType.Add;
                 if (change.ChangeType == ChangeType.Add)
                 {
                     foreach (var prop in type.GetProperties())
                     {
                         if (!IsTrackable(prop)) { continue; }
-                        object currentValue = prop.GetValue(currentVersion);
-                        object defaultValue = GetDefault(prop.PropertyType);
+                        var currentValue = prop.GetValue(currentVersion);
+                        var defaultValue = GetDefault(prop.PropertyType);
                         if (defaultValue == null && currentValue == null) { continue; }
                         if (Equals(defaultValue, currentValue)) { continue; }
                         change.ChangedProperties.Add(new ChangedProperty
@@ -166,15 +157,15 @@ namespace Cblx.OData.Client
                 }
                 if (change.ChangeType == ChangeType.Update)
                 {
-                    string oldState = states[kvp.Key];
+                    string oldState = _states[kvp.Key];
                     if (oldState != currentState)
                     {
-                        object oldVersion = JsonSerializer.Deserialize(oldState, type, options);
+                        var oldVersion = JsonSerializer.Deserialize(oldState, type, _options);
                         foreach (var prop in type.GetProperties())
                         {
                             if (!IsTrackable(prop)) { continue; }
-                            object oldValue = prop.GetValue(oldVersion);
-                            object currentValue = prop.GetValue(currentVersion);
+                            var oldValue = prop.GetValue(oldVersion);
+                            var currentValue = prop.GetValue(currentVersion);
 
                             if (oldValue == null && currentValue == null) { continue; }
                             if (Equals(oldValue, currentValue)) { continue; }

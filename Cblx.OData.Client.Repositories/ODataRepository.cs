@@ -73,7 +73,7 @@ namespace Cblx.OData.Client
 
         async Task SaveChangesForAsync(TEntity entity)
         {
-            Guid? id = changeTracker.GetId(entity);
+            Guid? id = ChangeTracker.GetId(entity);
             if (id == null)
             {
                 throw new InvalidOperationException("Could not find Id for entity");
