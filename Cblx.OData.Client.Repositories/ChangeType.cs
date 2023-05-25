@@ -1,9 +1,8 @@
-﻿namespace Cblx.OData.Client
+﻿namespace Cblx.OData.Client;
+
+public enum ChangeType
 {
-    public enum ChangeType
-    {
-        Add,
-        Update,
-        Remove
-    }
+    Add,
+    Update,
+    Remove
 }
