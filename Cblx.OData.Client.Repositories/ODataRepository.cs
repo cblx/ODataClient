@@ -3,12 +3,9 @@ using Cblx.OData.Client.Abstractions;
 using Cblx.OData.Client.Abstractions.Ids;
 using OData.Client.Abstractions;
 using OData.Client.Abstractions.Write;
-using System;
-using System.Collections.Generic;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 
 namespace Cblx.OData.Client;
 
@@ -132,7 +129,6 @@ where TTable : class, new()
                             await oDataClient.Unbind<TTable>(id.Value, navLogicalName);
                         }
                     }
-
                 }
                 else
                 {

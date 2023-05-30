@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace Cblx.OData.Client;
+﻿namespace Cblx.OData.Client;
 
 public interface IChangeTracker
 {

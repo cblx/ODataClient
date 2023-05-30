@@ -1,9 +1,6 @@
 ﻿using Cblx.OData.Client.Abstractions.Ids;
 using Cblx.OData.Client.Abstractions.Json;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
 using System.Reflection;
 using System.Text.Json;
 

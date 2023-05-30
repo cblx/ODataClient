@@ -3,6 +3,7 @@
 	<PropertyGroup>
 		<TargetFramework>net7.0</TargetFramework>
 		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
 	</PropertyGroup>
 	<PropertyGroup>
 		<!-- Optional: Publish the repository URL in the built .nupkg (in the NuSpec <Repository> element) -->
