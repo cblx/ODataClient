@@ -4,10 +4,11 @@ using System.Collections;
 using System.Reflection;
 using System.Text.Json.Serialization;
 namespace OData.Client;
-public class SelectAndExpandParser<TSource, TTarget>
-    where TTarget : class
+
+internal class SelectAndExpandParser<TSource, TTarget>
+where TTarget : class
 {
-    private string _selectAndExpandString;
+    private readonly string _selectAndExpandString;
     public SelectAndExpandParser()
     {
         var selectAndExpand = new List<string>();
@@ -21,17 +22,17 @@ public class SelectAndExpandParser<TSource, TTarget>
 
     private void AddExpandPart(Type tSource, Type tTarget, List<string> selectAndExpand, int level)
     {
-        if(level > 1) { return; }
+        if (level > 1) { return; }
         level++;
         IEnumerable<PropertyInfo> expandableSourceProps = tSource
             .GetProperties()
             .Where(p => !p.PropertyType.IsAssignableTo(typeof(Id)))
             .Where(p => p.PropertyType != typeof(string))
-            .Where(p => p.PropertyType.IsClass 
-                || 
+            .Where(p => p.PropertyType.IsClass
+                ||
                 p.PropertyType.IsGenericType && typeof(IEnumerable).IsAssignableFrom(p.PropertyType)
             );
-        
+
         var props = from pTarget in tTarget.GetProperties()
                     let targetName = pTarget.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name ?? pTarget.Name
                     join pSource in expandableSourceProps on targetName equals (pSource.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name ?? pSource.Name)
@@ -72,7 +73,7 @@ public class SelectAndExpandParser<TSource, TTarget>
         {
             type = type.GetElementType();
         }
-        else if(typeof(IEnumerable).IsAssignableFrom(type))
+        else if (typeof(IEnumerable).IsAssignableFrom(type))
         {
             return type.GetGenericArguments()[0];
         }
@@ -95,7 +96,7 @@ public class SelectAndExpandParser<TSource, TTarget>
         if (selectFieldNames.Any())
         {
             var select = $"$select={string.Join(",", selectFieldNames)}";
-            
+
             selectAndExpand.Add(select);
         }
 

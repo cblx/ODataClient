@@ -22,8 +22,10 @@
 	</PropertyGroup>
 	<ItemGroup>
 		<InternalsVisibleTo Include="Cblx.Dynamics.OData" />
+		<InternalsVisibleTo Include="Cblx.OData.Client.Tests" />
 	</ItemGroup>
 	<ItemGroup>
+		<PackageReference Include="Cblx.Blocks.Json" Version="0.8.0-dev.2" />
 		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
 	</ItemGroup>
 	<ItemGroup>
