@@ -1,6 +1,6 @@
 ﻿namespace Cblx.OData.Client;
 
-public enum ChangeType
+internal enum ChangeType
 {
     Add,
     Update,

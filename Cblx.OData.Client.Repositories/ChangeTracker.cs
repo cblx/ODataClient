@@ -9,18 +9,19 @@ using System.Text.Json;
 
 namespace Cblx.OData.Client;
 
-public class ChangeTracker
+internal class ChangeTracker : IChangeTracker
 {
-    public static ICollection<Func<Type, bool>> CanTrack { get; } = new HashSet<Func<Type, bool>>() { 
+    public static ICollection<Func<Type, bool>> CanTrack { get; } = new HashSet<Func<Type, bool>>() {
         type => type.BaseType == typeof(Id)
     };
 
     readonly Dictionary<Guid, string> _states = new();
     readonly Dictionary<Guid, object> _entities = new();
-    readonly HashSet<Guid> _markedForRemove = new ();
-    readonly JsonSerializerOptions _options = new ();
+    readonly HashSet<Guid> _markedForRemove = new();
+    readonly JsonSerializerOptions _options = new();
 
-    public ChangeTracker(){
+    public ChangeTracker()
+    {
         _options.TypeInfoResolver = JsonContractBuilder.CreateContract();
         _options.Converters.Add(new DateOnlyJsonConverter());
     }
@@ -57,8 +58,8 @@ public class ChangeTracker
         var list = new List<TEntity?>();
         foreach (var e in items)
         {
-            if(e is null) { continue; }
-           list.Add(AttachOrGetCurrent(e));
+            if (e is null) { continue; }
+            list.Add(AttachOrGetCurrent(e));
         }
         return list.ToArray()!;
     }
@@ -72,8 +73,8 @@ public class ChangeTracker
     internal static Guid? GetId(object entity)
     {
         object? val = GetIdProp(entity).GetValue(entity);
-        if(val == null) { return null; }
-        if(val is Guid guid) { return guid; }
+        if (val == null) { return null; }
+        if (val is Guid guid) { return guid; }
         return JsonSerializer.Deserialize<Guid>(JsonSerializer.Serialize(val));
     }
 
@@ -90,7 +91,7 @@ public class ChangeTracker
         }
     }
 
-    internal void AcceptChange(Change change)
+    public void AcceptChange(Change change)
     {
         if (change.ChangeType == ChangeType.Remove)
         {
@@ -198,7 +199,7 @@ public class ChangeTracker
 
     static bool IsTrackable(PropertyInfo prop)
     {
-        if(prop.GetCustomAttribute<ReadOnlyAttribute>()?.IsReadOnly is true)
+        if (prop.GetCustomAttribute<ReadOnlyAttribute>()?.IsReadOnly is true)
         {
             return false;
         }
@@ -206,7 +207,7 @@ public class ChangeTracker
         {
             return false;
         }
-        if (prop.PropertyType.IsValueType || prop.PropertyType == typeof(string) ) { return true; }
+        if (prop.PropertyType.IsValueType || prop.PropertyType == typeof(string)) { return true; }
         if (CanTrack.Any(c => c(prop.PropertyType))) { return true; }
         return false;
     }

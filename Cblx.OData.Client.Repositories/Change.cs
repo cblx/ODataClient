@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Cblx.OData.Client;
 
-public class Change
+internal class Change
 {
     public Guid Id { get; set; }
 

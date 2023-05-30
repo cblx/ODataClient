@@ -20,6 +20,7 @@
 		<PackageTags>Dynamics;OData,FetchXml</PackageTags>
 	</PropertyGroup>
 	<ItemGroup>
+		<InternalsVisibleTo Include="Cblx.OData.Client.Tests"/>
 		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All"/>
 	</ItemGroup>
 	<ItemGroup>

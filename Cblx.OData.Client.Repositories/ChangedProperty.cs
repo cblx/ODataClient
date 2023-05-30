@@ -2,7 +2,7 @@
 
 namespace Cblx.OData.Client;
 
-public class ChangedProperty
+internal class ChangedProperty
 {
     public PropertyInfo PropertyInfo { get; set; } = default!;
     public object? OldValue { get; set; }

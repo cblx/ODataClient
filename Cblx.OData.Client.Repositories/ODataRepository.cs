@@ -27,7 +27,7 @@ public class ODataRepository<TEntity, TTable>
 where TEntity : class
 where TTable : class, new()
 {
-    readonly protected ChangeTracker changeTracker = new();
+    readonly protected IChangeTracker changeTracker = new ChangeTracker();
     readonly protected IODataClient oDataClient;
     private IDynamicsMetadataProvider MetadataProvider => oDataClient.MetadataProvider;
 
