@@ -1,7 +1,6 @@
-﻿using FluentAssertions;
-using System;
-using System.ComponentModel;
-using Xunit;
+﻿using System.ComponentModel;
+using System.Text.Json.Serialization;
+
 namespace Cblx.OData.Client.Tests;
 public class ChangeTrackerTests
 {
@@ -14,7 +13,7 @@ public class ChangeTrackerTests
         Change change = changeTracker.GetChange(trackedClass.Id);
         Assert.NotNull(change);
         Assert.Equal(ChangeType.Add, change.ChangeType);
-        Assert.Collection(change.ChangedProperties, cp => Assert.Equal("Id", cp.PropertyInfo.Name));
+        Assert.Collection(change.ChangedProperties, cp => Assert.Equal("Id", cp.FieldLogicalName));
     }
 
     [Fact]
@@ -28,8 +27,8 @@ public class ChangeTrackerTests
         Assert.NotNull(change);
         Assert.Equal(ChangeType.Add, change.ChangeType);
         Assert.Collection(change.ChangedProperties,
-            cp => Assert.Equal("Id", cp.PropertyInfo.Name),
-            cp => Assert.Equal("Name", cp.PropertyInfo.Name)
+            cp => Assert.Equal("Id", cp.FieldLogicalName),
+            cp => Assert.Equal("Name", cp.FieldLogicalName)
         );
     }
 
@@ -45,9 +44,9 @@ public class ChangeTrackerTests
         Assert.NotNull(change);
         Assert.Equal(ChangeType.Add, change.ChangeType);
         Assert.Collection(change.ChangedProperties,
-            cp => Assert.Equal("Id", cp.PropertyInfo.Name),
-            cp => Assert.Equal("Name", cp.PropertyInfo.Name),
-            cp => Assert.Equal("Private", cp.PropertyInfo.Name)
+            cp => Assert.Equal("Id", cp.FieldLogicalName),
+            cp => Assert.Equal("Name", cp.FieldLogicalName),
+            cp => Assert.Equal("Private", cp.FieldLogicalName)
         );
     }
 
@@ -62,8 +61,8 @@ public class ChangeTrackerTests
         Assert.NotNull(change);
         Assert.Equal(ChangeType.Add, change.ChangeType);
         Assert.Collection(change.ChangedProperties,
-            cp => Assert.Equal("Id", cp.PropertyInfo.Name),
-            cp => Assert.Equal("Name", cp.PropertyInfo.Name)
+            cp => Assert.Equal("Id", cp.FieldLogicalName),
+            cp => Assert.Equal("Name", cp.FieldLogicalName)
         );
     }
 
@@ -87,7 +86,7 @@ public class ChangeTrackerTests
         trackedClass.Name = "João";
         Change change = changeTracker.GetChange(trackedClass.Id);
         Assert.Equal(ChangeType.Update, change.ChangeType);
-        Assert.Collection(change.ChangedProperties, cp => Assert.Equal("Name", cp.PropertyInfo.Name));
+        Assert.Collection(change.ChangedProperties, cp => Assert.Equal("Name", cp.FieldLogicalName));
     }
 
     [Fact]
@@ -99,7 +98,7 @@ public class ChangeTrackerTests
         trackedClass.ChangeName("João");
         Change change = changeTracker.GetChange(trackedClass.Id);
         Assert.Equal(ChangeType.Update, change.ChangeType);
-        Assert.Collection(change.ChangedProperties, cp => Assert.Equal("Name", cp.PropertyInfo.Name));
+        Assert.Collection(change.ChangedProperties, cp => Assert.Equal("Name", cp.FieldLogicalName));
     }
 
     [Fact]
@@ -112,8 +111,8 @@ public class ChangeTrackerTests
         trackedClass.ChangeNotTracked("João");
         Change change = changeTracker.GetChange(trackedClass.Id);
         change.ChangeType.Should().Be(ChangeType.Update);
-        change.ChangedProperties.Should().ContainSingle(change => change.PropertyInfo.Name == "Name");
-        change.ChangedProperties.Should().NotContain(change => change.PropertyInfo.Name == "NotTracked");
+        change.ChangedProperties.Should().ContainSingle(change => change.FieldLogicalName == "Name");
+        change.ChangedProperties.Should().NotContain(change => change.FieldLogicalName == "NotTracked");
     }
 }
 
@@ -124,15 +123,19 @@ public class TrackedInheritedClass : TrackedClass
 
 public class TrackedClass
 {
+    [JsonPropertyName(nameof(Id))]
     public Guid Id { get; set; } = Guid.NewGuid();
 
+    [JsonPropertyName(nameof(Name))]
     public string Name { get; set; }
 
+    [JsonPropertyName(nameof(Description))]
     public string Description { get; set; }
 
     public void ChangePrivate() => Private = "yep";
 
     [Description("Bla")]
+    [JsonPropertyName(nameof(Private))]
     public string Private { get; private set; }
 }
 
@@ -150,10 +153,13 @@ public partial class TrackedClassPrivates
 
     }
 
+    [JsonPropertyName(nameof(Id))]
     public Guid Id { get; private set; } = Guid.NewGuid();
 
+    [JsonPropertyName(nameof(Name))]
     public string Name { get; private set; }
 
+    [JsonPropertyName(nameof(Description))]
     public string Description { get; private set; }
 
     [ReadOnly(true)]

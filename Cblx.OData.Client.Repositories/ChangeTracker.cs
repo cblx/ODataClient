@@ -1,8 +1,10 @@
-﻿using Cblx.OData.Client.Abstractions.Ids;
+﻿using Cblx.Dynamics;
+using Cblx.OData.Client.Abstractions.Ids;
 using Cblx.OData.Client.Abstractions.Json;
 using System.ComponentModel;
 using System.Reflection;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Cblx.OData.Client;
 
@@ -145,7 +147,8 @@ internal class ChangeTracker : IChangeTracker
                     {
                         NewValue = currentValue,
                         OldValue = defaultValue,
-                        PropertyInfo = prop
+                        FieldLogicalName = GetFieldLogicalName(prop),
+                        NavigationLogicalName = GetNavigationLogicalName(prop),
                     });
                 }
                 if (change.ChangedProperties.Any())
@@ -171,7 +174,8 @@ internal class ChangeTracker : IChangeTracker
                         {
                             NewValue = currentValue,
                             OldValue = oldValue,
-                            PropertyInfo = prop
+                            FieldLogicalName = GetFieldLogicalName(prop),
+                            NavigationLogicalName = GetNavigationLogicalName(prop),
                         });
                     }
                 }
@@ -185,6 +189,25 @@ internal class ChangeTracker : IChangeTracker
         return changes;
     }
 
+    private static string? GetFieldLogicalName(PropertyInfo propertyInfo) => propertyInfo.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name;
+    private static string? GetNavigationLogicalName(PropertyInfo propertyInfo)
+    {
+        string? navLogicalName =
+           // Old mode: Gets ODataBindAttribute from the Repository Entity
+           propertyInfo.GetCustomAttribute<ODataBindAttribute>()?.Name
+           // I think this fallback may lead to miss some configuration
+           // when migrating to some kind of Context/Unit of Work model in the future.
+           // If we have some kind of DynamicsContext in the future like a DbContext,
+           // when migrating to the new form, the ODataBind or Fluent Config in the Entity will be necessary.
+           //?? 
+           //// New mode: Search in the related Table model definition
+           //// Note: The current ODataRepository may be deprecated in the future.
+           //// The idea of a Repository that is related to 2 types is somehow strange.
+           //MetadataProvider.FindLogicalNavigationNameForLookup<TTable>(fieldLogicalName)
+           ;
+        return navLogicalName;
+    }
+   
     static object? GetDefault(Type type)
     {
         if (type.IsValueType)
