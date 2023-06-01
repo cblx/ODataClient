@@ -7,9 +7,10 @@ internal static class JsonTemplateHelper
 {
     private static readonly ConcurrentDictionary<Type, JsonObject> _templates = new();
 
-    public static JsonObject GetTemplate<T>()
+    public static JsonObject GetTemplate<T>() => GetTemplate(typeof(T));
+    public static JsonObject GetTemplate(Type type)
     {
-        return _templates.GetOrAdd(typeof(T), t =>
+        return _templates.GetOrAdd(type, t =>
         {
             // Create a new instance of the type with all nested properties instantiated, till a depth of 5.
             // The type must have a parameterless constructor, private or public.

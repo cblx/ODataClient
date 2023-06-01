@@ -12,16 +12,23 @@ public class DynamicsCodeMetadataProvider : IDynamicsMetadataProvider
 {
     private static readonly ConcurrentDictionary<Type, DynamicsEntityType> _dynamicsEntityTypes = new();
 
-    public virtual bool IsEdmDate<TEntity>(string columnName) where TEntity : class => GetEntityType(typeof(TEntity)).IsEdmDate(columnName);
+    public virtual bool IsEdmDate<TEntity>(string columnName) where TEntity : class 
+        => GetEntityType(typeof(TEntity)).IsEdmDate(columnName);
 
-    public virtual string GetEndpoint<TEntity>() where TEntity : class => GetEndpoint(typeof(TEntity));
+    public virtual string GetEndpoint<TEntity>() where TEntity : class 
+        => GetEndpoint(typeof(TEntity));
 
-    public virtual string GetEndpoint(Type type) => GetEntityType(type).GetEndpointName();
+    public virtual string GetEndpoint(Type type) 
+        => GetEntityType(type).GetEndpointName();
 
-    public string GetTableName<TEntity>() => GetTableName(typeof(TEntity));
-    public string GetTableName(Type type) => GetEntityType(type).GetTableName();
+    public string GetTableName<TEntity>() 
+        => GetTableName(typeof(TEntity));
 
-    public bool IsEntity(Type type) => type.GetCustomAttribute<DynamicsEntityAttribute>() != null;
+    public string GetTableName(Type type) 
+        => GetEntityType(type).GetTableName();
+
+    public bool IsEntity(Type type) 
+        => type.GetCustomAttribute<DynamicsEntityAttribute>() != null;
 
     public string? GetLogicalLookupRawNameForMappedNavigationProperty(MemberInfo member)
         => GetEntityType(member.DeclaringType!).GetProperty(member.Name).RelatedLogicalLookupRawName;
@@ -29,5 +36,9 @@ public class DynamicsCodeMetadataProvider : IDynamicsMetadataProvider
     public string? GetLogicalLookupNameForMappedNavigationProperty(MemberInfo member)
         => GetEntityType(member.DeclaringType!).GetProperty(member.Name).RelatedLogicalLookupName;
 
-    private static DynamicsEntityType GetEntityType(Type type) => _dynamicsEntityTypes.GetOrAdd(type, t => new DynamicsEntityType { ClrType = t });
+    private static DynamicsEntityType GetEntityType(Type type) 
+        => _dynamicsEntityTypes.GetOrAdd(type, t => new DynamicsEntityType { ClrType = t });
+
+    public string? FindLogicalNavigationNameByForeignKeyLogicalName(Type type, string foreignKeyLogicalName) 
+        => GetEntityType(type).FindPropertyByLogicalName(foreignKeyLogicalName)?.RelatedLogicalNavigationName;
 }

@@ -1,4 +1,5 @@
-﻿using Cblx.Dynamics;
+﻿using Cblx.Blocks;
+using Cblx.Dynamics;
 using Cblx.OData.Client.Abstractions;
 using Cblx.OData.Client.Abstractions.Ids;
 using OData.Client.Abstractions;
@@ -24,13 +25,26 @@ public class ODataRepository<TEntity, TTable>
 where TEntity : class
 where TTable : class, new()
 {
-    readonly protected IChangeTracker changeTracker = new ChangeTracker();
+    private readonly IChangeTracker _changeTracker;
+    public IChangeTracker ChangeTracker => _changeTracker;
     readonly protected IODataClient oDataClient;
     private IDynamicsMetadataProvider MetadataProvider => oDataClient.MetadataProvider;
 
     public ODataRepository(IODataClient oDataClient)
     {
         this.oDataClient = oDataClient;
+        _changeTracker = CreateTracker();
+    }
+
+    private IChangeTracker CreateTracker()
+    {
+        if(typeof(TEntity).GetCustomAttributes()
+            .Any(attr => attr is JsonConverterAttribute jsonConverterAttribute &&
+            jsonConverterAttribute.ConverterType == typeof(FlattenJsonConverter<TEntity>)))
+        {
+            return new JsonChangeTracker<TTable>(oDataClient.MetadataProvider);
+        }
+        return new ClassicChangeTracker();
     }
 
     protected async Task<T?> GetAsync<T>(Guid id)
@@ -47,22 +61,22 @@ where TTable : class, new()
             // ObjectDoesNotExist = 0x80040217
             return null;
         }
-        return changeTracker.AttachOrGetCurrent(e);
+        return _changeTracker.AttachOrGetCurrent(e);
     }
 
     public void Add(TEntity entity)
     {
-        changeTracker.Add(entity);
+        _changeTracker.Add(entity);
     }
 
     public void Remove(TEntity entity)
     {
-        changeTracker.Remove(entity);
+        _changeTracker.Remove(entity);
     }
 
     public async Task SaveChangesAsync()
     {
-        IEnumerable<Change> changes = changeTracker.GetChanges();
+        IEnumerable<Change> changes = _changeTracker.GetChanges();
         foreach (Change change in changes)
         {
             await SaveChangesForAsync((change.Entity as TEntity)!);
@@ -72,8 +86,8 @@ where TTable : class, new()
 
     async Task SaveChangesForAsync(TEntity entity)
     {
-        Guid? id = ChangeTracker.GetId(entity) ?? throw new InvalidOperationException("Could not find Id for entity");
-        Change? change = changeTracker.GetChange(id.Value);
+        Guid? id = ClassicChangeTracker.GetId(entity) ?? throw new InvalidOperationException("Could not find Id for entity");
+        Change? change = _changeTracker.GetChange(id.Value);
         if (change == null) { return; }
 
         if (change.ChangeType == ChangeType.Remove)
@@ -128,6 +142,6 @@ where TTable : class, new()
                 await oDataClient.Post(body);
             }
         }
-        changeTracker.AcceptChange(change);
+        _changeTracker.AcceptChange(change);
     }
 }

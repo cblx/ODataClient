@@ -8,7 +8,7 @@ using System.Text.Json.Serialization;
 
 namespace Cblx.OData.Client;
 
-internal class ChangeTracker : IChangeTracker
+internal class ClassicChangeTracker : IChangeTracker
 {
     public static ICollection<Func<Type, bool>> CanTrack { get; } = new HashSet<Func<Type, bool>>() {
         type => type.BaseType == typeof(Id)
@@ -19,7 +19,7 @@ internal class ChangeTracker : IChangeTracker
     readonly HashSet<Guid> _markedForRemove = new();
     readonly JsonSerializerOptions _options = new();
 
-    public ChangeTracker()
+    public ClassicChangeTracker()
     {
         _options.TypeInfoResolver = JsonContractBuilder.CreateContract();
         _options.Converters.Add(new DateOnlyJsonConverter());

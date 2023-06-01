@@ -41,7 +41,7 @@ public class DynamicsEntityType
         return endpointName;
     }
 
-    public DynamicsEntityProperty GetProperty(string name)
+    internal DynamicsEntityProperty GetProperty(string name)
     {
         InitDefaultProperty(name);
         return _properties[name];
@@ -50,17 +50,24 @@ public class DynamicsEntityType
     private void InitDefaultProperty(string name)
     {
         if (_properties.ContainsKey(name)) { return; }
-        var thisPropInfo = ClrType.GetProperty(name) ?? throw new InvalidOperationException($"Property {name} does not exists in type {ClrType.Name}");
+        var thisPropInfo = ClrType.GetProperty(name) 
+            ?? throw new InvalidOperationException($"Property {name} does not exists in type {ClrType.Name}");
         var logicalName = thisPropInfo.GetColName();
         var relatedLogicalLookupName = thisPropInfo.GetCustomAttribute<ReferentialConstraintAttribute>()?.Property 
                 ?? 
                 ClrType
                     .GetProperties()
-                    .FirstOrDefault(p => p.Name == $"{name}Id" || p.GetCustomAttribute<ODataBindAttribute>()?.Name == logicalName)?.GetColName();
+                    .FirstOrDefault(p => 
+                    p.Name == $"{name}Id" 
+                    // This mode will not support this Attribute
+                    // This should be used only for the old mode repository entity
+                    //|| p.GetCustomAttribute<ODataBindAttribute>()?.Name == logicalName
+                    )?.GetColName();
         _properties[name] = new DynamicsEntityProperty
         {
             LogicalName = logicalName,
-            RelatedLogicalLookupName = relatedLogicalLookupName
+            RelatedLogicalLookupName = relatedLogicalLookupName,
+            RelatedLogicalNavigationName = FindLogicalNavigationNameByConventionOrAnnotations(logicalName)
         };
     }
 
@@ -88,23 +95,24 @@ public class DynamicsEntityType
             || type == typeof(DateOnly);
     }
 
-    //internal string? FindLogicalNavigationNameByConventionOrAnnotations(string lookupLogicalName)
-    //{
-    //    var mappedLookupPropertyInfo = ClrType.GetProperties().FirstOrDefault(p => p.GetColName() == lookupLogicalName);
-    //    if(mappedLookupPropertyInfo == null) { return null; }
-    //    // from ODataBind attribute
-    //    if(mappedLookupPropertyInfo.GetCustomAttribute<ODataBindAttribute>()?.Name is { } navLogicalName){ return navLogicalName; }
+    internal DynamicsEntityProperty? FindPropertyByLogicalName(string foreignKeyLogicalName) 
+        => _properties.Values.FirstOrDefault(p => p.LogicalName == foreignKeyLogicalName);
+
+    private string? FindLogicalNavigationNameByConventionOrAnnotations(string lookupLogicalName)
+    {
+        var mappedLookupPropertyInfo = ClrType.GetProperties().FirstOrDefault(p => p.GetColName() == lookupLogicalName);
+        if (mappedLookupPropertyInfo == null) { return null; }
         
-    //    // find the mapped nav property and use [ReferentialConstraint] or Naming Convention
-    //    var mappedNavigationPropertyInfo = ClrType.GetProperties().FirstOrDefault(
-    //        p =>
-    //            // ReferentialConstraint
-    //            p.GetCustomAttribute<ReferentialConstraintAttribute>()?.Property == lookupLogicalName
-    //            ||
-    //            // Naming convention
-    //            (mappedLookupPropertyInfo.Name.EndsWith("Id") && p.Name == mappedLookupPropertyInfo.Name[..^2])
-    //    );
-    //    if (mappedNavigationPropertyInfo == null) { return null; }
-    //    return mappedLookupPropertyInfo.GetColName();
-    //}
+        // find the mapped nav property and use [ReferentialConstraint] or Naming Convention
+        var mappedNavigationPropertyInfo = ClrType.GetProperties().FirstOrDefault(
+            p =>
+                // ReferentialConstraint
+                p.GetCustomAttribute<ReferentialConstraintAttribute>()?.Property == lookupLogicalName
+                ||
+                // Naming convention
+                (mappedLookupPropertyInfo.Name.EndsWith("Id") && p.Name == mappedLookupPropertyInfo.Name[..^2])
+        );
+        if (mappedNavigationPropertyInfo == null) { return null; }
+        return mappedLookupPropertyInfo.GetColName();
+    }
 }

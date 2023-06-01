@@ -9,7 +9,7 @@ public interface IDynamicsMetadataProvider
     string GetTableName<TEntity>();
     string GetTableName(Type type);
     bool IsEntity(Type type);
-    //string? FindLogicalNavigationNameForLookup<TEntity>(string logicalLookupName);
+    string? FindLogicalNavigationNameByForeignKeyLogicalName(Type type, string foreignKeyLogicalName);
     string? GetLogicalLookupRawNameForMappedNavigationProperty(MemberInfo member);
     string? GetLogicalLookupNameForMappedNavigationProperty(MemberInfo member);
 }
