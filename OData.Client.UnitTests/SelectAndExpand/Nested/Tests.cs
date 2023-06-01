@@ -15,6 +15,6 @@ public class Tests
     {
         string query = "$select=Id&$expand=Child($select=Id)";
         var parser = new SelectAndExpandParserV2<Source, Target>();
-        parser.ToSelectAndExpand().Should().Be(query);
+        parser.ToSelectAndExpand().Query.Should().Be(query);
     }
 }

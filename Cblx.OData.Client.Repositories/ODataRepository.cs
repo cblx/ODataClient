@@ -2,6 +2,7 @@
 using Cblx.Dynamics;
 using Cblx.OData.Client.Abstractions;
 using Cblx.OData.Client.Abstractions.Ids;
+using OData.Client;
 using OData.Client.Abstractions;
 using OData.Client.Abstractions.Write;
 using System.Reflection;
@@ -38,9 +39,7 @@ where TTable : class, new()
 
     private IChangeTracker CreateTracker()
     {
-        if(typeof(TEntity).GetCustomAttributes()
-            .Any(attr => attr is JsonConverterAttribute jsonConverterAttribute &&
-            jsonConverterAttribute.ConverterType == typeof(FlattenJsonConverter<TEntity>)))
+        if(JsonTemplateHelper.IsJsonBasedDomainEntity(typeof(TEntity)))
         {
             return new JsonChangeTracker<TTable>(oDataClient.MetadataProvider);
         }

@@ -84,16 +84,7 @@ public class ODataSet<TSource> : IODataSet<TSource>
         var url = ToString(selectExpression);
         var rewriter = new ODataProjectionRewriter(_metadataProvider);
         var projectionExpression = rewriter.Rewrite(selectExpression);
-        if (rewriter.HasFormattedValues)
-        {
-            _requestMessageConfiguration = requestMessage =>
-                        requestMessage
-                        .Headers.Add(
-                            "Prefer",
-                            $"odata.include-annotations={DynAnnotations.FormattedValue}"
-                        );
-        }
-
+        ApplyFormattedValueHeaderWhen(rewriter.HasFormattedValues);
         var del = projectionExpression.Compile() as Func<JsonObject, TProjection>;
         var result = await Get<JsonObject>(url);
 
@@ -363,17 +354,28 @@ public class ODataSet<TSource> : IODataSet<TSource>
 
     private string RunSelectExpandParser<TEntity>() where TEntity : class
     {
+        if (JsonTemplateHelper.IsJsonBasedDomainEntity(typeof(TEntity)))
+        {
+            var result = new SelectAndExpandParserV2<TSource, TEntity>().ToSelectAndExpand();
+            ApplyFormattedValueHeaderWhen(result.HasFormattedValues);
+            return result.Query;
+        }
         var selectAndExpandParser = new SelectAndExpandParser<TSource, TEntity>();
-        if (selectAndExpandParser.HasFormattedValues)
+        ApplyFormattedValueHeaderWhen(selectAndExpandParser.HasFormattedValues);
+        return selectAndExpandParser.ToString();
+    }
+
+    private void ApplyFormattedValueHeaderWhen(bool condition)
+    {
+        if (condition)
         {
             _requestMessageConfiguration = requestMessage =>
-                        requestMessage
-                        .Headers.Add(
-                            "Prefer",
-                            $"odata.include-annotations={DynAnnotations.FormattedValue}"
-                        );
+                       requestMessage
+                       .Headers.Add(
+                           "Prefer",
+                           $"odata.include-annotations={DynAnnotations.FormattedValue}"
+                       );
         }
-        return selectAndExpandParser.ToString();
     }
 
     public string ToString<TProjection>(Expression<Func<TSource, TProjection>>? selectExpression)

@@ -1,11 +1,27 @@
-﻿using System.Collections.Concurrent;
+﻿using Cblx.Blocks;
+using System.Collections.Concurrent;
+using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
+
 namespace OData.Client;
 
 internal static class JsonTemplateHelper
 {
     private static readonly ConcurrentDictionary<Type, JsonObject> _templates = new();
+
+    /// <summary>
+    /// Tells if a Domain Entity (for Repositories) can use the new mode based on it's JSON template (ex: when using FlattenJsonConverter).
+    /// </summary>
+    /// <param name="type"></param>
+    /// <returns></returns>
+    public static bool IsJsonBasedDomainEntity(Type type)
+    {
+        return type.GetCustomAttributes()
+            .Any(attr => attr is JsonConverterAttribute jsonConverterAttribute &&
+            jsonConverterAttribute.ConverterType == type);
+    }
 
     public static JsonObject GetTemplate<T>() => GetTemplate(typeof(T));
     public static JsonObject GetTemplate(Type type)
