@@ -1,13 +1,6 @@
 ﻿using Cblx.Dynamics;
-using FluentAssertions;
-using Moq;
-using OData.Client;
 using OData.Client.Abstractions;
-using System;
-using System.Net.Http;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace Cblx.OData.Client.Tests;
 public class ODataRepositoryTests

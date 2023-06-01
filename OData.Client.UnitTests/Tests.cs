@@ -19,7 +19,7 @@ using System.Threading.Tasks;
 using Xunit;
 
 namespace OData.Client.UnitTests;
-public class Tests
+public partial class Tests
 {
     private readonly JsonSerializerOptions _jsonMockDataOptions = new JsonSerializerOptions();
     public Tests()
@@ -1928,33 +1928,6 @@ public class Tests
         set.LastQuery
             .Should()
             .Be("EntityDefinitions(LogicalName='some_entity')/Attributes/Microsoft.Dynamics.CRM.StateAttributeMetadata?$select=LogicalName&$expand=OptionSet($select=Options)");
-    }
-
-    public class MockHttpMessageHandler : HttpMessageHandler
-    {
-        readonly string _content;
-        readonly HttpStatusCode _statusCode;
-        public MockHttpMessageHandler(string content, HttpStatusCode statusCode = HttpStatusCode.OK)
-        {
-            this._content = content;
-            this._statusCode = statusCode;
-        }
-
-        public HttpRequestMessage? LastRequestMessage { get; private set; }
-
-        protected override async Task<HttpResponseMessage> SendAsync(
-            HttpRequestMessage request,
-            CancellationToken cancellationToken)
-        {
-            LastRequestMessage = request;
-            var responseMessage = new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent(_content),
-                StatusCode = _statusCode
-            };
-
-            return await Task.FromResult(responseMessage);
-        }
     }
 }
 

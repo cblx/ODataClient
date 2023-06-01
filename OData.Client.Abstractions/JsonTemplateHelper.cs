@@ -20,7 +20,8 @@ internal static class JsonTemplateHelper
     {
         return type.GetCustomAttributes()
             .Any(attr => attr is JsonConverterAttribute jsonConverterAttribute &&
-            jsonConverterAttribute.ConverterType == type);
+            jsonConverterAttribute.ConverterType?.IsGenericType is true
+            && jsonConverterAttribute.ConverterType.GetGenericTypeDefinition() == typeof(FlattenJsonConverter<>));
     }
 
     public static JsonObject GetTemplate<T>() => GetTemplate(typeof(T));
