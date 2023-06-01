@@ -45,6 +45,7 @@ public class Tests
         var client = new ODataClient(new HttpClient(handler) { BaseAddress = new Uri("https://localhsot") });
         var repository = new Repository(client);
         var entity = await repository.GetAsync(id);
+        handler.LastRequestMessage.RequestUri.Should().Be($"https://localhsot/TbEntities({id})?$select=Id,Classification1,Classification2,Classification3,Classification4");
         entity.Should().BeEquivalentTo(new DomainEntity
         {
             Id = entity.Id,
