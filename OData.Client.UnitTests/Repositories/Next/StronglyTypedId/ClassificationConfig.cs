@@ -1,7 +1,7 @@
 ﻿#nullable enable
 using Cblx.Blocks;
 
-namespace Cblx.OData.Client.Tests.Repositories.Next.Simple;
+namespace Cblx.OData.Client.Tests.Repositories.Next.StronglyTypedId;
 
 public class ClassificationConfig : FlattenJsonConfiguration<Classification>
 {

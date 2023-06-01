@@ -1,5 +1,5 @@
 ﻿#nullable enable
-namespace Cblx.OData.Client.Tests.Repositories.Next.Simple;
+namespace Cblx.OData.Client.Tests.Repositories.Next.StronglyTypedId;
 
 public class TbEntity
 {

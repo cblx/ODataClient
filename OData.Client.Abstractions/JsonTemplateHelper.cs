@@ -1,4 +1,5 @@
 ﻿using Cblx.Blocks;
+using Cblx.OData.Client.Abstractions.Ids;
 using System.Collections.Concurrent;
 using System.Reflection;
 using System.Text.Json;
@@ -42,13 +43,26 @@ internal static class JsonTemplateHelper
     private static void Initialize(object instance, int remainingLevels)
     {
         var type = instance.GetType();
-        if (remainingLevels == 0 || type.IsPrimitive || type.IsEnum || type == typeof(string))
+        if (remainingLevels == 0 
+            || type.IsPrimitive 
+            || type.IsEnum 
+            || type == typeof(string)
+            // In the future we may drop this Id support.
+            // Ideally we should not have a Strongly Typed Id in this Library
+            // We may offer an struct Id in a future version.
+            // So we can drop this "record" Id support and then remove it in the future.
+            || type.IsAssignableTo(typeof(Id))
+            )
         {
             return;
         }
         foreach (var prop in type.GetProperties())
         {
-            if (prop.PropertyType.IsClass && prop.PropertyType != typeof(string))
+            if (prop.PropertyType.IsClass 
+                && prop.PropertyType != typeof(string)
+                // In the future we may drop this Id support. Struct Ids are better.
+                && !prop.PropertyType.IsAssignableTo(typeof(Id))
+                )
             {
                 var propInstance = Activator.CreateInstance(prop.PropertyType, true)!;
                 Initialize(propInstance, remainingLevels - 1);
