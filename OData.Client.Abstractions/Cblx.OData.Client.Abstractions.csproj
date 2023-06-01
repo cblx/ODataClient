@@ -24,7 +24,7 @@
 		<InternalsVisibleTo Include="Cblx.OData.Client" />
 		<InternalsVisibleTo Include="Cblx.OData.Client.Repositories" />
 		<InternalsVisibleTo Include="Cblx.OData.Client.Tests" />
-		<PackageReference Include="Cblx.Blocks.Json" Version="0.8.0-dev.3" />
+		<PackageReference Include="Cblx.Blocks.Json" Version="0.8.0-dev.4" />
 		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
 	</ItemGroup>
 </Project>
