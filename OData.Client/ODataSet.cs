@@ -73,17 +73,7 @@ public class ODataSet<TSource> : IODataSet<TSource>
 
     public async Task<ODataResult<TEntity>> ToResultAsync<TEntity>() where TEntity : class
     {
-        var selectAndExpandParser = new SelectAndExpandParser<TSource, TEntity>();
-        var url = AppendOptions(_endpoint, selectAndExpandParser.ToString());
-        if (selectAndExpandParser.HasFormattedValues)
-        {
-            _requestMessageConfiguration = requestMessage =>
-                        requestMessage
-                        .Headers.Add(
-                            "Prefer",
-                            $"odata.include-annotations={DynAnnotations.FormattedValue}"
-                        );
-        }
+        var url = AppendOptions(_endpoint, RunSelectExpandParser<TEntity>());
         return (await Get<ODataResultInternal<TEntity>>(url))!;
     }
 
@@ -362,21 +352,16 @@ public class ODataSet<TSource> : IODataSet<TSource>
     private Task<TResult?> Get<TResult>(string url)
     {
         LastQuery = url;
-        //if(typeof(TResult) is { IsClass: true } resultType 
-        //    && resultType.GetProperties()
-        //            .Any(prop => prop.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name.Contains(DynAnnotations.FormattedValue) is true))
-        //{
-        //    _requestMessageConfiguration = requestMessage =>
-        //              requestMessage
-        //              .Headers.Add(
-        //                  "Prefer",
-        //                  $"odata.include-annotations={DynAnnotations.FormattedValue}"
-        //              );
-        //}
         return HttpHelpers.Get<TResult>(new RequestParameters(_client, _requestMessageConfiguration, url));
     }
 
     public string CreateFindString<TEntity>(Guid id) where TEntity : class
+    {
+        return $"{_endpoint}({id})?{RunSelectExpandParser<TEntity>()}";
+    }
+
+
+    private string RunSelectExpandParser<TEntity>() where TEntity : class
     {
         var selectAndExpandParser = new SelectAndExpandParser<TSource, TEntity>();
         if (selectAndExpandParser.HasFormattedValues)
@@ -388,7 +373,7 @@ public class ODataSet<TSource> : IODataSet<TSource>
                             $"odata.include-annotations={DynAnnotations.FormattedValue}"
                         );
         }
-        return $"{_endpoint}({id})?{selectAndExpandParser}";
+        return selectAndExpandParser.ToString();
     }
 
     public string ToString<TProjection>(Expression<Func<TSource, TProjection>>? selectExpression)

@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Nodes;
+﻿using Cblx.Dynamics;
+using System.Text.Json.Nodes;
 
 namespace OData.Client;
 
@@ -7,7 +8,7 @@ internal class SelectAndExpandParserV2<TSource, TTarget>
     where TTarget : class
 {
     private readonly JsonObject _template = JsonTemplateHelper.GetTemplate<TTarget>();
-
+    public bool HasFormattedValues { get; private set; }
     public string ToSelectAndExpand()
     {
         // Monta o $select e $expand a partir do template
@@ -21,12 +22,16 @@ internal class SelectAndExpandParserV2<TSource, TTarget>
 
     private void AddSelectPart(JsonObject obj, List<string> selectAndExpand)
     {
-        var fields = new List<string>();
+        var fields = new HashSet<string>();
         foreach(var prop in obj)
         {
             if(prop.Value is not JsonObject)
             {
-                fields.Add(prop.Key);
+                if(prop.Key.EndsWith(DynAnnotations.FormattedValue))
+                {
+                    HasFormattedValues = true;
+                }
+                fields.Add(RemoveAnnotation(prop.Key));
             }
         }
         if(fields.Any())
@@ -54,5 +59,6 @@ internal class SelectAndExpandParserV2<TSource, TTarget>
         }
     }
 
-
+    // Remove formatted value annotation. Ex: "field@formatted-value-annotation" => "field"
+    private static string RemoveAnnotation(string name) => name.Split('@').First();
 }
