@@ -10,11 +10,16 @@ public class DynamicsEntityType
     private readonly Lazy<string> _endpointNameLazy;
     private readonly Dictionary<string, DynamicsEntityProperty> _properties = new();
 
-    internal DynamicsEntityType() {
+    internal DynamicsEntityType(Type clrType) {
+        ClrType = clrType;
         _endpointNameLazy = new Lazy<string>(ResolveEndpointName);
+        foreach(var prop in ClrType!.GetProperties())
+        {
+            InitDefaultProperty(prop.Name);
+        }
     }
 
-    public required Type ClrType { get; init; }
+    public Type ClrType { get; init; }
     internal string? TableName { get; set; }
     internal string? EndpointName { get; set; }
 
@@ -43,7 +48,6 @@ public class DynamicsEntityType
 
     internal DynamicsEntityProperty GetProperty(string name)
     {
-        InitDefaultProperty(name);
         return _properties[name];
     }
 
@@ -113,6 +117,6 @@ public class DynamicsEntityType
                 (mappedLookupPropertyInfo.Name.EndsWith("Id") && p.Name == mappedLookupPropertyInfo.Name[..^2])
         );
         if (mappedNavigationPropertyInfo == null) { return null; }
-        return mappedLookupPropertyInfo.GetColName();
+        return mappedNavigationPropertyInfo.GetColName();
     }
 }

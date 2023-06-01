@@ -37,7 +37,7 @@ public class DynamicsCodeMetadataProvider : IDynamicsMetadataProvider
         => GetEntityType(member.DeclaringType!).GetProperty(member.Name).RelatedLogicalLookupName;
 
     private static DynamicsEntityType GetEntityType(Type type) 
-        => _dynamicsEntityTypes.GetOrAdd(type, t => new DynamicsEntityType { ClrType = t });
+        => _dynamicsEntityTypes.GetOrAdd(type, t => new DynamicsEntityType(t));
 
     public string? FindLogicalNavigationNameByForeignKeyLogicalName(Type type, string foreignKeyLogicalName) 
         => GetEntityType(type).FindPropertyByLogicalName(foreignKeyLogicalName)?.RelatedLogicalNavigationName;

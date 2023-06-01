@@ -23,7 +23,7 @@ public class DynamicsModelBuilder
     private void InitEntity(Type type)
     {
         if(Model.Entities.ContainsKey(type)) { return; }
-        Model.Entities[type] = new DynamicsEntityType { ClrType = type };
+        Model.Entities[type] = new DynamicsEntityType(type);
     }
         
 }
