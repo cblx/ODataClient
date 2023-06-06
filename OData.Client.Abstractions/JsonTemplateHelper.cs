@@ -65,6 +65,10 @@ internal static class JsonTemplateHelper
         }
         foreach (var prop in type.GetProperties())
         {
+            if(!prop.DeclaringType!.GetProperty(prop.Name)!.CanWrite)
+            {
+                continue;
+            }
             if (prop.PropertyType.IsArray)
             {
                 var elementType = prop.PropertyType.GetElementType()!;
