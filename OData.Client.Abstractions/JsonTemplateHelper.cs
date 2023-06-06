@@ -65,11 +65,19 @@ internal static class JsonTemplateHelper
         }
         foreach (var prop in type.GetProperties())
         {
-            if (prop.PropertyType.IsClass 
-                && prop.PropertyType != typeof(string)
-                // In the future we may drop this Id support. Struct Ids are better.
-                && !prop.PropertyType.IsAssignableTo(typeof(Id))
-                )
+            if (prop.PropertyType.IsArray)
+            {
+                var elementType = prop.PropertyType.GetElementType()!;
+                if (IsComplexType(elementType))
+                {
+                    var arrayPropInstance = Array.CreateInstance(elementType, 1);
+                    var itemInstance = Activator.CreateInstance(elementType, true)!;
+                    Initialize(itemInstance, remainingLevels - 1);
+                    arrayPropInstance.SetValue(itemInstance, 0);
+                    prop.SetValue(instance, arrayPropInstance);
+                }
+            }
+            else if (IsComplexType(prop.PropertyType))
             {
                 var propInstance = Activator.CreateInstance(prop.PropertyType, true)!;
                 Initialize(propInstance, remainingLevels - 1);
@@ -77,4 +85,9 @@ internal static class JsonTemplateHelper
             }
         }
     }
+
+    private static bool IsComplexType(Type t) => t.IsClass
+                    && t != typeof(string)
+                    // In the future we may drop this Id support. Struct Ids are better.
+                    && !t.IsAssignableTo(typeof(Id));
 }

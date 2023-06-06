@@ -24,18 +24,15 @@ internal class SelectAndExpandParserV2<TSource, TTarget>
     private void AddSelectPart(JsonObject obj, List<string> selectAndExpand, SelectAndExpandResult result)
     {
         var fields = new HashSet<string>();
-        foreach(var prop in obj)
+        foreach (var key in obj.Where(p => p.Value is not JsonObject and not JsonArray).Select(p => p.Key))
         {
-            if(prop.Value is not JsonObject)
+            if (key.EndsWith(DynAnnotations.FormattedValue))
             {
-                if(prop.Key.EndsWith(DynAnnotations.FormattedValue))
-                {
-                    result.HasFormattedValues = true;
-                }
-                fields.Add(RemoveAnnotation(prop.Key));
+                result.HasFormattedValues = true;
             }
+            fields.Add(RemoveAnnotation(key));
         }
-        if(fields.Any())
+        if (fields.Any())
         {
             selectAndExpand.Add($"$select={string.Join(',', fields)}");
         }
@@ -46,13 +43,13 @@ internal class SelectAndExpandParserV2<TSource, TTarget>
         var expands = new List<string>();
         foreach (var prop in obj)
         {
-            if (prop.Value is JsonObject subTemplate)
-            {
-                var subSelectAndExpand = new List<string>();
-                AddSelectPart(subTemplate, subSelectAndExpand, result);
-                AddExpandPart(subTemplate, subSelectAndExpand, result);
-                expands.Add($"{prop.Key}({string.Join(';', subSelectAndExpand)})");
-            }
+            var template = prop.Value as JsonObject
+                            ?? (prop.Value as JsonArray)?.First() as JsonObject;
+            if (template is null) { continue; }
+            var subSelectAndExpand = new List<string>();
+            AddSelectPart(template, subSelectAndExpand, result);
+            AddExpandPart(template, subSelectAndExpand, result);
+            expands.Add($"{prop.Key}({string.Join(';', subSelectAndExpand)})");
         }
         if (expands.Any())
         {
