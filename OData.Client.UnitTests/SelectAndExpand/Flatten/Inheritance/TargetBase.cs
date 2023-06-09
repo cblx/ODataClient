@@ -4,6 +4,6 @@ namespace Cblx.OData.Client.Tests.SelectAndExpand.Flatten.Inheritance;
 
 public class TargetBase
 {
-    [Flatten<ValueObjectConfiguration>]
+    [FlattenJsonProperty<ValueObjectConfiguration>]
     public ValueObject ValueObject { get; set; }
 }

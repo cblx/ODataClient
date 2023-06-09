@@ -22,7 +22,7 @@ internal static class JsonTemplateHelper
     {
         return type.GetCustomAttributes()
             .Any(attr => 
-            attr is FlattenRootAttribute
+            attr is FlattenJsonRootAttribute
             ||
             attr is JsonConverterAttribute jsonConverterAttribute &&
             (

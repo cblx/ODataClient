@@ -8,6 +8,6 @@ public class DomainEntity
 {
     public TbEntityId Id { get; set; } = TbEntityId.NewId();
 
-    [Flatten<ClassificationConfig>]
+    [FlattenJsonProperty<ClassificationConfig>]
     public Classification Classification { get; set; } = new Classification();
 }

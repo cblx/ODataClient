@@ -7,6 +7,6 @@ namespace Cblx.OData.Client.Tests.SelectAndExpand.Flatten.Simple;
 public class Target
 {
     public Guid Id { get; set; }
-    [Flatten]
+    [FlattenJsonProperty]
     public ValueObject ValueObject { get; set; }
 }

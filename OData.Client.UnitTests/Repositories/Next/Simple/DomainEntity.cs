@@ -9,6 +9,6 @@ public class DomainEntity
 {
     public Guid Id { get; set; } = Guid.NewGuid();
 
-    [Flatten<ClassificationConfig>]
+    [FlattenJsonProperty<ClassificationConfig>]
     public Classification Classification { get; set; } = new Classification();
 }

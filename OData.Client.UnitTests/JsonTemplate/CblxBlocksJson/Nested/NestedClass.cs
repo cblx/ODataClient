@@ -11,6 +11,6 @@ public class NestedClass
     public int Age { get; set; }
     public string Description { get; set; }
     // Some nested properties here
-    [Flatten]
+    [FlattenJsonProperty]
     public OtherClass Nested { get; set; }
 }
