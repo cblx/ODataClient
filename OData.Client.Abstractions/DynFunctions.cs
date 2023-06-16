@@ -60,6 +60,15 @@ public static class DynFunctions
 
     /// <summary>
     /// OData - Implemented
+    /// FetchXml - NOT Implemented
+    /// </summary>
+    /// <param name="date"></param>
+    /// <returns></returns>
+    /// <exception cref="NotImplementedException"></exception>
+    public static bool Today(DateTimeOffset? date) => throw new NotImplementedException();
+
+    /// <summary>
+    /// OData - Implemented
     /// FetchXml - Implemented
     /// </summary>
     /// <typeparam name="T"></typeparam>
