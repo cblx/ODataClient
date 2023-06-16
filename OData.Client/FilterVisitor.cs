@@ -71,6 +71,7 @@ internal class FilterVisitor : ExpressionVisitor
                 Name: nameof(DynFunctions.LastMonth)
                       or nameof(DynFunctions.NextMonth) 
                       or nameof(DynFunctions.ThisMonth)
+                      or nameof(DynFunctions.Today)
             } m when m.DeclaringType == typeof(DynFunctions):
                 Query += $"Microsoft.Dynamics.CRM.{m.Name}(PropertyName='";
                 Visit(node.Arguments[0]);
