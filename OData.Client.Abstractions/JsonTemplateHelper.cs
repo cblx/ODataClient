@@ -1,10 +1,9 @@
-﻿using Cblx.Blocks;
+﻿using Cblx.Dynamics;
 using Cblx.OData.Client.Abstractions.Ids;
 using System.Collections.Concurrent;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using System.Text.Json.Serialization;
 
 namespace OData.Client;
 
@@ -20,16 +19,9 @@ internal static class JsonTemplateHelper
     /// <returns></returns>
     public static bool IsJsonBasedDomainEntity(Type type)
     {
-        return type.GetCustomAttributes()
-            .Any(attr => 
-            attr is FlattenJsonRootAttribute
-            ||
-            attr is JsonConverterAttribute jsonConverterAttribute &&
-            (
-                (jsonConverterAttribute.ConverterType?.IsGenericType is true && jsonConverterAttribute.ConverterType.GetGenericTypeDefinition() == typeof(FlattenJsonConverter<>))
-                ||
-                jsonConverterAttribute.ConverterType == typeof(FlattenJsonConverterFactory)
-            ));
+        return type
+            .GetCustomAttributes()
+            .Any(attr => attr is UseNewJsonTemplateModeAttribute);
     }
 
     public static JsonObject GetTemplate<T>() => GetTemplate(typeof(T));

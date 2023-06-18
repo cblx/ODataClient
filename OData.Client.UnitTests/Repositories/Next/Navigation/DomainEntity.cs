@@ -1,10 +1,11 @@
 ﻿#nullable enable
 using Cblx.Blocks;
-using Cblx.OData.Client.Abstractions.Ids;
+using Cblx.Dynamics;
 using System.Text.Json.Serialization;
 
 namespace Cblx.OData.Client.Tests.Repositories.Next.Navigation;
 [JsonConverter(typeof(FlattenJsonConverter<DomainEntity>))]
+[UseNewJsonTemplateMode]
 public class DomainEntity
 {
     public Guid Id { get; set; } = Guid.NewGuid();

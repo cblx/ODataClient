@@ -22,6 +22,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Cblx.OData.Client.Repositories\Cblx.OData.Client.Repositories.csproj" />
+	<PackageReference Include="Cblx.Blocks.Json" Version="0.8.0-dev.12" />
     <ProjectReference Include="..\OData.Client\Cblx.OData.Client.csproj" />
   </ItemGroup>
 </Project>
