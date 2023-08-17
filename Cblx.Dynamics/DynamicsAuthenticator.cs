@@ -1,5 +1,4 @@
 ﻿using System.Collections.Concurrent;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
 
 namespace Cblx.Dynamics;
@@ -19,14 +18,6 @@ public class DynamicsAuthenticator : IDynamicsAuthenticator
         string configKey = $"{config.Authority}-{config.ResourceUrl}-{config.Users}-{config.ClientId}-{config.ClientSecret}";
         return _clientsPerDynamics.GetOrAdd(configKey, _ => new());
     }
-
-    //public async Task AuthenticateHttpClient(HttpClient httpClient, DynamicsConfig config)
-    //{
-    //    string accessToken = await GetAccessToken(config);
-    //    httpClient.DefaultRequestHeaders.Authorization = AuthenticationHeaderValue.Parse($"Bearer {accessToken}");
-    //    httpClient.BaseAddress = new Uri($"{config.ResourceUrl}api/data/v9.0/");
-    //}
-
   
     public async Task<string> GetAccessToken(DynamicsConfig config)
     {

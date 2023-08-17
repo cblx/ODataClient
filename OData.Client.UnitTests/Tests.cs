@@ -65,6 +65,7 @@ public partial class Tests
             .Contain(h => h.Key == "Prefer" && h.Value.First() == $"odata.include-annotations={DynAnnotations.FormattedValue}");
     }
 
+
     [Fact]
     public async Task EntityWithFormattedValueFromSourceTblTest()
     {
@@ -293,6 +294,41 @@ public partial class Tests
         }).ToArrayAsync();
         items.Should().HaveCount(2);
         items.Should().AllSatisfy(item => item.Children.Should().HaveCount(1));
+    }
+
+    [Fact]
+    public async Task PostAsyncTest()
+    {
+        var messageHandler = new MockHttpMessageHandler("");
+        var httpClient = new HttpClient(messageHandler) { BaseAddress = new Uri("http://localhost") };
+        var oDataClient = new ODataClient(httpClient);
+        await oDataClient.PostAsync<TblEntity>(b => b.Set(e => e.Age, 1));
+        messageHandler.LastRequestMessage.Method.Should().Be(HttpMethod.Post);
+        messageHandler.LastRequestMessage.RequestUri.Should().Be(new Uri("http://localhost/some_entities"));
+        var content = await messageHandler.LastRequestMessage.Content.ReadAsStringAsync();
+        content.Should().Be("""
+            {
+              "age": 1
+            }
+            """);
+    }
+
+    [Fact]
+    public async Task PatchAsyncTest()
+    {
+        var messageHandler = new MockHttpMessageHandler("");
+        var httpClient = new HttpClient(messageHandler) { BaseAddress = new Uri("http://localhost") };
+        var oDataClient = new ODataClient(httpClient);
+        var id = Guid.NewGuid();
+        await oDataClient.PatchAsync<TblEntity>(id, b => b.Set(e => e.Age, 1));
+        messageHandler.LastRequestMessage.Method.Should().Be(HttpMethod.Patch);
+        messageHandler.LastRequestMessage.RequestUri.Should().Be(new Uri($"http://localhost/some_entities({id})"));
+        var content = await messageHandler.LastRequestMessage.Content.ReadAsStringAsync();
+        content.Should().Be("""
+            {
+              "age": 1
+            }
+            """);
     }
 
 

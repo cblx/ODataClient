@@ -46,6 +46,20 @@ public class ODataClient : IODataClient
             )
         );
 
+    public async Task PatchAsync<T>(object id, Action<Body<T>> bodyBuilder, Action<HttpRequestMessage>? requestMessageConfiguration = null) where T : class
+    {
+        var body = new Body<T>(MetadataProvider);
+        bodyBuilder(body);
+        await Patch(id, body, requestMessageConfiguration);
+    }
+
+    public async Task PostAsync<T>(Action<Body<T>> bodyBuilder, Action<HttpRequestMessage>? requestMessageConfiguration = null) where T : class
+    {
+        var body = new Body<T>(MetadataProvider);
+        bodyBuilder(body);
+        await Post(body, requestMessageConfiguration);
+    }
+
     public Task Delete<T>(object id, Action<HttpRequestMessage>? requestMessageConfiguration = null) where T: class
         => HttpHelpers.Delete(
             new(
@@ -55,6 +69,7 @@ public class ODataClient : IODataClient
             )
         );
 
+  
     public Task Unbind<T>(object id, string nav, Action<HttpRequestMessage>? requestMessageConfiguration = null) where T: class
         => HttpHelpers.Delete(
             new(
