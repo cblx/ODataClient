@@ -1,4 +1,5 @@
-﻿using Cblx.OData.Client.Abstractions;
+﻿using Cblx.Dynamics;
+using Cblx.OData.Client.Abstractions;
 using Cblx.OData.Client.Abstractions.Json;
 using OData.Client;
 using System.Reflection;
@@ -142,6 +143,7 @@ internal class JsonChangeTracker<TTable> : IChangeTracker
             {
                 foreach (var prop in jsonTemplate)
                 {
+                    if (prop.Key.EndsWith(DynAnnotations.FormattedValue)) { continue; }
                     // Nested entities (sub-entity in an aggregate) not supported yet
                     if (prop.Value is JsonObject) { continue; }
                     if(prop.Value is JsonArray) { continue; }
@@ -169,10 +171,9 @@ internal class JsonChangeTracker<TTable> : IChangeTracker
                     var jsonOld = JsonSerializer.Deserialize<JsonObject>(oldState, _options)!;
                     foreach (var prop in jsonTemplate)
                     {
+                        if (prop.Key.EndsWith(DynAnnotations.FormattedValue)) { continue; }
                         // Compare these two JsonNode, continue (ignore) if same values are found
-                        // Copilot, please suggest a fix for this, the comparison is not working
-                        
-                        if(jsonCurrent[prop.Key]?.ToJsonString() == jsonOld[prop.Key]?.ToJsonString()) { continue; }
+                        if (jsonCurrent[prop.Key]?.ToJsonString() == jsonOld[prop.Key]?.ToJsonString()) { continue; }
                         change.ChangedProperties.Add(new ChangedProperty
                         {
                             NewValue = jsonCurrent[prop.Key],
