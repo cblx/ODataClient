@@ -13,7 +13,7 @@ public class ODataClient : IODataClient
     public IDynamicsMetadataProvider MetadataProvider { get; private set; }
 
     public ODataClient(
-        HttpMessageInvoker invoker, 
+        HttpMessageInvoker invoker,
         IDynamicsMetadataProvider? metadataProvider = null,
         DynamicsOptions? options = null
     )
@@ -60,7 +60,22 @@ public class ODataClient : IODataClient
         await Post(body, requestMessageConfiguration);
     }
 
-    public Task Delete<T>(object id, Action<HttpRequestMessage>? requestMessageConfiguration = null) where T: class
+    public async Task<T> PostAndReturnAsync<T>(Action<Body<T>> bodyBuilder, Action<HttpRequestMessage>? requestMessageConfiguration = null) where T : class
+    {
+        var body = new Body<T>(MetadataProvider);
+        bodyBuilder(body);
+        var selectParserResult = new SelectAndExpandParserV2<T, T>().ToSelectAndExpand();
+        return await HttpHelpers.PostAndReturnAsync<T>(
+           new(
+               this,
+               requestMessageConfiguration,
+               $"{MetadataProvider.GetEndpoint<T>()}?{selectParserResult.Query}",
+               body.ToDictionary()
+           )
+        );
+    }
+
+    public Task Delete<T>(object id, Action<HttpRequestMessage>? requestMessageConfiguration = null) where T : class
         => HttpHelpers.Delete(
             new(
                 this,
@@ -69,8 +84,8 @@ public class ODataClient : IODataClient
             )
         );
 
-  
-    public Task Unbind<T>(object id, string nav, Action<HttpRequestMessage>? requestMessageConfiguration = null) where T: class
+
+    public Task Unbind<T>(object id, string nav, Action<HttpRequestMessage>? requestMessageConfiguration = null) where T : class
         => HttpHelpers.Delete(
             new(
                 this,
@@ -80,7 +95,7 @@ public class ODataClient : IODataClient
         );
 
     public Task Unbind<T, TBind>(object id, Expression<Func<T, TBind>> navExpression, Action<HttpRequestMessage>? requestMessageConfiguration = null)
-        where T: class
+        where T : class
         where TBind : class
     {
         var member = navExpression.Body as MemberExpression;

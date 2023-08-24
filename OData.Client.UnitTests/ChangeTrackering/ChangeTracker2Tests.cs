@@ -1,5 +1,4 @@
 ﻿using Cblx.Dynamics;
-using System.Net.Mail;
 
 namespace Cblx.OData.Client.Tests.ChangeTrackering;
 

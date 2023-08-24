@@ -84,6 +84,47 @@ static class HttpHelpers
         ThrowErrorIfNotOk(responseMessage, json);
     }
 
+    public static async Task<TResult> PostAndReturnAsync<TResult>(RequestParametersWithValue parameters)
+    {
+        string jsonValue = SerializeForWrite(parameters.Value);
+        StringBuilder sbLog = new();
+        if (parameters.ShowLog)
+        {
+            AppendRequestInfo(sbLog, parameters.Invoker, "POST", parameters.Url);
+            AppendBodyInfo(sbLog, jsonValue);
+        }
+
+        var requestMessage = new HttpRequestMessage(HttpMethod.Post, parameters.Url)
+        {
+            Content = new StringContent(jsonValue, Encoding.UTF8, "application/json")
+        };
+        parameters.RequestMessageConfiguration?.Invoke(requestMessage);
+        HttpResponseMessage responseMessage = await parameters.Invoker.SendAsync(requestMessage, default);
+        await ThrowErrorIfNotOk(responseMessage);
+
+        var jsonSerializerOptions = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+            TypeInfoResolver = JsonContractBuilder.CreateContract()
+        };
+        jsonSerializerOptions.Converters.Add(DateOnlyJsonConverter);
+        string json = "";
+        try
+        {
+
+            json = await responseMessage.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<TResult>(json, jsonSerializerOptions)!;
+        }
+        finally
+        {
+            if (parameters.ShowLog)
+            {
+                AppendResponseInfo(sbLog, json);
+                Console.WriteLine(sbLog);
+            }
+        }
+    }
+
     static string SerializeForWrite<TValue>(TValue value) => JsonSerializer.Serialize(value, JsonSerializerOptionsForWrite);
 
     public static async Task Delete(RequestParameters parameters)
@@ -121,7 +162,8 @@ static class HttpHelpers
         HttpResponseMessage responseMessage = await parameters.Invoker.SendAsync(requestMessage, default);
         await ThrowErrorIfNotOk(responseMessage);
 
-        var jsonSerializerOptions = new JsonSerializerOptions { 
+        var jsonSerializerOptions = new JsonSerializerOptions
+        {
             PropertyNameCaseInsensitive = true,
             TypeInfoResolver = JsonContractBuilder.CreateContract()
         };
