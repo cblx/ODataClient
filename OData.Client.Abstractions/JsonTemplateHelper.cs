@@ -62,9 +62,11 @@ internal static class JsonTemplateHelper
             {
                 continue;
             }
-            if (prop.PropertyType.IsArray)
+            if (prop.PropertyType.IsArray || (prop.PropertyType.IsGenericType && prop.PropertyType.GetGenericTypeDefinition() == typeof(IEnumerable<>)))
             {
-                var elementType = prop.PropertyType.GetElementType()!;
+                var elementType = prop.PropertyType.IsArray ? 
+                    prop.PropertyType.GetElementType()! :
+                    prop.PropertyType.GetGenericArguments()[0]!;
                 if (IsComplexType(elementType))
                 {
                     var arrayPropInstance = Array.CreateInstance(elementType, 1);
