@@ -244,21 +244,17 @@ static class HttpHelpers
 
     static void ThrowErrorIfNotOk(HttpResponseMessage responseMessage, string json)
     {
-        if (responseMessage.StatusCode != HttpStatusCode.OK && responseMessage.StatusCode != HttpStatusCode.NoContent)
-        {
-            ThrowODataErrorIfItFits(json);
-            throw new HttpRequestException(responseMessage.StatusCode.ToString() + ": " + json);
-        }
+        if (responseMessage.IsSuccessStatusCode) { return; }
+        ThrowODataErrorIfItFits(json);
+        throw new HttpRequestException(responseMessage.StatusCode.ToString() + ": " + json);
     }
 
     static async Task ThrowErrorIfNotOk(HttpResponseMessage responseMessage)
     {
-        if (responseMessage.StatusCode != HttpStatusCode.OK && responseMessage.StatusCode != HttpStatusCode.NoContent)
-        {
-            string json = await responseMessage.Content.ReadAsStringAsync();
-            ThrowODataErrorIfItFits(json);
-            throw new HttpRequestException(responseMessage.StatusCode.ToString() + ": " + json);
-        }
+        if (responseMessage.IsSuccessStatusCode) { return; }
+        string json = await responseMessage.Content.ReadAsStringAsync();
+        ThrowODataErrorIfItFits(json);
+        throw new HttpRequestException(responseMessage.StatusCode.ToString() + ": " + json);
     }
 
     static void ThrowODataErrorIfItFits(string json)
