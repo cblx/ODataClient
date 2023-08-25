@@ -9,7 +9,7 @@ namespace OData.Client;
 
 internal static class JsonTemplateHelper
 {
-    private static readonly ConcurrentDictionary<Type, JsonObject> _templates = new();
+    private static readonly ConcurrentDictionary<string, JsonObject> _templates = new();
 
     /// <summary>
     /// Tells if a Domain Entity (for Repositories) can use the new mode based on it's JSON template (ex: when using FlattenJsonConverter).
@@ -24,16 +24,17 @@ internal static class JsonTemplateHelper
             .Any(attr => attr is UseNewJsonTemplateModeAttribute);
     }
 
-    public static JsonObject GetTemplate<T>() => GetTemplate(typeof(T));
-    public static JsonObject GetTemplate(Type type)
+    public static JsonObject GetTemplate<T>(int depth = 1) => GetTemplate(typeof(T), depth);
+    public static JsonObject GetTemplate(Type type, int depth = 1)
     {
-        return _templates.GetOrAdd(type, t =>
+        string key = $"{type.FullName}_{depth}";
+        return _templates.GetOrAdd(key, t =>
         {
             // Create a new instance of the type with all nested properties instantiated, till a depth of 5.
             // The type must have a parameterless constructor, private or public.
-            var instance = Activator.CreateInstance(t, true)!;
+            var instance = Activator.CreateInstance(type, true)!;
             // Recursively initialize all nested properties.
-            Initialize(instance, 5);
+            Initialize(instance, depth);
             var json = JsonSerializer.Serialize(instance);
             return JsonSerializer.Deserialize<JsonObject>(json)!;
         });

@@ -7,16 +7,16 @@ namespace OData.Client;
 internal class SelectAndExpandParserV2<TSource, TTarget>
     where TTarget : class
 {
-    private readonly JsonObject _template = JsonTemplateHelper.GetTemplate<TTarget>();
-    public SelectAndExpandResult ToSelectAndExpand()
+    public SelectAndExpandResult ToSelectAndExpand(int expandDepth = 1)
     {
         var result = new SelectAndExpandResult();
         // Mounts the $select and $expand from the template
         // In case of nested objects, the $select and $expand are recursively mounted
-        // Allows more than 1 level, the limit comes from GetTemplate
+        // We need to get one more level of depth so we can identify if a property is a complex type or not (object and array)
+        var template = JsonTemplateHelper.GetTemplate<TTarget>(expandDepth + 1);
         var selectAndExpand = new List<string>();
-        AddSelectPart(_template, selectAndExpand, result);
-        AddExpandPart(_template, selectAndExpand, result);
+        AddSelectPart(template, selectAndExpand, result);
+        AddExpandPart(template, selectAndExpand, result, remainingLevels: expandDepth);
         result.Query = string.Join("&", selectAndExpand);
         return result;
     }
@@ -38,8 +38,9 @@ internal class SelectAndExpandParserV2<TSource, TTarget>
         }
     }
 
-    private void AddExpandPart(JsonObject obj, List<string> selectAndExpand, SelectAndExpandResult result)
+    private void AddExpandPart(JsonObject obj, List<string> selectAndExpand, SelectAndExpandResult result, int remainingLevels)
     {
+        if(remainingLevels <= 0) { return; }
         var expands = new List<string>();
         foreach (var prop in obj)
         {
@@ -48,7 +49,7 @@ internal class SelectAndExpandParserV2<TSource, TTarget>
             if (template is null) { continue; }
             var subSelectAndExpand = new List<string>();
             AddSelectPart(template, subSelectAndExpand, result);
-            AddExpandPart(template, subSelectAndExpand, result);
+            AddExpandPart(template, subSelectAndExpand, result, remainingLevels - 1);
             expands.Add($"{prop.Key}({string.Join(';', subSelectAndExpand)})");
         }
         if (expands.Any())
