@@ -73,14 +73,14 @@ internal static class JsonTemplateHelper
                     var itemInstance = Activator.CreateInstance(elementType, true)!;
                     Initialize(itemInstance, remainingLevels - 1);
                     arrayPropInstance.SetValue(itemInstance, 0);
-                    prop.SetValue(instance, arrayPropInstance);
+                    prop.DeclaringType.GetProperty(prop.Name)!.SetValue(instance, arrayPropInstance);
                 }
             }
             else if (IsComplexType(prop.PropertyType))
             {
                 var propInstance = Activator.CreateInstance(prop.PropertyType, true)!;
                 Initialize(propInstance, remainingLevels - 1);
-                prop.SetValue(instance, propInstance);
+                prop.DeclaringType.GetProperty(prop.Name)!.SetValue(instance, propInstance);
             }
         }
     }
