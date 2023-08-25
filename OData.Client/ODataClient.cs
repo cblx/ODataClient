@@ -60,11 +60,21 @@ public class ODataClient : IODataClient
         await Post(body, requestMessageConfiguration);
     }
 
-    public async Task<T> PostAndReturnAsync<T>(Action<Body<T>> bodyBuilder, Action<HttpRequestMessage>? requestMessageConfiguration = null) where T : class
+    // TODO: This method doesn't have the requestMessageConfiguration parameter. Maybe we should drop it from the other methods too?
+    public async Task<T> PostAndReturnAsync<T>(Action<Body<T>> bodyBuilder) where T : class
     {
         var body = new Body<T>(MetadataProvider);
         bodyBuilder(body);
         var selectParserResult = new SelectAndExpandParserV2<T, T>().ToSelectAndExpand();
+
+        void requestMessageConfiguration(HttpRequestMessage requestMessage)
+        {
+            if (selectParserResult.HasFormattedValues)
+            {
+                requestMessage.Headers.Add("Prefer", $"odata.include-annotations={DynAnnotations.FormattedValue}");
+            }
+            requestMessage.Headers.Add("Prefer", $"return=representation");
+        }
         return await HttpHelpers.PostAndReturnAsync<T>(
            new(
                this,

@@ -369,7 +369,7 @@ public class ODataSet<TSource> : IODataSet<TSource>
     {
         if (condition)
         {
-            _requestMessageConfiguration = requestMessage =>
+            _requestMessageConfiguration = requestMessage => 
                        requestMessage
                        .Headers.Add(
                            "Prefer",

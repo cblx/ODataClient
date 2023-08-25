@@ -12,7 +12,7 @@ public interface IODataClient
     Task PostAsync<T>(Action<Write.Body<T>> bodyBuilder, Action<HttpRequestMessage>? requestMessageConfiguration = null) where T : class;
     [Obsolete("Use PostAsync instead")]
     Task Post<T>(Write.Body<T> body, Action<HttpRequestMessage>? requestMessageConfiguration = null) where T : class;
-    Task<T> PostAndReturnAsync<T>(Action<Write.Body<T>> bodyBuilder, Action<HttpRequestMessage>? requestMessageConfiguration = null) where T : class;
+    Task<T> PostAndReturnAsync<T>(Action<Write.Body<T>> bodyBuilder) where T : class;
     Task Unbind<T>(object id, string nav, Action<HttpRequestMessage>? requestMessageConfiguration = null) where T : class;
     Task Unbind<T, TBind>(object id, System.Linq.Expressions.Expression<Func<T, TBind>> navExpression, Action<HttpRequestMessage>? requestMessageConfiguration = null)
         where T : class
