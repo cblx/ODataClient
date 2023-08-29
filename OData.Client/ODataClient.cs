@@ -59,12 +59,16 @@ public class ODataClient : IODataClient
         bodyBuilder(body);
         await Post(body, requestMessageConfiguration);
     }
-
-    // TODO: This method doesn't have the requestMessageConfiguration parameter. Maybe we should drop it from the other methods too?
     public async Task<T> PostAndReturnAsync<T>(Action<Body<T>> bodyBuilder) where T : class
     {
         var body = new Body<T>(MetadataProvider);
         bodyBuilder(body);
+        return await PostAndReturnAsync(body);
+    }
+
+    // TODO: This method doesn't have the requestMessageConfiguration parameter. Maybe we should drop it from the other methods too?
+    public async Task<T> PostAndReturnAsync<T>(Body<T> body) where T : class
+    {
         var selectParserResult = new SelectAndExpandParserV2<T, T>().ToSelectAndExpand();
 
         void requestMessageConfiguration(HttpRequestMessage requestMessage)
