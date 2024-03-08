@@ -66,7 +66,7 @@ public class ClientVsProvidersODataAndFetchXml
             {
                 thing.Name,
                 thing.Id
-            }).ToListAsync();
+            }).CompatToListAsync();
     }
 
     [Benchmark]
@@ -94,7 +94,7 @@ public class ClientVsProvidersODataAndFetchXml
             {
                 thing.Name,
                 thing.Id
-            }).ToListAsync();
+            }).CompatToListAsync();
     }
 }
 
