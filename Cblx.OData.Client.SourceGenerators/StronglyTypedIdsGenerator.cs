@@ -32,6 +32,16 @@ public partial record {name}(Guid Guid) : Id(Guid)
     public static explicit operator {name}(Guid guid) => new {name}(guid);
     public static {name} Empty {{ get; }} = new {name}(Guid.Empty);
     public static {name} NewId() => new {name}(Guid.NewGuid());
+    public static bool TryParse(string? value, out {name}? result)
+    {{
+        if (value is null)
+        {{
+            result = null;
+            return true;
+        }}
+        result = new {name}(value);
+        return true;
+    }}
     public override string ToString() => Guid.ToString();
 }}";
                 context.AddSource($"{symbol.Name}Id.g.cs", source);
