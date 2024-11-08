@@ -1,6 +1,6 @@
 ﻿using Cblx.OData.Client.Abstractions;
 using Cblx.OData.Client.Abstractions.Json;
-using System.Net;
+using OData.Client.Abstractions;
 using System.Text;
 using System.Text.Json;
 
@@ -33,8 +33,9 @@ static class HttpHelpers
         JsonSerializerOptionsForWrite.Converters.Add(DateOnlyJsonConverter);
     }
 
-    public static async Task Patch(RequestParametersWithValue parameters)
+    public static async Task<RequestData> Patch(RequestParametersWithValue parameters)
     {
+        var requestData = new RequestData();
         string jsonValue = SerializeForWrite(parameters.Value);
         StringBuilder sbLog = new();
         if (parameters.ShowLog)
@@ -42,6 +43,8 @@ static class HttpHelpers
             AppendRequestInfo(sbLog, parameters.Invoker, "PATCH", parameters.Url);
             AppendBodyInfo(sbLog, jsonValue);
         }
+        requestData.Url = parameters.Url;
+        requestData.Body = jsonValue;
         var requestMessage = new HttpRequestMessage(HttpMethod.Patch, parameters.Url)
         {
             Content = new StringContent(jsonValue, Encoding.UTF8, "application/json")
@@ -56,10 +59,12 @@ static class HttpHelpers
             Console.WriteLine(sbLog);
         }
         ThrowErrorIfNotOk(responseMessage, json);
+        return requestData;
     }
 
-    public static async Task Post(RequestParametersWithValue parameters)
+    public static async Task<RequestData> Post(RequestParametersWithValue parameters)
     {
+        var requestData = new RequestData();
         string jsonValue = SerializeForWrite(parameters.Value);
         StringBuilder sbLog = new();
         if (parameters.ShowLog)
@@ -68,6 +73,8 @@ static class HttpHelpers
             AppendBodyInfo(sbLog, jsonValue);
         }
 
+        requestData.Url = parameters.Url;
+        requestData.Body = jsonValue;
         var requestMessage = new HttpRequestMessage(HttpMethod.Post, parameters.Url)
         {
             Content = new StringContent(jsonValue, Encoding.UTF8, "application/json")
@@ -82,6 +89,7 @@ static class HttpHelpers
             Console.WriteLine(sbLog);
         }
         ThrowErrorIfNotOk(responseMessage, json);
+        return requestData;
     }
 
     public static async Task<TResult> PostAndReturnAsync<TResult>(RequestParametersWithValue parameters)

@@ -25,6 +25,7 @@ where TTable : class, new()
     protected IChangeTracker ChangeTracker { get; }
     readonly protected IODataClient oDataClient;
     private IDynamicsMetadataProvider MetadataProvider => oDataClient.MetadataProvider;
+    public List<RequestData> Requests { get; } = new();
 
     public ODataRepository(IODataClient oDataClient)
     {
@@ -123,11 +124,11 @@ where TTable : class, new()
             }
             if (change.ChangeType == ChangeType.Update)
             {
-                await oDataClient.Patch(id.Value, body);
+                Requests.Add(await oDataClient.Patch(id.Value, body));
             }
             if (change.ChangeType == ChangeType.Add)
             {
-                await oDataClient.Post(body);
+                Requests.Add(await oDataClient.Post(body));
             }
         }
         ChangeTracker.AcceptChange(change);

@@ -26,7 +26,7 @@ public class ODataClient : IODataClient
     public IODataSet<T> From<T>() where T : class
         => new ODataSet<T>(this, MetadataProvider);
 
-    public Task Post<T>(Body<T> body, Action<HttpRequestMessage>? requestMessageConfiguration = null) where T : class
+    public Task<RequestData> Post<T>(Body<T> body, Action<HttpRequestMessage>? requestMessageConfiguration = null) where T : class
         => HttpHelpers.Post(
             new(
                 this,
@@ -36,7 +36,7 @@ public class ODataClient : IODataClient
             )
         );
 
-    public Task Patch<T>(object id, Body<T> body, Action<HttpRequestMessage>? requestMessageConfiguration = null) where T : class
+    public Task<RequestData> Patch<T>(object id, Body<T> body, Action<HttpRequestMessage>? requestMessageConfiguration = null) where T : class
         => HttpHelpers.Patch(
             new(
                 this,
